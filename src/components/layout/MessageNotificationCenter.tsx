@@ -5,7 +5,6 @@
  * Opens a popover listing each inquiry with unread messages.
  * Clicking an item navigates to the inquiry page and opens the chat widget.
  */
-
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -181,7 +180,6 @@ export function MessageNotificationCenter() {
                     : "All caught up!"}
                 </p>
               </div>
-              {/* "Mark all read" removed for client messages header */}
             </div>
 
             <div className="relative">
@@ -422,14 +420,17 @@ function NotificationItem({
             </div>
           </div>
 
-          <p
-            className="text-[10px] text-slate-500 leading-normal mt-1 line-clamp-2 pr-2"
-            title={n.lastMessageByName || n.clientName}
-          >
-            Last reply:{" "}
-            {n.lastMessageByName ||
-              (n.lastMessageBy === n.clientEmail ? n.clientName : "Admin")}
-          </p>
+          {(n.lastMessagePreview || n.lastMessageByName) && (
+            <p
+              className="text-[10px] text-slate-500 leading-normal mt-1 line-clamp-2 pr-2"
+              title={n.lastMessagePreview || undefined}
+            >
+              {n.lastMessageByRole === "admin"
+                ? `Admin (${n.lastMessageByName || "Unknown"})`
+                : "Client"}
+              {n.lastMessagePreview ? `: ${n.lastMessagePreview}` : ":"}
+            </p>
+          )}
         </div>
 
         {/* Unread Status Dot */}

@@ -137,6 +137,7 @@ export interface QuotationThread {
   lastMessageBy?: string;
   lastMessageByName?: string;
   lastMessageByRole?: MessageSenderRole;
+  lastMessagePreview?: string;
   unreadCount: {
     admin: number;
     client: number;

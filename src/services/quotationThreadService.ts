@@ -491,6 +491,7 @@ export async function sendQuotationToClient(
       lastMessageBy: adminEmail,
       lastMessageByName: adminName,
       lastMessageByRole: "admin",
+      lastMessagePreview: content.trim().substring(0, 120),
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
@@ -557,6 +558,7 @@ export async function addThreadMessage(
       lastMessageBy: message.senderId,
       lastMessageByName: message.senderName,
       lastMessageByRole: message.senderRole,
+      lastMessagePreview: message.content.trim().substring(0, 120),
       updatedAt: serverTimestamp(),
     };
 

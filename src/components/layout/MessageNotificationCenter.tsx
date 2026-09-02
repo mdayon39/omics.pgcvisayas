@@ -9,7 +9,15 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { MessageCircle, RotateCcw, MoreHorizontal, Search, Trash2, X, Check } from "lucide-react";
+import {
+  MessageCircle,
+  RotateCcw,
+  MoreHorizontal,
+  Search,
+  Trash2,
+  X,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -40,9 +48,9 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import usePresenceStatus from "@/hooks/usePresenceStatus";
-import { 
+import {
   markLatestClientMessageAsUnseen,
-  dismissThreadNotification
+  dismissThreadNotification,
 } from "@/services/quotationThreadService";
 
 export function MessageNotificationCenter() {
@@ -52,7 +60,10 @@ export function MessageNotificationCenter() {
   const [markingUnseenId, setMarkingUnseenId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
   const [confirmDismissOpen, setConfirmDismissOpen] = useState(false);
-  const [pendingDismiss, setPendingDismiss] = useState<{ id: string; name: string } | null>(null);
+  const [pendingDismiss, setPendingDismiss] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const { notifications, totalUnread, markViewed, markAllViewed } =
     useMessageNotifications();
 
@@ -78,7 +89,11 @@ export function MessageNotificationCenter() {
     router.push(`/admin/inquiry?inquiryId=${inquiryId}&focus=messages`);
   };
 
-  const requestDismiss = (event: React.MouseEvent, inquiryId: string, clientName: string) => {
+  const requestDismiss = (
+    event: React.MouseEvent,
+    inquiryId: string,
+    clientName: string,
+  ) => {
     event.stopPropagation();
     if (dismissingId) return;
 
@@ -128,102 +143,105 @@ export function MessageNotificationCenter() {
 
   return (
     <>
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative hover:bg-slate-100"
-          aria-label={
-            totalUnread > 0
-              ? `${totalUnread} unread client message${totalUnread !== 1 ? "s" : ""}`
-              : "Client messages"
-          }
-        >
-          <MessageCircle className="h-5 w-5 text-slate-700" />
-          {totalUnread > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500 animate-pulse"
-            >
-              {totalUnread > 9 ? "9+" : totalUnread}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent className="w-[350px] p-0" align="end">
-        {/* Header */}
-        <div className="border-b p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div>
-              <h3 className="font-semibold text-slate-900">Client Messages</h3>
-              <p className="text-xs text-slate-500">
-                {totalUnread > 0
-                  ? `${totalUnread} unread message${totalUnread !== 1 ? "s" : ""}`
-                  : "All caught up!"}
-              </p>
-            </div>
-            {/* "Mark all read" removed for client messages header */}
-          </div>
-
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-            <Input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search client or affiliation"
-              className="h-8 pr-8 pl-8 text-xs"
-              aria-label="Search client messages"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                aria-label="Clear search"
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative hover:bg-slate-100"
+            aria-label={
+              totalUnread > 0
+                ? `${totalUnread} unread client message${totalUnread !== 1 ? "s" : ""}`
+                : "Client messages"
+            }
+          >
+            <MessageCircle className="h-5 w-5 text-slate-700" />
+            {totalUnread > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500 animate-pulse"
               >
-                <X className="h-3 w-3" />
-              </button>
+                {totalUnread > 9 ? "9+" : totalUnread}
+              </Badge>
             )}
-          </div>
-        </div>
+          </Button>
+        </PopoverTrigger>
 
-        {/* List */}
-        <ScrollArea className="h-[360px]">
-          {filteredNotifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-              <div className="p-3 bg-slate-100 rounded-full mb-3">
-                <MessageCircle className="h-7 w-7 text-slate-400" />
+        <PopoverContent className="w-[350px] p-0" align="end">
+          {/* Header */}
+          <div className="border-b p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div>
+                <h3 className="font-semibold text-slate-900">
+                  Client Messages
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {totalUnread > 0
+                    ? `${totalUnread} unread message${totalUnread !== 1 ? "s" : ""}`
+                    : "All caught up!"}
+                </p>
               </div>
-              <p className="text-sm font-medium text-slate-700">
-                {searchQuery ? "No matching clients" : "No new messages"}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                {searchQuery ? "Try a different search keyword" : "New client messages will appear here"}
-              </p>
+              {/* "Mark all read" removed for client messages header */}
             </div>
-          ) : (
-            <div className="flex flex-col">
-              {filteredNotifications.map((n) => (
-                <NotificationItem 
-                  key={n.inquiryId}
-                  notification={n}
-                  onClick={() => handleNotificationClick(n.inquiryId)}
-                  handleDismiss={requestDismiss}
-                  handleMarkAsUnseen={handleMarkAsUnseen}
-                  dismissingId={dismissingId}
-                  markingUnseenId={markingUnseenId}
-                />
-              ))}
+
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search client or affiliation"
+                className="h-8 pr-8 pl-8 text-xs"
+                aria-label="Search client messages"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                  aria-label="Clear search"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
-          )}
-        </ScrollArea>
-      </PopoverContent>
+          </div>
 
-    </Popover>
+          {/* List */}
+          <ScrollArea className="h-[360px]">
+            {filteredNotifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                <div className="p-3 bg-slate-100 rounded-full mb-3">
+                  <MessageCircle className="h-7 w-7 text-slate-400" />
+                </div>
+                <p className="text-sm font-medium text-slate-700">
+                  {searchQuery ? "No matching clients" : "No new messages"}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {searchQuery
+                    ? "Try a different search keyword"
+                    : "New client messages will appear here"}
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                {filteredNotifications.map((n) => (
+                  <NotificationItem
+                    key={n.inquiryId}
+                    notification={n}
+                    onClick={() => handleNotificationClick(n.inquiryId)}
+                    handleDismiss={requestDismiss}
+                    handleMarkAsUnseen={handleMarkAsUnseen}
+                    dismissingId={dismissingId}
+                    markingUnseenId={markingUnseenId}
+                  />
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </PopoverContent>
+      </Popover>
 
-    <AlertDialog
+      <AlertDialog
         open={confirmDismissOpen}
         onOpenChange={(nextOpen) => {
           setConfirmDismissOpen(nextOpen);
@@ -240,11 +258,14 @@ export function MessageNotificationCenter() {
               <span className="font-semibold text-foreground">
                 {pendingDismiss?.name || "this client"}
               </span>{" "}
-              from the admin list. You can only restore it if a new message arrives.
+              from the admin list. You can only restore it if a new message
+              arrives.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={dismissingId !== null}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={dismissingId !== null}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDismiss}
               disabled={!pendingDismiss || dismissingId !== null}
@@ -266,19 +287,23 @@ export function MessageNotificationCenter() {
 interface NotificationItemProps {
   notification: any;
   onClick: () => void;
-  handleDismiss: (e: React.MouseEvent, inquiryId: string, clientName: string) => void;
+  handleDismiss: (
+    e: React.MouseEvent,
+    inquiryId: string,
+    clientName: string,
+  ) => void;
   handleMarkAsUnseen: (e: React.MouseEvent, inquiryId: string) => void;
   dismissingId: string | null;
   markingUnseenId: string | null;
 }
 
-function NotificationItem({ 
-  notification: n, 
-  onClick, 
-  handleDismiss, 
+function NotificationItem({
+  notification: n,
+  onClick,
+  handleDismiss,
   handleMarkAsUnseen,
   dismissingId,
-  markingUnseenId
+  markingUnseenId,
 }: NotificationItemProps) {
   const presence = usePresenceStatus(`client_${n.inquiryId}`);
 
@@ -292,18 +317,21 @@ function NotificationItem({
       <div className="flex items-start gap-3">
         {/* Client Initials Avatar */}
         <div className="relative flex-shrink-0">
-          <div 
+          <div
             className={`h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm border ${
-              n.unreadCount > 0 
-                ? "bg-blue-600 text-white border-blue-500" 
+              n.unreadCount > 0
+                ? "bg-blue-600 text-white border-blue-500"
                 : "bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 border-slate-200"
             }`}
           >
             {n.clientName
               ? (() => {
                   const words = n.clientName.trim().split(/\s+/);
-                  if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
-                  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+                  if (words.length === 1)
+                    return words[0].substring(0, 2).toUpperCase();
+                  return (
+                    words[0][0] + words[words.length - 1][0]
+                  ).toUpperCase();
                 })()
               : "?"}
           </div>
@@ -318,9 +346,13 @@ function NotificationItem({
           <div className="flex items-start justify-between gap-1">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-baseline gap-x-2">
-                <p className={`text-sm leading-tight inline ${
-                  n.unreadCount > 0 ? "font-bold text-slate-900" : "font-semibold text-slate-700"
-                }`}>
+                <p
+                  className={`text-sm leading-tight inline ${
+                    n.unreadCount > 0
+                      ? "font-bold text-slate-900"
+                      : "font-semibold text-slate-700"
+                  }`}
+                >
                   {n.clientName}
                 </p>
                 {n.lastMessageAt && (
@@ -340,7 +372,7 @@ function NotificationItem({
                   {n.unreadCount}
                 </span>
               )}
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -353,8 +385,10 @@ function NotificationItem({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-32">
                   {n.unreadCount > 0 ? (
-                    <DropdownMenuItem 
-                      onClick={(e) => handleDismiss(e, n.inquiryId, n.clientName)}
+                    <DropdownMenuItem
+                      onClick={(e) =>
+                        handleDismiss(e, n.inquiryId, n.clientName)
+                      }
                       disabled={dismissingId === n.inquiryId}
                       className="text-[11px] cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
                     >
@@ -363,7 +397,7 @@ function NotificationItem({
                     </DropdownMenuItem>
                   ) : (
                     <>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={(e) => handleMarkAsUnseen(e, n.inquiryId)}
                         disabled={markingUnseenId === n.inquiryId}
                         className="text-[11px] cursor-pointer"
@@ -371,8 +405,10 @@ function NotificationItem({
                         <RotateCcw className="mr-2 h-3.5 w-3.5" />
                         <span>Mark as unseen</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={(e) => handleDismiss(e, n.inquiryId, n.clientName)}
+                      <DropdownMenuItem
+                        onClick={(e) =>
+                          handleDismiss(e, n.inquiryId, n.clientName)
+                        }
                         disabled={dismissingId === n.inquiryId}
                         className="text-[11px] cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
                       >
@@ -385,15 +421,15 @@ function NotificationItem({
               </DropdownMenu>
             </div>
           </div>
-          
-          {n.clientAffiliation && (
-            <p 
-              className="text-[10px] text-slate-500 leading-normal mt-1 line-clamp-2 pr-2"
-              title={n.clientAffiliation}
-            >
-              {n.clientAffiliation}
-            </p>
-          )}
+
+          <p
+            className="text-[10px] text-slate-500 leading-normal mt-1 line-clamp-2 pr-2"
+            title={n.lastMessageByName || n.clientName}
+          >
+            Last reply:{" "}
+            {n.lastMessageByName ||
+              (n.lastMessageBy === n.clientEmail ? n.clientName : "Admin")}
+          </p>
         </div>
 
         {/* Unread Status Dot */}

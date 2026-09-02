@@ -489,6 +489,8 @@ export async function sendQuotationToClient(
       "unreadCount.client": (thread?.unreadCount.client || 0) + 1,
       lastMessageAt: serverTimestamp(),
       lastMessageBy: adminEmail,
+      lastMessageByName: adminName,
+      lastMessageByRole: "admin",
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
@@ -553,6 +555,8 @@ export async function addThreadMessage(
       ...unreadCountUpdate,
       lastMessageAt: serverTimestamp(),
       lastMessageBy: message.senderId,
+      lastMessageByName: message.senderName,
+      lastMessageByRole: message.senderRole,
       updatedAt: serverTimestamp(),
     };
 

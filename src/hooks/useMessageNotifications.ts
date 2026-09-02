@@ -65,16 +65,16 @@ export function useMessageNotifications() {
             clientAffiliation: data.clientAffiliation || "",
             unreadCount,
             lastMessageAt:
-              data.lastMessageAt?.toDate?.() ||
-              latestMessage?.createdAt?.toDate?.(),
-            lastMessageBy: data.lastMessageBy || latestMessage?.senderId,
+              latestMessage?.createdAt?.toDate?.() ||
+              data.lastMessageAt?.toDate?.(),
+            lastMessageBy: latestMessage?.senderId || data.lastMessageBy,
             lastMessageByName:
-              data.lastMessageByName || latestMessage?.senderName,
+              latestMessage?.senderName || data.lastMessageByName,
             lastMessageByRole:
-              data.lastMessageByRole || latestMessage?.senderRole,
+              latestMessage?.senderRole || data.lastMessageByRole,
             lastMessagePreview:
-              data.lastMessagePreview ||
-              latestMessage?.content?.trim().substring(0, 120),
+              latestMessage?.content?.trim().substring(0, 120) ||
+              data.lastMessagePreview,
             viewed: viewedRef.current.has(docSnap.id),
           };
         })
@@ -101,7 +101,12 @@ export function useMessageNotifications() {
       latestMessages = new Map();
       snapshot.docs.forEach((docSnap) => {
         const message = docSnap.data() as ThreadMessage;
-        if (message.threadId && !latestMessages.has(message.threadId)) {
+        if (
+          message.threadId &&
+          !message.unsent &&
+          message.content?.trim() &&
+          !latestMessages.has(message.threadId)
+        ) {
           latestMessages.set(message.threadId, message);
         }
       });

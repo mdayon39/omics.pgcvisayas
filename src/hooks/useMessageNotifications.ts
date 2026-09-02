@@ -6,7 +6,13 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { QuotationThread } from "@/types/QuotationThread";
 
@@ -31,7 +37,7 @@ export function useMessageNotifications() {
   useEffect(() => {
     const q = query(
       collection(db, "quotationThreads"),
-      orderBy("lastMessageAt", "desc")
+      orderBy("lastMessageAt", "desc"),
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -52,12 +58,14 @@ export function useMessageNotifications() {
         })
         .filter((n) => {
           // Hide manually dismissed threads from this recent list
-          const threadRaw = snapshot.docs.find(d => d.id === n.inquiryId)?.data() as any;
+          const threadRaw = snapshot.docs
+            .find((d) => d.id === n.inquiryId)
+            ?.data() as any;
           if (threadRaw?.dismissedByAdmin === true) return false;
-          
+
           return n.unreadCount > 0 || !!n.lastMessageAt;
         })
-        .slice(0, 50); // keep more recent threads visible in the admin client messages list
+        .slice(0, 1000); // keep up to 1,000 recent threads visible in the admin client messages list
 
       const total = threads.reduce((sum, t) => sum + t.unreadCount, 0);
       setTotalUnread(total);
@@ -71,7 +79,7 @@ export function useMessageNotifications() {
   const markViewed = (inquiryId: string) => {
     viewedRef.current.add(inquiryId);
     setNotifications((prev) =>
-      prev.map((n) => (n.inquiryId === inquiryId ? { ...n, viewed: true } : n))
+      prev.map((n) => (n.inquiryId === inquiryId ? { ...n, viewed: true } : n)),
     );
   };
 

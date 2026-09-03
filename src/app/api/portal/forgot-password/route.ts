@@ -4,7 +4,14 @@
 // (if they changed it) or their earliest inquiry ID.
 
 import { NextRequest, NextResponse } from "next/server";
-import { collection, getDocs, query, where, addDoc, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  addDoc,
+  Timestamp,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 const PORTAL_URL = "https://omics.pgcvisayas.upv.edu.ph/portal";
@@ -41,36 +48,48 @@ export async function POST(request: NextRequest) {
     const email: string = (body?.email || "").trim().toLowerCase();
 
     if (!email || !email.includes("@")) {
-      return NextResponse.json({ error: "A valid email is required." }, { status: 400 });
+      return NextResponse.json(
+        { error: "A valid email is required." },
+        { status: 400 },
+      );
     }
 
     if (isRateLimited(email)) {
       return NextResponse.json(
-        { error: "Too many requests. Please wait 15 minutes before trying again." },
-        { status: 429 }
+        {
+          error:
+            "Too many requests. Please wait 15 minutes before trying again.",
+        },
+        { status: 429 },
       );
     }
 
     const snapshot = await getDocs(
-      query(collection(db, "inquiries"), where("email", "==", email))
+      query(collection(db, "inquiries"), where("email", "==", email)),
     );
 
     if (snapshot.empty) {
       return NextResponse.json(
-        { error: "No account was found linked to this email address. Please make sure you're signed in with the same Google account you used when submitting your inquiry." },
-        { status: 404 }
+        {
+          error:
+            "No account was found linked to this email address. Please make sure you're signed in with the same Google account you used when submitting your inquiry.",
+        },
+        { status: 404 },
       );
     }
 
     // Filter to portal-eligible inquiries only
     const eligible = snapshot.docs.filter((d) =>
-      ALLOWED_STATUSES.includes(d.data().status || "")
+      ALLOWED_STATUSES.includes(d.data().status || ""),
     );
 
     if (eligible.length === 0) {
       return NextResponse.json(
-        { error: "Your account is not currently eligible for portal access. Please contact PGC Visayas for assistance." },
-        { status: 403 }
+        {
+          error:
+            "Your account is not currently eligible for portal access. Please contact PGC Visayas for assistance.",
+        },
+        { status: 403 },
       );
     }
 
@@ -84,14 +103,17 @@ export async function POST(request: NextRequest) {
 
     if (withCustomPw) {
       activePassword = withCustomPw.data().customPassword as string;
-      clientName = withCustomPw.data().name || withCustomPw.data().fullName || "Client";
+      clientName =
+        withCustomPw.data().name || withCustomPw.data().fullName || "Client";
     } else {
       // Sort ascending by createdAt to find the first inquiry
       const sorted = [...eligible].sort((a, b) => {
         const tsA = a.data().createdAt;
         const tsB = b.data().createdAt;
-        const msA = tsA instanceof Timestamp ? tsA.toMillis() : (tsA ? Number(tsA) : 0);
-        const msB = tsB instanceof Timestamp ? tsB.toMillis() : (tsB ? Number(tsB) : 0);
+        const msA =
+          tsA instanceof Timestamp ? tsA.toMillis() : tsA ? Number(tsA) : 0;
+        const msB =
+          tsB instanceof Timestamp ? tsB.toMillis() : tsB ? Number(tsB) : 0;
         return msA - msB;
       });
       const first = sorted[0];
@@ -101,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     const emailText = `Dear ${clientName},
 
-You requested a password reset for your Client Portal account. Your current password is shown below.
+Your current password is:
 
   Password: ${activePassword}
 
@@ -119,7 +141,7 @@ Philippine Genome Center Visayas`;
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 32px;">
           <h2 style="margin-top: 0; color: #1e40af; font-size: 18px;">Client Portal — Password Recovery</h2>
           <p>Dear <strong>${clientName}</strong>,</p>
-          <p>You requested a password reset for your Client Portal account. Your current password is:</p>
+          <p>Your current password is:</p>
 
           <div style="margin: 20px 0; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px 20px; text-align: center;">
             <p style="margin: 0 0 4px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em;">Password</p>
@@ -157,7 +179,7 @@ Philippine Genome Center Visayas`;
     console.error("forgot-password route error:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred. Please try again." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

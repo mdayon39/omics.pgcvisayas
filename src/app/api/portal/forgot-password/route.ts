@@ -25,10 +25,10 @@ const ALLOWED_STATUSES = [
   "Service Not Offered",
 ];
 
-// Simple in-memory rate limiter: max 3 requests per email per 15 min window.
+// Simple in-memory rate limiter: max 2 recovery emails per email per 24-hour window.
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_MAX = 3;
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX = 2;
+const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 function isRateLimited(email: string): boolean {
   const now = Date.now();
@@ -51,16 +51,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "A valid email is required." },
         { status: 400 },
-      );
-    }
-
-    if (isRateLimited(email)) {
-      return NextResponse.json(
-        {
-          error:
-            "Too many requests. Please wait 15 minutes before trying again.",
-        },
-        { status: 429 },
       );
     }
 
@@ -90,6 +80,16 @@ export async function POST(request: NextRequest) {
             "Your account is not currently eligible for portal access. Please contact PGC Visayas for assistance.",
         },
         { status: 403 },
+      );
+    }
+
+    if (isRateLimited(email)) {
+      return NextResponse.json(
+        {
+          error:
+            "You have reached the password recovery limit of two requests in 24 hours. Please try again tomorrow.",
+        },
+        { status: 429 },
       );
     }
 

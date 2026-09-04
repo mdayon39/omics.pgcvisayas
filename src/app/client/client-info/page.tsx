@@ -1069,7 +1069,7 @@ export default function ClientPortalPage() {
     const fetchInquiryQuotations = async () => {
       setLoadingQuotations(true);
       try {
-        const docs = await getQuotationsByInquiryId(inquiryIdParam);
+        const docs = await getQuotationsByInquiryId(inquiryIdParam, user?.uid);
         setInquiryQuotations(docs);
       } catch (err) {
         console.error("Error fetching inquiry quotations:", err);
@@ -1083,7 +1083,7 @@ export default function ClientPortalPage() {
     return () => {
       unsubInquiry();
     };
-  }, [inquiryIdParam]);
+  }, [inquiryIdParam, user?.uid]);
 
   // 1.5. Subscribe to Member Approvals for the selected project
   useEffect(() => {

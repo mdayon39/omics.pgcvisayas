@@ -381,7 +381,9 @@ service cloud.firestore {
           || hasOwnedUuid(request.resource.data.uuid)
         );
 
-      allow read: if canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.uuid == userUid())
+        || canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
 
       allow update, delete: if isSignedIn()
         && isClientOrAdmin()

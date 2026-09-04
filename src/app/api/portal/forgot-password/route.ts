@@ -4,8 +4,15 @@
 // (if they changed it) or their earliest inquiry ID.
 
 import { NextRequest, NextResponse } from "next/server";
-import { Timestamp } from "firebase/firestore";
-import { getAdminDb } from "@/lib/firebase-admin";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  addDoc,
+  Timestamp,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const PORTAL_URL = "https://omics.pgcvisayas.upv.edu.ph/portal";
 
@@ -18,27 +25,21 @@ const ALLOWED_STATUSES = [
   "Service Not Offered",
 ];
 
-const DAILY_RECOVERY_LIMIT = 2;
+// Simple in-memory rate limiter: max 3 requests per email per 15 min window.
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 
-async function hasReachedDailyLimit(email: string): Promise<boolean> {
-  const adminDb = getAdminDb();
-  if (!adminDb) throw new Error("Firebase Admin is not configured");
-
-  const dateKey = new Date().toISOString().slice(0, 10);
-  const limitRef = adminDb
-    .collection("passwordRecoveryLimits")
-    .doc(encodeURIComponent(email));
-
-  return adminDb.runTransaction(async (transaction) => {
-    const limitSnapshot = await transaction.get(limitRef);
-    const current = limitSnapshot.exists ? limitSnapshot.data() : undefined;
-    const count = current?.date === dateKey ? Number(current.count || 0) : 0;
-
-    if (count >= DAILY_RECOVERY_LIMIT) return true;
-
-    transaction.set(limitRef, { date: dateKey, count: count + 1 });
+function isRateLimited(email: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(email);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(email, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
     return false;
-  });
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return true;
+  entry.count += 1;
+  return false;
 }
 
 export async function POST(request: NextRequest) {
@@ -53,19 +54,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const adminDb = getAdminDb();
-    if (!adminDb) throw new Error("Firebase Admin is not configured");
-
-    const inquirySnapshot = await adminDb.collection("inquiries").get();
-    const matchingInquiries = inquirySnapshot.docs.filter((inquiryDoc) => {
-      const storedEmail = inquiryDoc.data().email;
-      return (
-        typeof storedEmail === "string" &&
-        storedEmail.trim().toLowerCase() === email
+    if (isRateLimited(email)) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many requests. Please wait 15 minutes before trying again.",
+        },
+        { status: 429 },
       );
-    });
+    }
 
-    if (matchingInquiries.length === 0) {
+    const snapshot = await getDocs(
+      query(collection(db, "inquiries"), where("email", "==", email)),
+    );
+
+    if (snapshot.empty) {
       return NextResponse.json(
         {
           error:
@@ -76,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Filter to portal-eligible inquiries only
-    const eligible = matchingInquiries.filter((d) =>
+    const eligible = snapshot.docs.filter((d) =>
       ALLOWED_STATUSES.includes(d.data().status || ""),
     );
 
@@ -87,16 +90,6 @@ export async function POST(request: NextRequest) {
             "Your account is not currently eligible for portal access. Please contact PGC Visayas for assistance.",
         },
         { status: 403 },
-      );
-    }
-
-    if (await hasReachedDailyLimit(email)) {
-      return NextResponse.json(
-        {
-          error:
-            "You've reached today's password recovery limit. Please try again tomorrow.",
-        },
-        { status: 429 },
       );
     }
 
@@ -172,7 +165,7 @@ Philippine Genome Center Visayas`;
       </div>
     `;
 
-    await adminDb.collection("mail").add({
+    await addDoc(collection(db, "mail"), {
       to: [email],
       message: {
         subject: "Client Portal — Password Recovery",

@@ -521,22 +521,12 @@ export default function ClientVerifyPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900">
-              Account Not Found
+              {forgotErrorModal?.startsWith("You have reached")
+                ? "Password Recovery Limit Reached"
+                : "Account Not Found"}
             </DialogTitle>
             <DialogDescription className="text-sm text-slate-600 leading-relaxed pt-1">
-              No account was found linked to this email address
-              {googleUser?.email ? (
-                <>
-                  {" "}
-                  (
-                  <span className="font-semibold text-slate-800">
-                    {googleUser.email}
-                  </span>
-                  )
-                </>
-              ) : null}
-              . Please make sure you&apos;re signed in with the same Google
-              account you used when submitting your inquiry.
+              {forgotErrorModal}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col gap-2 sm:flex-col">

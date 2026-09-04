@@ -61,6 +61,23 @@ async function resolveUuidFromEmail(
     );
   }
 
+  try {
+    const inquirySnapshot = await getDocs(
+      query(
+        collection(db, "inquiries"),
+        where("email", "==", normalizedEmail),
+        limit(1),
+      ),
+    );
+    const inquiryUuid = inquirySnapshot.docs[0]?.data()?.uuid;
+    if (typeof inquiryUuid === "string" && inquiryUuid) return inquiryUuid;
+  } catch (error) {
+    console.warn(
+      `[Firestore] Unable to resolve uuid from inquiry for ${normalizedEmail}:`,
+      error,
+    );
+  }
+
   return null;
 }
 
@@ -184,10 +201,14 @@ export async function saveChargeSlip(slip: ChargeSlipRecord): Promise<string> {
   const resolvedUuid = await resolveUuidFromEmail(
     slip.clientInfo?.email || slip.client?.email || null,
   );
+  const clientUuid =
+    (slip.client as (Client & { uuid?: string | null }) | undefined)?.uuid ||
+    slip.uuid ||
+    resolvedUuid;
 
   const payload: any = {
     ...slip,
-    uuid: resolvedUuid ?? slip.uuid ?? "",
+    uuid: clientUuid ?? "",
     dateIssued: safeTimestamp(slip.dateIssued),
     dateOfOR: slip.dateOfOR ? convertToTimestamp(slip.dateOfOR) : null,
     createdAt: safeTimestamp(slip.createdAt || new Date()),

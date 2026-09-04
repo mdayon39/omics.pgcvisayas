@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
       projectRequestId: projectRequestId || null,
       createdBy: clientEmail,
       ...(clientUid ? { createdByUid: clientUid } : {}),
+      ...(clientUid ? { uuid: clientUid } : {}),
       clientIpAddress: clientIp,
       userAgent: request.headers.get("user-agent") || "unknown",
       browserFingerprint: "server_captured",

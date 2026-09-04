@@ -119,6 +119,7 @@ export interface ThreadMessage {
 export interface QuotationThread {
   id: string; // Same as inquiryId for easy linking
   inquiryId: string;
+  uuid?: string | null;
 
   // Client info (from inquiry)
   clientEmail: string;

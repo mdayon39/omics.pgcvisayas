@@ -39,6 +39,7 @@ import {
   QuotationGenerationRequest,
   QuotationItem,
 } from "@/types/QuotationThread";
+import { resolveClientUuid } from "@/services/clientUuidService";
 
 const THREADS_COLLECTION = "quotationThreads";
 const MESSAGES_COLLECTION = "threadMessages";
@@ -83,6 +84,10 @@ export async function initializeQuotationThread(
     }
 
     const inquiryData = inquirySnap.data();
+    const uuid =
+      typeof inquiryData.uuid === "string" && inquiryData.uuid
+        ? inquiryData.uuid
+        : await resolveClientUuid(inquiryId, inquiryData.email);
 
     // Check if thread already exists
     const threadRef = doc(db, THREADS_COLLECTION, inquiryId);
@@ -96,6 +101,7 @@ export async function initializeQuotationThread(
     const thread: Omit<QuotationThread, "id"> = {
       inquiryId,
       clientEmail: inquiryData.email || "",
+      uuid: uuid || undefined,
       clientName: inquiryData.name || "",
       clientAffiliation: inquiryData.affiliation || "",
       status: "pending",

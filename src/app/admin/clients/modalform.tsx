@@ -37,6 +37,7 @@ import { Inquiry } from "@/types/Inquiry";
 import { DialogFooter } from "@/components/ui/dialog";
 import { logActivity } from "@/services/activityLogService";
 import useAuth from "@/hooks/useAuth";
+import { resolveClientUuid } from "@/services/clientUuidService";
 
 // Extended client schema for admin modal validation
 const clientSchema = baseClientSchema
@@ -106,8 +107,10 @@ export function ClientFormModal({
     mutationFn: async (data: Client) => {
       if (!data.cid) throw new Error("Client ID is required");
       const docRef = doc(db, "clients", data.cid);
+      const clientUuid = await resolveClientUuid(data.inquiryId, data.email);
       const clientData = {
         ...data,
+        ...(clientUuid ? { uuid: clientUuid } : {}),
         createdAt: serverTimestamp(),
       };
       await setDoc(docRef, clientData);

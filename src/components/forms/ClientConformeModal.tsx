@@ -206,6 +206,7 @@ export default function ClientConformeModal({
             projectPid: projectPid ?? null,
             projectRequestId: projectRequestId ?? null,
             createdBy: clientEmail,
+            ...(clientUid ? { uuid: clientUid } : {}),
             ...(clientUid ? { createdByUid: clientUid } : {}),
             clientIpAddress: "client_browser",
             userAgent:

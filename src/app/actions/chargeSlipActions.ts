@@ -1,30 +1,32 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { 
-  saveChargeSlip, 
-  updateChargeSlip, 
-  getAllChargeSlips 
+import {
+  saveChargeSlip,
+  updateChargeSlip,
+  getAllChargeSlips,
 } from "@/services/chargeSlipService";
 import { ChargeSlipRecord } from "@/types/ChargeSlipRecord";
 import { logActivity } from "@/services/activityLogService";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { resolveClientUuid } from "@/services/clientUuidService";
 
 export async function saveChargeSlipAction(
   slip: ChargeSlipRecord,
-  userInfo?: { name: string; email: string }
+  userInfo?: { name: string; email: string },
 ) {
   try {
     const result = await saveChargeSlip(slip);
-    
+
     // Send email notification to client about billing availability
     const recipientEmail = slip.clientInfo?.email || slip.client?.email || "";
     if (recipientEmail) {
       try {
         const mailCollection = collection(db, "mail");
-        const clientName = slip.clientInfo?.name || slip.client?.name || "Valued Client";
-        
+        const clientName =
+          slip.clientInfo?.name || slip.client?.name || "Valued Client";
+
         const clientEmailHtml = `
           <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; color: #334155; line-height: 1.6;">
             <div style="background-color: #f1f5f9; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
@@ -70,14 +72,21 @@ Philippine Genome Center Visayas
           message: {
             subject: "Billing/Invoice: PGC Visayas",
             text: clientEmailText,
-            html: clientEmailHtml
-          }
+            html: clientEmailHtml,
+          },
         });
-        console.log(`✅ Billing notification email sent to ${slip.clientInfo.email}`);
+        console.log(
+          `✅ Billing notification email sent to ${slip.clientInfo.email}`,
+        );
 
         // In-app notification
+        const notificationUuid = await resolveClientUuid(
+          undefined,
+          recipientEmail,
+        );
         await addDoc(collection(db, "clientNotifications"), {
           recipientEmail,
+          ...(notificationUuid ? { uuid: notificationUuid } : {}),
           type: "chargeSlip",
           title: "New Charge Slip Available",
           body: "Your billing is now available in the client portal. Please review and proceed with payment.",
@@ -88,7 +97,7 @@ Philippine Genome Center Visayas
         console.warn("Could not send billing notification email:", emailError);
       }
     }
-    
+
     // Log the activity
     await logActivity({
       userId: userInfo?.email || "system",
@@ -101,15 +110,16 @@ Philippine Genome Center Visayas
       description: `Generated charge slip: ${slip.referenceNumber || slip.id}`,
       changesAfter: slip,
     });
-    
-    revalidatePath('/admin/charge-slips');
-    revalidatePath('/admin/projects');
+
+    revalidatePath("/admin/charge-slips");
+    revalidatePath("/admin/projects");
     return { success: true, data: result };
   } catch (error) {
     console.error("Error saving charge slip:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Failed to save charge slip" 
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to save charge slip",
     };
   }
 }
@@ -117,11 +127,11 @@ Philippine Genome Center Visayas
 export async function updateChargeSlipAction(
   id: string,
   updates: Partial<ChargeSlipRecord>,
-  userInfo?: { name: string; email: string }
+  userInfo?: { name: string; email: string },
 ) {
   try {
     await updateChargeSlip(id, updates);
-    
+
     // Log the activity
     await logActivity({
       userId: userInfo?.email || "system",
@@ -135,8 +145,8 @@ export async function updateChargeSlipAction(
       changesAfter: updates,
       changedFields: Object.keys(updates),
     });
-    
-    revalidatePath('/admin/charge-slips');
+
+    revalidatePath("/admin/charge-slips");
     revalidatePath(`/admin/charge-slips/${id}`);
     return { success: true };
   } catch (error) {

@@ -65,11 +65,12 @@ export async function saveQuotationAction(
 
         // Send email to client about quotation availability
         const inquiry = await getInquiryById(quotation.inquiryId);
+        let resolvedUid: string | null = null;
 
         // Keep inquiry ownership in sync during quotation send by deriving
         // uuid from users.email -> users.uid using inquiry email.
         if (adminDb && inquiry?.email) {
-          const resolvedUid = await resolveUidFromUsersByEmail(inquiry.email);
+          resolvedUid = await resolveUidFromUsersByEmail(inquiry.email);
           if (resolvedUid) {
             await adminDb
               .collection("inquiries")
@@ -79,6 +80,10 @@ export async function saveQuotationAction(
         }
 
         if (inquiry && inquiry.email) {
+          const notificationUuid =
+            resolvedUid ||
+            inquiry.uuid ||
+            (await resolveUidFromUsersByEmail(inquiry.email));
           const mailCollection = collection(db, "mail");
 
           const clientEmailHtml = `
@@ -132,6 +137,7 @@ Philippine Genome Center Visayas
           // In-app notification
           await addDoc(collection(db, "clientNotifications"), {
             recipientEmail: inquiry.email,
+            ...(notificationUuid ? { uuid: notificationUuid } : {}),
             type: "quotation",
             title: "Quotation Available",
             body: "Your quotation is now available in the client portal. Please review it at your convenience.",

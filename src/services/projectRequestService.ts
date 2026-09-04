@@ -17,8 +17,14 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { logActivity } from "@/services/activityLogService";
+import { resolveClientUuid } from "@/services/clientUuidService";
 
-export type ProjectRequestStatus = "draft" | "pending" | "approved" | "rejected" | "cancelled";
+export type ProjectRequestStatus =
+  | "draft"
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "cancelled";
 
 export interface PrimaryMemberData {
   name: string;
@@ -33,26 +39,27 @@ export interface PrimaryMemberData {
 export interface ProjectRequest {
   id?: string;
   inquiryId: string;
+  uuid?: string | null;
   requestedBy: string; // Email of requester
   requestedByName: string; // Name of requester
-  
+
   // Project details
   title: string;
   projectLead: string;
   startDate: Timestamp;
   sendingInstitution: string;
   fundingInstitution: string;
-  
+
   // Primary member (must be provided for submission)
   primaryMember?: PrimaryMemberData;
-  
+
   // Approval tracking
   status: ProjectRequestStatus;
-  
+
   // Assigned IDs (only set upon approval)
   pid?: string;
   cid?: string; // Primary member's CID
-  
+
   // Timestamps
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -75,40 +82,43 @@ function getDocId(inquiryId: string): string {
  * Save or update a draft project request.
  */
 export async function saveProjectRequest(
-  data: Omit<ProjectRequest, "id" | "createdAt" | "updatedAt">
+  data: Omit<ProjectRequest, "id" | "createdAt" | "updatedAt">,
 ): Promise<string> {
   const docId = getDocId(data.inquiryId);
   const docRef = doc(db, COLLECTION, docId);
   const existing = await getDoc(docRef);
+  const uuid = await resolveClientUuid(data.inquiryId, data.requestedBy);
 
   const isNewProject = !existing.exists();
-  
+
   if (existing.exists()) {
     // Update existing draft
     await setDoc(
       docRef,
       {
         ...data,
+        ...(uuid ? { uuid } : {}),
         updatedAt: serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
   } else {
     // Create new draft
     await setDoc(docRef, {
       ...data,
+      ...(uuid ? { uuid } : {}),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    
+
     // Log project request creation
     await logActivity({
       userId: data.requestedBy,
       userEmail: data.requestedBy,
       userName: data.requestedByName,
-      userRole: 'client',
-      action: 'CREATE',
-      entityType: 'project',
+      userRole: "client",
+      action: "CREATE",
+      entityType: "project",
       entityId: docId,
       entityName: data.title,
       description: `Draft project created: ${data.title}`,
@@ -134,15 +144,17 @@ export async function submitProjectForApproval(
     sendingInstitution: string;
     fundingInstitution: string;
   },
-  primaryMember: PrimaryMemberData
+  primaryMember: PrimaryMemberData,
 ): Promise<string> {
   const docId = getDocId(inquiryId);
   const docRef = doc(db, COLLECTION, docId);
+  const uuid = await resolveClientUuid(inquiryId, requestedBy);
 
   await setDoc(
     docRef,
     {
       inquiryId,
+      ...(uuid ? { uuid } : {}),
       requestedBy,
       requestedByName,
       title: projectData.title,
@@ -156,21 +168,21 @@ export async function submitProjectForApproval(
       updatedAt: serverTimestamp(),
       rejectionReason: "",
     },
-    { merge: true }
+    { merge: true },
   );
-  
+
   // Log project submission for approval
   await logActivity({
     userId: requestedBy,
     userEmail: requestedBy,
     userName: requestedByName,
-    userRole: 'client',
-    action: 'UPDATE',
-    entityType: 'project',
+    userRole: "client",
+    action: "UPDATE",
+    entityType: "project",
     entityId: docId,
     entityName: projectData.title,
     description: `Project submitted for approval: ${projectData.title}`,
-    changesAfter: { ...projectData, primaryMember, status: 'pending' },
+    changesAfter: { ...projectData, primaryMember, status: "pending" },
   });
 
   // Also update the inquiry document to show the portal has been submitted
@@ -189,7 +201,7 @@ export async function submitProjectForApproval(
  * Get a project request by inquiry ID.
  */
 export async function getProjectRequest(
-  inquiryId: string
+  inquiryId: string,
 ): Promise<ProjectRequest | null> {
   const docId = getDocId(inquiryId);
   const docRef = doc(db, COLLECTION, docId);
@@ -207,7 +219,7 @@ export async function getProjectRequest(
  * Get a specific project request by its ID.
  */
 export async function getProjectRequestById(
-  projectRequestId: string
+  projectRequestId: string,
 ): Promise<ProjectRequest | null> {
   const docRef = doc(db, COLLECTION, projectRequestId);
   const snap = await getDoc(docRef);
@@ -224,7 +236,7 @@ export async function getProjectRequestById(
  * Get all project requests for an inquiry.
  */
 export async function getProjectRequestsByInquiry(
-  inquiryId: string
+  inquiryId: string,
 ): Promise<ProjectRequest[]> {
   const request = await getProjectRequest(inquiryId);
   return request ? [request] : [];
@@ -234,14 +246,11 @@ export async function getProjectRequestsByInquiry(
  * Get project requests by status.
  */
 export async function getProjectRequestsByStatus(
-  status?: ProjectRequestStatus | "all"
+  status?: ProjectRequestStatus | "all",
 ): Promise<ProjectRequest[]> {
   let q;
   if (status && status !== "all") {
-    q = query(
-      collection(db, COLLECTION),
-      where("status", "==", status)
-    );
+    q = query(collection(db, COLLECTION), where("status", "==", status));
   } else {
     q = query(collection(db, COLLECTION));
   }
@@ -272,7 +281,7 @@ export async function getAllProjectRequests(): Promise<ProjectRequest[]> {
  */
 export function subscribeToProjectRequestById(
   projectRequestId: string,
-  callback: (request: ProjectRequest | null) => void
+  callback: (request: ProjectRequest | null) => void,
 ): () => void {
   const docRef = doc(db, COLLECTION, projectRequestId);
 
@@ -293,7 +302,7 @@ export function subscribeToProjectRequestById(
  */
 export function subscribeToProjectRequest(
   inquiryId: string,
-  callback: (request: ProjectRequest | null) => void
+  callback: (request: ProjectRequest | null) => void,
 ): () => void {
   return subscribeToProjectRequestById(getDocId(inquiryId), callback);
 }
@@ -303,7 +312,7 @@ export function subscribeToProjectRequest(
  */
 export function subscribeToProjectRequestsByInquiry(
   inquiryId: string,
-  callback: (requests: ProjectRequest[]) => void
+  callback: (requests: ProjectRequest[]) => void,
 ): () => void {
   return subscribeToProjectRequestById(getDocId(inquiryId), (req) => {
     callback(req ? [req] : []);
@@ -314,12 +323,9 @@ export function subscribeToProjectRequestsByInquiry(
  * Subscribe to pending project requests count (for admin notification badge).
  */
 export function subscribeToPendingProjectRequestsCount(
-  callback: (count: number) => void
+  callback: (count: number) => void,
 ): () => void {
-  const q = query(
-    collection(db, COLLECTION),
-    where("status", "==", "pending")
-  );
+  const q = query(collection(db, COLLECTION), where("status", "==", "pending"));
 
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.size);
@@ -329,7 +335,9 @@ export function subscribeToPendingProjectRequestsCount(
 /**
  * Delete a project request by ID (admin or user cancellation).
  */
-export async function deleteProjectRequestById(projectRequestId: string): Promise<void> {
+export async function deleteProjectRequestById(
+  projectRequestId: string,
+): Promise<void> {
   const docRef = doc(db, COLLECTION, projectRequestId);
   await deleteDoc(docRef);
 }
@@ -350,7 +358,7 @@ export async function updateProjectRequestStatusById(
   reviewedBy: string,
   pid?: string,
   cid?: string,
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<void> {
   const docRef = doc(db, COLLECTION, projectRequestId);
 
@@ -377,7 +385,7 @@ export async function updateProjectRequestStatus(
   reviewedBy: string,
   pid?: string,
   cid?: string,
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<void> {
   await updateProjectRequestStatusById(
     getDocId(inquiryId),
@@ -385,6 +393,6 @@ export async function updateProjectRequestStatus(
     reviewedBy,
     pid,
     cid,
-    rejectionReason
+    rejectionReason,
   );
 }

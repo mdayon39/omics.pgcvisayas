@@ -18,8 +18,13 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { MemberApproval, DraftMember, ApprovalStatus } from "@/types/MemberApproval";
+import {
+  MemberApproval,
+  DraftMember,
+  ApprovalStatus,
+} from "@/types/MemberApproval";
 import { getNextCid } from "@/services/clientService";
+import { resolveClientUuid } from "@/services/clientUuidService";
 
 const COLLECTION = "memberApprovals";
 
@@ -34,11 +39,12 @@ function getDocId(inquiryId: string, projectPid: string): string {
  * Save or update a draft/pending member approval request.
  */
 export async function saveMemberApproval(
-  data: Omit<MemberApproval, "id" | "createdAt" | "updatedAt">
+  data: Omit<MemberApproval, "id" | "createdAt" | "updatedAt">,
 ): Promise<string> {
   const docId = getDocId(data.inquiryId, data.projectPid);
   const docRef = doc(db, COLLECTION, docId);
   const existing = await getDoc(docRef);
+  const uuid = await resolveClientUuid(data.inquiryId, data.submittedBy);
 
   if (existing.exists()) {
     // Update
@@ -46,14 +52,16 @@ export async function saveMemberApproval(
       docRef,
       {
         ...data,
+        ...(uuid ? { uuid } : {}),
         updatedAt: serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
   } else {
     // Create
     await setDoc(docRef, {
       ...data,
+      ...(uuid ? { uuid } : {}),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -72,15 +80,17 @@ export async function submitForApproval(
   projectTitle: string,
   submittedBy: string,
   submittedByName: string,
-  members: DraftMember[]
+  members: DraftMember[],
 ): Promise<string> {
   const docId = getDocId(inquiryId, projectPid);
   const docRef = doc(db, COLLECTION, docId);
+  const uuid = await resolveClientUuid(inquiryId, submittedBy);
 
   await setDoc(
     docRef,
     {
       inquiryId,
+      ...(uuid ? { uuid } : {}),
       projectPid,
       projectTitle,
       submittedBy,
@@ -90,7 +100,7 @@ export async function submitForApproval(
       submittedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 
   return docId;
@@ -101,7 +111,7 @@ export async function submitForApproval(
  */
 export async function getMemberApproval(
   inquiryId: string,
-  projectPid: string
+  projectPid: string,
 ): Promise<MemberApproval | null> {
   const docId = getDocId(inquiryId, projectPid);
   const docRef = doc(db, COLLECTION, docId);
@@ -124,7 +134,7 @@ export async function getMemberApproval(
  * Get all member approval requests, optionally filtered by status.
  */
 export async function getAllMemberApprovals(
-  status?: ApprovalStatus
+  status?: ApprovalStatus,
 ): Promise<MemberApproval[]> {
   let q;
   if (status) {
@@ -157,7 +167,7 @@ export async function approveMemberApproval(
   reviewedBy: string,
   reviewedByName: string,
   reviewNotes?: string,
-  cidDecisions?: Record<string, 'update' | 'new'>
+  cidDecisions?: Record<string, "update" | "new">,
 ): Promise<string[]> {
   const docRef = doc(db, COLLECTION, approvalId);
   const snap = await getDoc(docRef);
@@ -182,18 +192,24 @@ export async function approveMemberApproval(
     const normalized = email.trim().toLowerCase();
     if (!normalized) return null;
 
-    const clientsQ = query(collection(db, "clients"), where("email", "==", normalized));
+    const clientsQ = query(
+      collection(db, "clients"),
+      where("email", "==", normalized),
+    );
     const clientsSnap = await getDocs(clientsQ);
 
     let fallbackCid: string | null = null;
 
     for (const clientDoc of clientsSnap.docs) {
-      const clientData = clientDoc.data() as { cid?: string; pid?: string | string[] };
+      const clientData = clientDoc.data() as {
+        cid?: string;
+        pid?: string | string[];
+      };
       const pidList = Array.isArray(clientData.pid)
         ? clientData.pid
         : clientData.pid
-        ? [clientData.pid]
-        : [];
+          ? [clientData.pid]
+          : [];
 
       const cid = clientData.cid || clientDoc.id;
       if (!fallbackCid && cid) {
@@ -217,21 +233,31 @@ export async function approveMemberApproval(
     }
 
     const normalizedEmail = member.formData?.email?.trim().toLowerCase() || "";
-    const decision = normalizedEmail ? cidDecisions?.[normalizedEmail] : undefined;
+    const decision = normalizedEmail
+      ? cidDecisions?.[normalizedEmail]
+      : undefined;
 
     // Admin chose to always assign a new CID for this member
-    if (decision === 'new') {
+    if (decision === "new") {
       if (!member.formData?.email || !member.formData?.name) {
-        console.warn("Skipping member with incomplete data during approval", member);
+        console.warn(
+          "Skipping member with incomplete data during approval",
+          member,
+        );
         continue;
       }
       const newCid = await getNextCid(year);
       generatedCids.push(newCid);
+      const uuid = await resolveClientUuid(
+        approval.inquiryId,
+        member.formData.email,
+      );
       await setDoc(doc(db, "clients", newCid), {
         cid: newCid,
         ...member.formData,
         pid: [approval.projectPid],
         inquiryId: approval.inquiryId,
+        ...(uuid ? { uuid } : {}),
         isContactPerson: false,
         haveSubmitted: true,
         createdAt: serverTimestamp(),
@@ -240,11 +266,23 @@ export async function approveMemberApproval(
       });
       if (member.formData.email) {
         try {
-          const { approveClientRequest } = await import("@/services/clientRequestService");
-          await approveClientRequest(approval.inquiryId, member.formData.email, newCid, reviewedBy);
-          console.log(`✅ New CID ${newCid} assigned to ${member.formData.email}`);
+          const { approveClientRequest } = await import(
+            "@/services/clientRequestService"
+          );
+          await approveClientRequest(
+            approval.inquiryId,
+            member.formData.email,
+            newCid,
+            reviewedBy,
+          );
+          console.log(
+            `✅ New CID ${newCid} assigned to ${member.formData.email}`,
+          );
         } catch (error) {
-          console.warn(`Could not update clientRequest for ${member.formData.email}:`, error);
+          console.warn(
+            `Could not update clientRequest for ${member.formData.email}:`,
+            error,
+          );
         }
       }
       continue;
@@ -252,8 +290,12 @@ export async function approveMemberApproval(
 
     const existingCid = await findExistingClientCid(member.formData?.email);
     if (existingCid) {
+      const uuid = await resolveClientUuid(
+        approval.inquiryId,
+        member.formData?.email,
+      );
       // Admin chose to update (or default) — update existing client record with submitted data
-      if (decision === 'update' && member.formData?.name) {
+      if (decision === "update" && member.formData?.name) {
         try {
           await updateDoc(doc(db, "clients", existingCid), {
             name: member.formData.name,
@@ -264,36 +306,54 @@ export async function approveMemberApproval(
             affiliationAddress: member.formData.affiliationAddress || "",
             pid: arrayUnion(approval.projectPid),
             haveSubmitted: true,
+            ...(uuid ? { uuid } : {}),
             updatedAt: serverTimestamp(),
           });
-          console.log(`✅ Updated existing client record ${existingCid} for ${normalizedEmail}`);
+          console.log(
+            `✅ Updated existing client record ${existingCid} for ${normalizedEmail}`,
+          );
         } catch (error) {
-          console.warn(`Could not update existing client record ${existingCid}:`, error);
+          console.warn(
+            `Could not update existing client record ${existingCid}:`,
+            error,
+          );
         }
       }
       if (member.formData?.email) {
         try {
-          const { approveClientRequest } = await import("@/services/clientRequestService");
+          const { approveClientRequest } = await import(
+            "@/services/clientRequestService"
+          );
           await approveClientRequest(
             approval.inquiryId,
             member.formData.email,
             existingCid,
-            reviewedBy
+            reviewedBy,
           );
         } catch (error) {
-          console.warn(`Could not update clientRequest for ${member.formData.email}:`, error);
+          console.warn(
+            `Could not update clientRequest for ${member.formData.email}:`,
+            error,
+          );
         }
       }
       continue;
     }
 
     if (!member.formData?.email || !member.formData?.name) {
-      console.warn("Skipping member with incomplete data during approval", member);
+      console.warn(
+        "Skipping member with incomplete data during approval",
+        member,
+      );
       continue;
     }
 
     const newCid = await getNextCid(year);
     generatedCids.push(newCid);
+    const uuid = await resolveClientUuid(
+      approval.inquiryId,
+      member.formData.email,
+    );
 
     // Create client record
     await setDoc(doc(db, "clients", newCid), {
@@ -301,6 +361,7 @@ export async function approveMemberApproval(
       ...member.formData,
       pid: [approval.projectPid],
       inquiryId: approval.inquiryId,
+      ...(uuid ? { uuid } : {}),
       isContactPerson: false,
       haveSubmitted: true,
       createdAt: serverTimestamp(),
@@ -311,16 +372,23 @@ export async function approveMemberApproval(
     // Mark the corresponding clientRequest as approved (if it exists)
     if (member.formData.email) {
       try {
-        const { approveClientRequest } = await import("@/services/clientRequestService");
+        const { approveClientRequest } = await import(
+          "@/services/clientRequestService"
+        );
         await approveClientRequest(
           approval.inquiryId,
           member.formData.email,
           newCid,
-          reviewedBy
+          reviewedBy,
         );
-        console.log(`✅ Marked clientRequest as approved for ${member.formData.email}`);
+        console.log(
+          `✅ Marked clientRequest as approved for ${member.formData.email}`,
+        );
       } catch (error) {
-        console.warn(`Could not update clientRequest for ${member.formData.email}:`, error);
+        console.warn(
+          `Could not update clientRequest for ${member.formData.email}:`,
+          error,
+        );
         // Don't throw - the client record was created successfully
       }
     }
@@ -337,23 +405,23 @@ export async function approveMemberApproval(
       reviewNotes: reviewNotes || "",
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 
   // Update project status and clientNames array
   try {
     const projectRef = doc(db, "projects", approval.projectPid);
     const projectSnap = await getDoc(projectRef);
-    
+
     if (projectSnap.exists()) {
       const projectData = projectSnap.data();
       const currentClientNames = projectData.clientNames || [];
       const newNames = approval.members
-        .filter(m => !m.isPrimary && m.formData.name)
-        .map(m => m.formData.name);
-      
+        .filter((m) => !m.isPrimary && m.formData.name)
+        .map((m) => m.formData.name);
+
       const updatedClientNames = [...currentClientNames];
-      newNames.forEach(name => {
+      newNames.forEach((name) => {
         if (!updatedClientNames.includes(name)) {
           updatedClientNames.push(name);
         }
@@ -370,7 +438,9 @@ export async function approveMemberApproval(
         updateData.statusUpdatedAt = serverTimestamp();
         updateData.statusUpdatedBy = reviewedBy;
         updateData.statusUpdateReason = "Team members approved";
-        console.log(`✅ Project ${approval.projectPid} status updated to Ongoing`);
+        console.log(
+          `✅ Project ${approval.projectPid} status updated to Ongoing`,
+        );
       }
 
       await setDoc(projectRef, updateData, { merge: true });
@@ -384,7 +454,9 @@ export async function approveMemberApproval(
         isApproved: true,
         updatedAt: serverTimestamp(),
       });
-      console.log(`✅ Inquiry ${approval.inquiryId} updated to Approved Client`);
+      console.log(
+        `✅ Inquiry ${approval.inquiryId} updated to Approved Client`,
+      );
     }
   } catch (error) {
     console.error("Error updating project status:", error);
@@ -401,7 +473,7 @@ export async function rejectMemberApproval(
   approvalId: string,
   reviewedBy: string,
   reviewedByName: string,
-  reviewNotes?: string
+  reviewNotes?: string,
 ): Promise<void> {
   const docRef = doc(db, COLLECTION, approvalId);
   const snap = await getDoc(docRef);
@@ -418,7 +490,7 @@ export async function rejectMemberApproval(
       reviewNotes: reviewNotes || "",
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 }
 
@@ -427,12 +499,9 @@ export async function rejectMemberApproval(
  * Used for admin notification badge.
  */
 export function onPendingApprovalsCount(
-  callback: (count: number) => void
+  callback: (count: number) => void,
 ): () => void {
-  const q = query(
-    collection(db, COLLECTION),
-    where("status", "==", "pending")
-  );
+  const q = query(collection(db, COLLECTION), where("status", "==", "pending"));
 
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.size);
@@ -443,12 +512,9 @@ export function onPendingApprovalsCount(
  * Real-time listener for all pending approvals.
  */
 export function onPendingApprovals(
-  callback: (approvals: MemberApproval[]) => void
+  callback: (approvals: MemberApproval[]) => void,
 ): () => void {
-  const q = query(
-    collection(db, COLLECTION),
-    where("status", "==", "pending")
-  );
+  const q = query(collection(db, COLLECTION), where("status", "==", "pending"));
 
   return onSnapshot(q, (snapshot) => {
     const approvals = snapshot.docs.map((doc) => {

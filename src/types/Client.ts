@@ -10,6 +10,7 @@ export interface Client {
   affiliationAddress?: string;
   pid?: string[];
   createdAt?: string | Date;
+  uuid?: string | null;
   haveSubmitted?: boolean;
   isContactPerson?: boolean;
   year?: number;

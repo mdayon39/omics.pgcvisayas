@@ -19,11 +19,17 @@ export interface DraftMember {
   };
 }
 
-export type ApprovalStatus = "draft" | "pending" | "approved" | "rejected" | "cancelled";
+export type ApprovalStatus =
+  | "draft"
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "cancelled";
 
 export interface MemberApproval {
   id?: string; // Firestore doc ID (auto or composite)
   inquiryId: string;
+  uuid?: string | null;
   projectPid: string;
   projectTitle: string;
   submittedBy: string; // Email of submitter

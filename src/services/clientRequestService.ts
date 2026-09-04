@@ -18,8 +18,14 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { logActivity } from "@/services/activityLogService";
+import { resolveClientUuid } from "@/services/clientUuidService";
 
-export type ClientRequestStatus = "draft" | "pending" | "approved" | "rejected" | "cancelled";
+export type ClientRequestStatus =
+  | "draft"
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "cancelled";
 
 export interface ClientRequestData {
   name: string;
@@ -34,10 +40,11 @@ export interface ClientRequestData {
 export interface ClientRequest {
   id?: string;
   inquiryId: string;
+  uuid?: string | null;
   projectRequestId?: string; // Link to specific draft project (optional)
   requestedBy: string; // Email of requester
   requestedByName: string; // Name of requester
-  
+
   // Client/member details
   name: string;
   email: string;
@@ -46,17 +53,17 @@ export interface ClientRequest {
   sex: "M" | "F" | "Other" | "";
   phoneNumber: string;
   affiliationAddress: string;
-  
+
   // Flags
   isPrimary: boolean; // Is this the primary member?
   isValidated?: boolean; // Has the user saved/validated this information?
-  
+
   // Approval tracking
   status: ClientRequestStatus;
-  
+
   // Assigned CID (only set upon approval)
   cid?: string;
-  
+
   // Timestamps
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -71,7 +78,11 @@ const COLLECTION = "clientRequests";
 /**
  * Generate document ID from inquiryId, email, and optional projectRequestId
  */
-function getDocId(inquiryId: string, email: string, projectRequestId?: string): string {
+function getDocId(
+  inquiryId: string,
+  email: string,
+  projectRequestId?: string,
+): string {
   // Use email as part of ID to ensure unique client requests per inquiry/project
   const sanitizedEmail = email.toLowerCase().replace(/[^a-z0-9]/g, "_");
   if (projectRequestId) {
@@ -84,12 +95,13 @@ function getDocId(inquiryId: string, email: string, projectRequestId?: string): 
  * Save or update a draft client request.
  */
 export async function saveClientRequest(
-  data: Omit<ClientRequest, "id" | "createdAt" | "updatedAt">
+  data: Omit<ClientRequest, "id" | "createdAt" | "updatedAt">,
 ): Promise<string> {
   const docId = getDocId(data.inquiryId, data.email, data.projectRequestId);
   const docRef = doc(db, COLLECTION, docId);
   const existing = await getDoc(docRef);
   const isNewMember = !existing.exists();
+  const uuid = await resolveClientUuid(data.inquiryId, data.email);
 
   if (existing.exists()) {
     // Update existing draft
@@ -97,29 +109,31 @@ export async function saveClientRequest(
       docRef,
       {
         ...data,
+        ...(uuid ? { uuid } : {}),
         updatedAt: serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
   } else {
     // Create new draft
     await setDoc(docRef, {
       ...data,
+      ...(uuid ? { uuid } : {}),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    
+
     // Log new member creation
     await logActivity({
       userId: data.requestedBy,
       userEmail: data.requestedBy,
       userName: data.requestedByName,
-      userRole: 'client',
-      action: 'CREATE',
-      entityType: 'client',
+      userRole: "client",
+      action: "CREATE",
+      entityType: "client",
       entityId: docId,
       entityName: data.name,
-      description: `${data.isPrimary ? 'Primary' : 'Team'} member added: ${data.name}`,
+      description: `${data.isPrimary ? "Primary" : "Team"} member added: ${data.name}`,
       changesAfter: data,
     });
   }
@@ -132,45 +146,45 @@ export async function saveClientRequest(
  * Updates all client requests for an inquiry to "pending" status.
  */
 export async function submitClientRequestsForApproval(
-  inquiryId: string
+  inquiryId: string,
 ): Promise<void> {
   const q = query(
     collection(db, COLLECTION),
     where("inquiryId", "==", inquiryId),
-    where("status", "==", "draft")
+    where("status", "==", "draft"),
   );
-  
+
   const snapshot = await getDocs(q);
   const batch = writeBatch(db);
-  
+
   // Collect member names for logging
   const memberNames: string[] = [];
-  
+
   snapshot.docs.forEach((docSnap) => {
     const data = docSnap.data();
-    memberNames.push(data.name || 'Unnamed');
+    memberNames.push(data.name || "Unnamed");
     batch.update(docSnap.ref, {
       status: "pending",
       submittedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
   });
-  
+
   await batch.commit();
-  
+
   // Log the batch submission
   if (snapshot.docs.length > 0) {
     const firstDoc = snapshot.docs[0].data();
     await logActivity({
-      userId: firstDoc.requestedBy || 'unknown',
-      userEmail: firstDoc.requestedBy || 'unknown',
+      userId: firstDoc.requestedBy || "unknown",
+      userEmail: firstDoc.requestedBy || "unknown",
       userName: firstDoc.requestedByName,
-      userRole: 'client',
-      action: 'UPDATE',
-      entityType: 'client',
+      userRole: "client",
+      action: "UPDATE",
+      entityType: "client",
       entityId: inquiryId,
-      entityName: memberNames.join(', '),
-      description: `${snapshot.docs.length} team member(s) submitted for approval: ${memberNames.join(', ')}`,
+      entityName: memberNames.join(", "),
+      description: `${snapshot.docs.length} team member(s) submitted for approval: ${memberNames.join(", ")}`,
     });
   }
 }
@@ -180,7 +194,7 @@ export async function submitClientRequestsForApproval(
  */
 export async function getClientRequest(
   inquiryId: string,
-  email: string
+  email: string,
 ): Promise<ClientRequest | null> {
   const docId = getDocId(inquiryId, email);
   const docRef = doc(db, COLLECTION, docId);
@@ -201,21 +215,24 @@ export async function getClientRequest(
  */
 export async function getClientRequestsByInquiry(
   inquiryId: string,
-  status?: ClientRequestStatus
+  status?: ClientRequestStatus,
 ): Promise<ClientRequest[]> {
   const constraints = [where("inquiryId", "==", inquiryId)];
-  
+
   if (status) {
     constraints.push(where("status", "==", status));
   }
-  
+
   const q = query(collection(db, COLLECTION), ...constraints);
-  
+
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  } as ClientRequest));
+  return snapshot.docs.map(
+    (doc) =>
+      ({
+        id: doc.id,
+        ...doc.data(),
+      }) as ClientRequest,
+  );
 }
 
 /**
@@ -224,22 +241,25 @@ export async function getClientRequestsByInquiry(
 export function subscribeToClientRequests(
   inquiryId: string,
   callback: (requests: ClientRequest[]) => void,
-  status?: ClientRequestStatus
+  status?: ClientRequestStatus,
 ): () => void {
   let q = query(
     collection(db, COLLECTION),
-    where("inquiryId", "==", inquiryId)
+    where("inquiryId", "==", inquiryId),
   );
-  
+
   if (status) {
     q = query(q, where("status", "==", status));
   }
 
   return onSnapshot(q, (snapshot) => {
-    const requests = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    } as ClientRequest));
+    const requests = snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as ClientRequest,
+    );
     callback(requests);
   });
 }
@@ -249,7 +269,7 @@ export function subscribeToClientRequests(
  */
 export async function deleteClientRequest(
   inquiryId: string,
-  email: string
+  email: string,
 ): Promise<void> {
   const docId = getDocId(inquiryId, email);
   const docRef = doc(db, COLLECTION, docId);
@@ -263,14 +283,17 @@ export async function getAllPendingClientRequests(): Promise<ClientRequest[]> {
   const q = query(
     collection(db, COLLECTION),
     where("status", "==", "pending"),
-    orderBy("submittedAt", "desc")
+    orderBy("submittedAt", "desc"),
   );
-  
+
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  } as ClientRequest));
+  return snapshot.docs.map(
+    (doc) =>
+      ({
+        id: doc.id,
+        ...doc.data(),
+      }) as ClientRequest,
+  );
 }
 
 /**
@@ -281,11 +304,11 @@ export async function approveClientRequest(
   inquiryId: string,
   email: string,
   cid: string,
-  reviewedBy: string
+  reviewedBy: string,
 ): Promise<void> {
   const docId = getDocId(inquiryId, email);
   const docRef = doc(db, COLLECTION, docId);
-  
+
   await setDoc(
     docRef,
     {
@@ -295,7 +318,7 @@ export async function approveClientRequest(
       reviewedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 }
 
@@ -306,11 +329,11 @@ export async function rejectClientRequest(
   inquiryId: string,
   email: string,
   reason: string,
-  reviewedBy: string
+  reviewedBy: string,
 ): Promise<void> {
   const docId = getDocId(inquiryId, email);
   const docRef = doc(db, COLLECTION, docId);
-  
+
   await setDoc(
     docRef,
     {
@@ -320,7 +343,7 @@ export async function rejectClientRequest(
       reviewedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 }
 
@@ -329,11 +352,11 @@ export async function rejectClientRequest(
  * Used when admin cancels a project submission so the client starts fresh.
  */
 export async function deleteAllClientRequestsByInquiry(
-  inquiryId: string
+  inquiryId: string,
 ): Promise<void> {
   const q = query(
     collection(db, COLLECTION),
-    where("inquiryId", "==", inquiryId)
+    where("inquiryId", "==", inquiryId),
   );
 
   const snapshot = await getDocs(q);
@@ -354,12 +377,12 @@ export async function deleteAllClientRequestsByInquiry(
 export async function cancelAllClientRequestsByInquiry(
   inquiryId: string,
   reviewedBy: string,
-  reason: string
+  reason: string,
 ): Promise<void> {
   const q = query(
     collection(db, COLLECTION),
     where("inquiryId", "==", inquiryId),
-    where("status", "==", "pending")
+    where("status", "==", "pending"),
   );
 
   const snapshot = await getDocs(q);
@@ -386,12 +409,12 @@ export async function cancelAllClientRequestsByInquiry(
  */
 export async function approveAllClientRequestsByInquiry(
   inquiryId: string,
-  reviewedBy: string
+  reviewedBy: string,
 ): Promise<void> {
   const q = query(
     collection(db, COLLECTION),
     where("inquiryId", "==", inquiryId),
-    where("status", "==", "pending")
+    where("status", "==", "pending"),
   );
 
   const snapshot = await getDocs(q);
@@ -409,4 +432,3 @@ export async function approveAllClientRequestsByInquiry(
 
   await batch.commit();
 }
-

@@ -268,8 +268,14 @@ Philippine Genome Center Visayas`.trim();
           });
 
           // In-app notification
+          const notificationUuid =
+            quotations.find((quotation) => quotation.email === clientEmail)
+              ?.uuid ||
+            linkedInquiries.find((inquiry) => inquiry.email === clientEmail)
+              ?.uuid;
           await addDoc(collection(db, "clientNotifications"), {
             recipientEmail: clientEmail,
+            ...(notificationUuid ? { uuid: notificationUuid } : {}),
             type: "serviceReport",
             title: "Service Report Available",
             body: "Your service report is now available in the client portal. Please log in to access your results.",

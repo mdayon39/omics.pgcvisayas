@@ -35,6 +35,7 @@ import useAuth from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { collection, getDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { resolveClientUuid } from "@/services/clientUuidService";
 import {
   Users,
   CheckCircle2,
@@ -609,6 +610,10 @@ export default function MemberApprovalsPage() {
       const normalizedReqEmail = clientReq.email.trim().toLowerCase();
       const existingClient = existingClientsByEmail[normalizedReqEmail];
       const decision = memberCidDecisions[normalizedReqEmail];
+      const clientUuid = await resolveClientUuid(
+        approval.inquiryId,
+        clientReq.email,
+      );
 
       let cid: string;
       if (existingClient && decision !== "new") {
@@ -630,6 +635,7 @@ export default function MemberApprovalsPage() {
           affiliationAddress: clientReq.affiliationAddress || "",
           pid: arrayUnion(pid),
           haveSubmitted: true,
+          ...(clientUuid ? { uuid: clientUuid } : {}),
           updatedAt: firestoreTimestamp(),
         });
       } else {
@@ -640,6 +646,7 @@ export default function MemberApprovalsPage() {
           cid,
           pid: [pid],
           inquiryId: approval.inquiryId,
+          ...(clientUuid ? { uuid: clientUuid } : {}),
           name: clientReq.name || "",
           email: clientReq.email || "",
           affiliation: clientReq.affiliation || "",

@@ -2850,7 +2850,7 @@ export default function ClientPortalPage() {
 
         const chargeSlips =
           project.pid !== "DRAFT" && !project.pid.startsWith("PENDING-")
-            ? await getChargeSlipsByProjectId(project.pid)
+            ? await getChargeSlipsByProjectId(project.pid, user?.uid)
             : [];
 
         const sampleForms =

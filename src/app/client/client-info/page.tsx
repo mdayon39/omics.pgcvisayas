@@ -1069,7 +1069,7 @@ export default function ClientPortalPage() {
     const fetchInquiryQuotations = async () => {
       setLoadingQuotations(true);
       try {
-        const docs = await getQuotationsByInquiryId(inquiryIdParam, user?.uid);
+        const docs = await getQuotationsByInquiryId(inquiryIdParam);
         setInquiryQuotations(docs);
       } catch (err) {
         console.error("Error fetching inquiry quotations:", err);
@@ -1083,7 +1083,7 @@ export default function ClientPortalPage() {
     return () => {
       unsubInquiry();
     };
-  }, [inquiryIdParam, user?.uid]);
+  }, [inquiryIdParam]);
 
   // 1.5. Subscribe to Member Approvals for the selected project
   useEffect(() => {
@@ -2850,7 +2850,7 @@ export default function ClientPortalPage() {
 
         const chargeSlips =
           project.pid !== "DRAFT" && !project.pid.startsWith("PENDING-")
-            ? await getChargeSlipsByProjectId(project.pid, user?.uid)
+            ? await getChargeSlipsByProjectId(project.pid)
             : [];
 
         const sampleForms =

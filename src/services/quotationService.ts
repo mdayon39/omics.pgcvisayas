@@ -64,14 +64,11 @@ async function resolveUuidFromEmail(
  */
 export async function getQuotationsByInquiryId(
   inquiryId: string | string[],
-  clientUuid?: string | null,
 ): Promise<QuotationRecord[]> {
   const quotationsRef = collection(db, "quotations");
 
   let q;
-  if (clientUuid) {
-    q = query(quotationsRef, where("uuid", "==", clientUuid));
-  } else if (Array.isArray(inquiryId)) {
+  if (Array.isArray(inquiryId)) {
     if (inquiryId.length === 0) return [];
     // Firestore "in" query limited to 30 elements
     const ids = inquiryId.filter((id) => id && id.trim().length > 0);
@@ -100,11 +97,6 @@ export async function getQuotationsByInquiryId(
   const records: QuotationRecord[] = [];
   snapshot.forEach((docSnap) => {
     const data = docSnap.data();
-    const quotationInquiryId = data.inquiryId as string | undefined;
-    const matchesInquiry = Array.isArray(inquiryId)
-      ? inquiryId.includes(quotationInquiryId || "")
-      : quotationInquiryId === inquiryId;
-    if (clientUuid && !matchesInquiry) return;
     const { clientInfo = {}, ...rest } = data;
 
     records.push({

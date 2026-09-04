@@ -174,16 +174,7 @@ Philippine Genome Center Visayas
 
 export async function getQuotationsAction() {
   try {
-    if (!adminDb) throw new Error("Firebase Admin is not initialized");
-    const snapshot = await adminDb
-      .collection("quotations")
-      .orderBy("dateIssued", "desc")
-      .get();
-    const quotations = snapshot.docs.map((docSnap) => ({
-      ...docSnap.data(),
-      id: docSnap.id,
-      dateIssued: docSnap.data().dateIssued?.toDate?.()?.toISOString() || null,
-    })) as QuotationRecord[];
+    const quotations = await getAllQuotations();
     return { success: true, data: quotations };
   } catch (error) {
     console.error("Error fetching quotations:", error);

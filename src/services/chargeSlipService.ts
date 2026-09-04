@@ -341,7 +341,6 @@ export async function updateChargeSlip(
 
 export async function getChargeSlipsByProjectId(
   projectId: string,
-  clientUuid?: string | null,
 ): Promise<ChargeSlipRecord[]> {
   // Query both the top-level "projectId" field (newer records) and "project.pid"
   // nested field (older records) since older charge slips may not have the
@@ -350,37 +349,25 @@ export async function getChargeSlipsByProjectId(
     getDocs(
       query(
         collection(db, CHARGE_SLIPS_COLLECTION),
-        ...(clientUuid
-          ? [where("uuid", "==", clientUuid)]
-          : [where("projectId", "==", projectId)]),
+        where("projectId", "==", projectId),
       ),
     ),
-    clientUuid
-      ? Promise.resolve(null)
-      : getDocs(
-          query(
-            collection(db, CHARGE_SLIPS_COLLECTION),
-            where("project.pid", "==", projectId),
-          ),
-        ),
+    getDocs(
+      query(
+        collection(db, CHARGE_SLIPS_COLLECTION),
+        where("project.pid", "==", projectId),
+      ),
+    ),
   ]);
 
   const seen = new Set<string>();
   const results: ChargeSlipRecord[] = [];
 
-  for (const snapshot of [snap1, snap2].filter(Boolean)) {
-    if (!snapshot) continue;
+  for (const snapshot of [snap1, snap2]) {
     for (const docSnap of snapshot.docs) {
       if (seen.has(docSnap.id)) continue;
       seen.add(docSnap.id);
       const data = docSnap.data() as any;
-      if (
-        clientUuid &&
-        data.projectId !== projectId &&
-        data.project?.pid !== projectId
-      ) {
-        continue;
-      }
       results.push({
         ...data,
         id: docSnap.id,

@@ -96,11 +96,9 @@ function ViewDocumentContent() {
               const userEmail = user.email?.toLowerCase();
               // QuotationRecord has email directly
               const quoteEmail = (quotation as any).email?.toLowerCase();
-              const quoteUuid = (quotation as any).uuid;
 
               // 1. Check direct email match
-              let hasAccess =
-                userEmail === quoteEmail || quoteUuid === user.uid;
+              let hasAccess = userEmail === quoteEmail;
 
               // 2. Check team membership via inquiryId
               const inquiryId = (quotation as any).inquiryId;

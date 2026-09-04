@@ -10,7 +10,6 @@ import { ChargeSlipRecord } from "@/types/ChargeSlipRecord";
 import { logActivity } from "@/services/activityLogService";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { adminDb } from "@/lib/firebase-admin";
 import { resolveClientUuid } from "@/services/clientUuidService";
 
 export async function saveChargeSlipAction(
@@ -158,19 +157,7 @@ export async function updateChargeSlipAction(
 
 export async function getChargeSlipsAction() {
   try {
-    if (!adminDb) throw new Error("Firebase Admin is not initialized");
-    const snapshot = await adminDb
-      .collection("chargeSlips")
-      .orderBy("dateIssued", "desc")
-      .get();
-    const chargeSlips = snapshot.docs.map((docSnap) => ({
-      ...docSnap.data(),
-      id: docSnap.id,
-      dateIssued: docSnap.data().dateIssued?.toDate?.()?.toISOString() || null,
-      dateOfOR: docSnap.data().dateOfOR?.toDate?.()?.toISOString() || null,
-      createdAt: docSnap.data().createdAt?.toDate?.()?.toISOString() || null,
-      datePaid: docSnap.data().datePaid?.toDate?.()?.toISOString() || null,
-    })) as unknown as ChargeSlipRecord[];
+    const chargeSlips = await getAllChargeSlips();
     return { success: true, data: chargeSlips };
   } catch (error) {
     console.error("Error fetching charge slips:", error);

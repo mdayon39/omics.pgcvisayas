@@ -31,48 +31,6 @@ service cloud.firestore {
       return isAdminRole() || adminByEmail() || adminByUid();
     }
 
-    function isAdminAccount() {
-      return isSignedIn()
-        && (
-          (
-            userEmail() != null
-            && exists(/databases/$(database)/documents/admins/$(userEmail()))
-            && get(/databases/$(database)/documents/admins/$(userEmail())).data.status != 'deactivated'
-          )
-          || adminByUid()
-        );
-    }
-
-    function adminRole() {
-      return userEmail() != null
-        && exists(/databases/$(database)/documents/admins/$(userEmail()))
-        ? get(/databases/$(database)/documents/admins/$(userEmail())).data.role
-        : get(/databases/$(database)/documents/users/$(userUid())).data.role;
-    }
-
-    function hasAdminPermission(moduleName, actionName) {
-      return isAdminAccount()
-        && (
-          adminRole() == 'superadmin'
-          || get(/databases/$(database)/documents/rolePermissions/$(adminRole())).data[moduleName][actionName] == true
-        );
-    }
-
-    function hasAnyAdminPermission() {
-      return hasAdminPermission('dashboard', 'view')
-        || hasAdminPermission('inquiries', 'view')
-        || hasAdminPermission('projects', 'view')
-        || hasAdminPermission('clients', 'view')
-        || hasAdminPermission('quotations', 'view')
-        || hasAdminPermission('chargeSlips', 'view')
-        || hasAdminPermission('sampleForms', 'view')
-        || hasAdminPermission('configurations', 'view')
-        || hasAdminPermission('officeCalendar', 'view')
-        || hasAdminPermission('memberApprovals', 'view')
-        || hasAdminPermission('usersPermissions', 'view')
-        || hasAdminPermission('activityLogs', 'view');
-    }
-
     function userProfileExists() {
       return isSignedIn() && exists(/databases/$(database)/documents/users/$(userUid()));
     }
@@ -92,7 +50,7 @@ service cloud.firestore {
     }
 
     function isClientOrAdmin() {
-      return isAdminAccount() || isClientRole();
+      return isAdminRole() || isClientRole();
     }
 
     function hasOwnedUuid(uuidValue) {
@@ -105,14 +63,15 @@ service cloud.firestore {
     function canAccessUuidDoc(uuidValue) {
       return isSignedIn()
         && isClientOrAdmin()
-        && hasOwnedUuid(uuidValue);
+        && (isAdminRole() || hasOwnedUuid(uuidValue));
     }
 
     function canAccessUuidOrEmailDoc(uuidValue, emailValue) {
       return isSignedIn()
         && isClientOrAdmin()
         && (
-          hasOwnedUuid(uuidValue)
+          isAdminRole()
+          || hasOwnedUuid(uuidValue)
           || (emailValue != null && emailValue == userEmail())
         );
     }
@@ -121,12 +80,15 @@ service cloud.firestore {
       return isSignedIn()
         && isClientOrAdmin()
         && (
-          inquiryIdValue is string
-          && inquiryIdValue != ''
-          && exists(/databases/$(database)/documents/inquiries/$(inquiryIdValue))
-          && (
-            get(/databases/$(database)/documents/inquiries/$(inquiryIdValue)).data.uuid == userUid()
-            || get(/databases/$(database)/documents/inquiries/$(inquiryIdValue)).data.email == userEmail()
+          isAdminRole()
+          || (
+            inquiryIdValue is string
+            && inquiryIdValue != ''
+            && exists(/databases/$(database)/documents/inquiries/$(inquiryIdValue))
+            && (
+              get(/databases/$(database)/documents/inquiries/$(inquiryIdValue)).data.uuid == userUid()
+              || get(/databases/$(database)/documents/inquiries/$(inquiryIdValue)).data.email == userEmail()
+            )
           )
         );
     }
@@ -135,7 +97,8 @@ service cloud.firestore {
       return isSignedIn()
         && isClientOrAdmin()
         && (
-          hasOwnedUuid(uuidValue)
+          isAdminRole()
+          || hasOwnedUuid(uuidValue)
           || (emailValue != null && emailValue == userEmail())
           || canAccessLinkedInquiry(inquiryIdValue)
         );
@@ -152,67 +115,46 @@ service cloud.firestore {
     // ----- Admin and account collections -----
 
     match /admins/{docId} {
-      allow get: if hasAdminPermission('usersPermissions', 'view') || (isSignedIn() && userEmail() != null && docId == userEmail());
-      allow list: if hasAdminPermission('usersPermissions', 'view');
-      allow create: if hasAdminPermission('usersPermissions', 'create');
-      allow update: if hasAdminPermission('usersPermissions', 'edit');
-      allow delete: if hasAdminPermission('usersPermissions', 'delete');
+      allow get: if isAdmin() || (isSignedIn() && userEmail() != null && docId == userEmail());
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     match /users/{uid} {
-      allow read: if hasAdminPermission('usersPermissions', 'view') || (isSignedIn() && uid == userUid());
-      allow create: if hasAdminPermission('usersPermissions', 'create') || (isSignedIn() && uid == userUid());
-      allow update: if hasAdminPermission('usersPermissions', 'edit') || (isSignedIn() && uid == userUid());
-      allow delete: if hasAdminPermission('usersPermissions', 'delete');
+      allow read: if isAdmin() || (isSignedIn() && uid == userUid());
+      allow create, update: if isAdmin() || (isSignedIn() && uid == userUid());
+      allow delete: if isAdmin();
     }
 
     match /roles/{roleId} {
-      allow read: if hasAdminPermission('roleManagement', 'view');
-      allow create: if hasAdminPermission('roleManagement', 'create');
-      allow update: if hasAdminPermission('roleManagement', 'edit');
-      allow delete: if hasAdminPermission('roleManagement', 'delete');
-    }
-
-    match /rolePermissions/{roleId} {
-      allow read: if isAdminAccount();
-      allow create: if hasAdminPermission('roleManagement', 'create');
-      allow update: if hasAdminPermission('roleManagement', 'edit');
-      allow delete: if hasAdminPermission('roleManagement', 'delete');
+      allow read: if isAdmin();
+      allow write: if isAdmin();
     }
 
     match /settings/{docId} {
       allow read: if isSignedIn();
-      allow create: if hasAdminPermission('configurations', 'create');
-      allow update: if hasAdminPermission('configurations', 'edit');
-      allow delete: if hasAdminPermission('configurations', 'delete');
+      allow write: if isAdmin();
     }
 
     match /services/{serviceId} {
       allow read: if isSignedIn();
-      allow create: if hasAdminPermission('serviceCatalog', 'create');
-      allow update: if hasAdminPermission('serviceCatalog', 'edit');
-      allow delete: if hasAdminPermission('serviceCatalog', 'delete');
+      allow write: if isAdmin();
     }
 
     match /catalogSettings/{docId} {
       allow read: if isSignedIn();
-      allow create: if hasAdminPermission('catalogSettings', 'create');
-      allow update: if hasAdminPermission('catalogSettings', 'edit');
-      allow delete: if hasAdminPermission('catalogSettings', 'delete');
+      allow write: if isAdmin();
     }
 
     match /activityLogs/{logId} {
-      allow read: if hasAdminPermission('activityLogs', 'view');
+      allow read: if isAdmin();
       allow create: if isSignedIn();
-      allow update: if hasAdminPermission('activityLogs', 'edit');
-      allow delete: if hasAdminPermission('activityLogs', 'delete');
+      allow update, delete: if isAdmin();
     }
 
     match /mail/{mailId} {
-      allow read: if hasAnyAdminPermission();
-      allow update: if hasAnyAdminPermission();
-      allow delete: if hasAnyAdminPermission();
-      allow create: if hasAnyAdminPermission()
+      allow read, update, delete: if isAdmin();
+      allow create: if isAdmin()
         || (
           isSignedIn()
           && request.resource.data.keys().hasOnly(['to', 'message', 'inquiryId'])
@@ -245,14 +187,13 @@ service cloud.firestore {
 
     match /officeCalendar/{eventId} {
       allow read: if isSignedIn();
-      allow create: if hasAdminPermission('officeCalendar', 'create')
+      allow create: if isAdmin()
         && request.resource.data.createdBy == userEmail()
         && (
           !('createdByUid' in request.resource.data)
           || request.resource.data.createdByUid == userUid()
         );
-      allow update: if hasAdminPermission('officeCalendar', 'edit');
-      allow delete: if hasAdminPermission('officeCalendar', 'delete');
+      allow update, delete: if isAdmin();
     }
 
     // ----- Core owner-scoped collections -----
@@ -261,27 +202,16 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && isClientOrAdmin()
         && (
-          (hasAdminPermission('inquiries', 'create') && request.resource.data.uuid is string)
+          (isAdminRole() && request.resource.data.uuid is string)
           || hasOwnedUuid(request.resource.data.uuid)
         );
 
-      allow read: if hasAdminPermission('inquiries', 'view')
-        || canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
+      allow read: if canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
 
-      allow update: if isSignedIn()
+      allow update, delete: if isSignedIn()
         && isClientOrAdmin()
         && (
-          hasAdminPermission('inquiries', 'edit')
-          || (
-            hasOwnedUuid(resource.data.uuid)
-            && hasOwnedUuid(request.resource.data.uuid)
-            && request.resource.data.uuid == resource.data.uuid
-          )
-        );
-      allow delete: if isSignedIn()
-        && isClientOrAdmin()
-        && (
-          hasAdminPermission('inquiries', 'delete')
+          isAdminRole()
           || (
             hasOwnedUuid(resource.data.uuid)
             && hasOwnedUuid(request.resource.data.uuid)
@@ -291,7 +221,7 @@ service cloud.firestore {
     }
 
     match /clients/{cid} {
-      allow create: if hasAdminPermission('clients', 'create')
+      allow create: if isAdmin()
         || (
           isSignedIn()
           && request.resource.data.email == userEmail()
@@ -301,10 +231,10 @@ service cloud.firestore {
           )
         );
 
-      allow read: if hasAdminPermission('clients', 'view')
+      allow read: if isAdmin()
         || ownsByUidOrEmail(resource.data.ownerUid, resource.data.email);
 
-      allow update: if hasAdminPermission('clients', 'edit')
+      allow update, delete: if isAdmin()
         || (
           ownsByUidOrEmail(resource.data.ownerUid, resource.data.email)
           && request.resource.data.email == resource.data.email
@@ -314,7 +244,6 @@ service cloud.firestore {
             || request.resource.data.ownerUid == userUid()
           )
         );
-      allow delete: if hasAdminPermission('clients', 'delete');
     }
 
     match /clientRequests/{requestId} {
@@ -325,22 +254,10 @@ service cloud.firestore {
           || request.resource.data.requestedByUid == userUid()
         );
 
-      allow create: if hasAdminPermission('memberApprovals', 'create')
-        || (
-          isSignedIn()
-          && request.resource.data.requestedBy == userEmail()
-          && (
-            !('requestedByUid' in request.resource.data)
-            || request.resource.data.requestedByUid == userUid()
-          )
-        );
-
-      allow read: if hasAdminPermission('memberApprovals', 'view')
+      allow read: if isAdmin()
         || ownsByUidOrEmail(resource.data.requestedByUid, resource.data.requestedBy);
 
-      allow update: if hasAdminPermission('memberApprovals', 'edit')
-        || ownsByUidOrEmail(resource.data.requestedByUid, resource.data.requestedBy);
-      allow delete: if hasAdminPermission('memberApprovals', 'delete')
+      allow update, delete: if isAdmin()
         || (
           ownsByUidOrEmail(resource.data.requestedByUid, resource.data.requestedBy)
           && request.resource.data.requestedBy == resource.data.requestedBy
@@ -360,22 +277,10 @@ service cloud.firestore {
           || request.resource.data.requestedByUid == userUid()
         );
 
-      allow create: if hasAdminPermission('memberApprovals', 'create')
-        || (
-          isSignedIn()
-          && request.resource.data.requestedBy == userEmail()
-          && (
-            !('requestedByUid' in request.resource.data)
-            || request.resource.data.requestedByUid == userUid()
-          )
-        );
-
-      allow read: if hasAdminPermission('memberApprovals', 'view')
+      allow read: if isAdmin()
         || ownsByUidOrEmail(resource.data.requestedByUid, resource.data.requestedBy);
 
-      allow update: if hasAdminPermission('memberApprovals', 'edit')
-        || ownsByUidOrEmail(resource.data.requestedByUid, resource.data.requestedBy);
-      allow delete: if hasAdminPermission('memberApprovals', 'delete')
+      allow update, delete: if isAdmin()
         || (
           ownsByUidOrEmail(resource.data.requestedByUid, resource.data.requestedBy)
           && request.resource.data.requestedBy == resource.data.requestedBy
@@ -395,10 +300,10 @@ service cloud.firestore {
           || request.resource.data.submittedByUid == userUid()
         );
 
-      allow read: if hasAdminPermission('memberApprovals', 'view')
+      allow read: if isAdmin()
         || ownsByUidOrEmail(resource.data.submittedByUid, resource.data.submittedBy);
 
-      allow update: if hasAdminPermission('memberApprovals', 'edit')
+      allow update, delete: if isAdmin()
         || (
           ownsByUidOrEmail(resource.data.submittedByUid, resource.data.submittedBy)
           && request.resource.data.submittedBy == resource.data.submittedBy
@@ -413,7 +318,7 @@ service cloud.firestore {
     match /quotationThreads/{threadId} {
       allow create: if isSignedIn()
         && (
-          hasAdminPermission('inquiries', 'create')
+          isAdmin()
           || (
             request.resource.data.clientEmail == userEmail()
             && (
@@ -423,10 +328,10 @@ service cloud.firestore {
           )
         );
 
-      allow read: if hasAdminPermission('inquiries', 'view')
+      allow read: if isAdmin()
         || ownsByUidOrEmail(resource.data.clientUid, resource.data.clientEmail);
 
-      allow update: if hasAdminPermission('inquiries', 'edit')
+      allow update, delete: if isAdmin()
         || (
           ownsByUidOrEmail(resource.data.clientUid, resource.data.clientEmail)
           && request.resource.data.clientEmail == resource.data.clientEmail
@@ -436,8 +341,6 @@ service cloud.firestore {
             || request.resource.data.clientUid == userUid()
           )
         );
-      allow delete: if hasAdminPermission('inquiries', 'delete')
-        || ownsByUidOrEmail(resource.data.clientUid, resource.data.clientEmail);
     }
 
     match /threadMessages/{messageId} {
@@ -454,10 +357,10 @@ service cloud.firestore {
             'senderUid' in request.resource.data
             && request.resource.data.senderUid == userUid()
           )
-          || hasAdminPermission('inquiries', 'edit')
+          || isAdmin()
         );
 
-      allow read: if hasAdminPermission('inquiries', 'view')
+      allow read: if isAdmin()
         || (
           exists(/databases/$(database)/documents/quotationThreads/$(resource.data.threadId))
           && ownsByUidOrEmail(
@@ -466,9 +369,7 @@ service cloud.firestore {
           )
         );
 
-      allow update: if hasAdminPermission('inquiries', 'edit')
-        || ownsByUidOrEmail(resource.data.senderUid, resource.data.senderId);
-      allow delete: if hasAdminPermission('inquiries', 'delete')
+      allow update, delete: if isAdmin()
         || ownsByUidOrEmail(resource.data.senderUid, resource.data.senderId);
     }
 
@@ -476,67 +377,56 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && isClientOrAdmin()
         && (
-          (hasAdminPermission('quotations', 'create') && request.resource.data.uuid is string)
+          (isAdminRole() && request.resource.data.uuid is string)
           || hasOwnedUuid(request.resource.data.uuid)
         );
 
-      allow read: if hasAdminPermission('quotations', 'view')
-        || (isSignedIn() && resource.data.uuid == userUid())
-        || canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
+      allow read: if canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
 
-      allow update: if isSignedIn()
+      allow update, delete: if isSignedIn()
         && isClientOrAdmin()
         && (
-          hasAdminPermission('quotations', 'edit')
+          isAdminRole()
           || (
             hasOwnedUuid(resource.data.uuid)
             && hasOwnedUuid(request.resource.data.uuid)
             && request.resource.data.uuid == resource.data.uuid
           )
         );
-      allow delete: if hasAdminPermission('quotations', 'delete')
-        || hasOwnedUuid(resource.data.uuid);
     }
 
     match /projects/{projectId} {
       allow create: if isSignedIn()
         && isClientOrAdmin()
         && (
-          (hasAdminPermission('projects', 'create') && request.resource.data.uuid is string)
+          (isAdminRole() && request.resource.data.uuid is string)
           || hasOwnedUuid(request.resource.data.uuid)
         );
 
-      allow read: if hasAdminPermission('projects', 'view')
-        || canAccessLinkedInquiryDoc(resource.data.iid, resource.data.uuid, resource.data.email);
+      allow read: if canAccessLinkedInquiryDoc(resource.data.iid, resource.data.uuid, resource.data.email);
 
-      allow update: if isSignedIn()
+      allow update, delete: if isSignedIn()
         && isClientOrAdmin()
         && (
-          hasAdminPermission('projects', 'edit')
+          isAdminRole()
           || (
             hasOwnedUuid(resource.data.uuid)
             && hasOwnedUuid(request.resource.data.uuid)
             && request.resource.data.uuid == resource.data.uuid
           )
         );
-      allow delete: if hasAdminPermission('projects', 'delete')
-        || hasOwnedUuid(resource.data.uuid);
 
       match /officialReceipts/{receiptId} {
         allow read: if isSignedIn();
         allow create: if isSignedIn()
           && request.resource.data.uploadedBy == userEmail();
-        allow update: if hasAdminPermission('officialReceipts', 'edit')
-          || resource.data.uploadedBy == userEmail();
-        allow delete: if hasAdminPermission('officialReceipts', 'delete')
+        allow update, delete: if isAdmin()
           || resource.data.uploadedBy == userEmail();
       }
 
       match /serviceReports/{reportId} {
         allow read: if isSignedIn();
-        allow create: if hasAdminPermission('sampleForms', 'create');
-        allow update: if hasAdminPermission('sampleForms', 'edit');
-        allow delete: if hasAdminPermission('sampleForms', 'delete');
+        allow create, update, delete: if isAdmin();
       }
     }
 
@@ -548,10 +438,10 @@ service cloud.firestore {
           || request.resource.data.submittedByUid == userUid()
         );
 
-      allow read: if hasAdminPermission('sampleForms', 'view')
+      allow read: if isAdmin()
         || ownsByUidOrEmail(resource.data.submittedByUid, resource.data.submittedByEmail);
 
-      allow update: if hasAdminPermission('sampleForms', 'edit')
+      allow update, delete: if isAdmin()
         || (
           ownsByUidOrEmail(resource.data.submittedByUid, resource.data.submittedByEmail)
           && request.resource.data.submittedByEmail == resource.data.submittedByEmail
@@ -561,12 +451,10 @@ service cloud.firestore {
             || request.resource.data.submittedByUid == userUid()
           )
         );
-      allow delete: if hasAdminPermission('sampleForms', 'delete')
-        || ownsByUidOrEmail(resource.data.submittedByUid, resource.data.submittedByEmail);
     }
 
     match /sampleFormsPDF/{formId} {
-      allow read: if hasAdminPermission('sampleForms', 'view')
+      allow read: if isAdmin()
         || (
           exists(/databases/$(database)/documents/sampleForms/$(formId))
           && ownsByUidOrEmail(
@@ -575,23 +463,7 @@ service cloud.firestore {
           )
         );
 
-      allow create: if hasAdminPermission('sampleForms', 'create')
-        || (
-          exists(/databases/$(database)/documents/sampleForms/$(formId))
-          && ownsByUidOrEmail(
-            get(/databases/$(database)/documents/sampleForms/$(formId)).data.submittedByUid,
-            get(/databases/$(database)/documents/sampleForms/$(formId)).data.submittedByEmail
-          )
-        );
-      allow update: if hasAdminPermission('sampleForms', 'edit')
-        || (
-          exists(/databases/$(database)/documents/sampleForms/$(formId))
-          && ownsByUidOrEmail(
-            get(/databases/$(database)/documents/sampleForms/$(formId)).data.submittedByUid,
-            get(/databases/$(database)/documents/sampleForms/$(formId)).data.submittedByEmail
-          )
-        );
-      allow delete: if hasAdminPermission('sampleForms', 'delete')
+      allow create, update, delete: if isAdmin()
         || (
           exists(/databases/$(database)/documents/sampleForms/$(formId))
           && ownsByUidOrEmail(
@@ -609,24 +481,20 @@ service cloud.firestore {
           || request.resource.data.uploadedByUid == userUid()
         );
 
-      allow read: if hasAdminPermission('sampleForms', 'view')
+      allow read: if isAdmin()
         || ownsByUidOrEmail(resource.data.uploadedByUid, resource.data.uploadedBy);
 
-      allow update: if hasAdminPermission('sampleForms', 'edit')
-        || ownsByUidOrEmail(resource.data.uploadedByUid, resource.data.uploadedBy);
-      allow delete: if hasAdminPermission('sampleForms', 'delete')
+      allow update, delete: if isAdmin()
         || ownsByUidOrEmail(resource.data.uploadedByUid, resource.data.uploadedBy);
     }
 
     match /clientNotifications/{notificationId} {
-      allow create: if hasAnyAdminPermission();
+      allow create: if isAdmin();
 
-      allow read: if hasAnyAdminPermission()
+      allow read: if isAdmin()
         || ownsByUidOrEmail(resource.data.recipientUid, resource.data.recipientEmail);
 
-      allow update: if hasAnyAdminPermission()
-        || ownsByUidOrEmail(resource.data.recipientUid, resource.data.recipientEmail);
-      allow delete: if hasAnyAdminPermission()
+      allow update, delete: if isAdmin()
         || ownsByUidOrEmail(resource.data.recipientUid, resource.data.recipientEmail);
     }
 
@@ -634,25 +502,22 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && isClientOrAdmin()
         && (
-          (hasAdminPermission('chargeSlips', 'create') && request.resource.data.uuid is string)
+          (isAdminRole() && request.resource.data.uuid is string)
           || hasOwnedUuid(request.resource.data.uuid)
         );
 
-      allow read: if hasAdminPermission('chargeSlips', 'view')
-        || canAccessLinkedInquiryDoc(resource.data.inquiryId, resource.data.uuid, resource.data.email);
+      allow read: if canAccessLinkedInquiryDoc(resource.data.inquiryId, resource.data.uuid, resource.data.email);
 
-      allow update: if isSignedIn()
+      allow update, delete: if isSignedIn()
         && isClientOrAdmin()
         && (
-          hasAdminPermission('chargeSlips', 'edit')
+          isAdminRole()
           || (
             hasOwnedUuid(resource.data.uuid)
             && hasOwnedUuid(request.resource.data.uuid)
             && request.resource.data.uuid == resource.data.uuid
           )
         );
-      allow delete: if hasAdminPermission('chargeSlips', 'delete')
-        || hasOwnedUuid(resource.data.uuid);
     }
 
     match /receipts/{receiptId} {
@@ -661,24 +526,16 @@ service cloud.firestore {
 
       allow read: if isSignedIn();
 
-      allow update: if hasAdminPermission('chargeSlips', 'edit')
-        || resource.data.uploadedBy == userEmail();
-      allow delete: if hasAdminPermission('chargeSlips', 'delete')
+      allow update, delete: if isAdmin()
         || resource.data.uploadedBy == userEmail();
     }
 
     match /adminChannels/{channelId} {
-      allow read: if hasAnyAdminPermission();
-      allow create: if hasAnyAdminPermission();
-      allow update: if hasAnyAdminPermission();
-      allow delete: if hasAnyAdminPermission();
+      allow read, write: if isAdmin();
     }
 
     match /adminMessages/{messageId} {
-      allow read: if hasAnyAdminPermission();
-      allow create: if hasAnyAdminPermission();
-      allow update: if hasAnyAdminPermission();
-      allow delete: if hasAnyAdminPermission();
+      allow read, write: if isAdmin();
     }
 
     match /presence/{presenceId} {
@@ -694,10 +551,10 @@ service cloud.firestore {
           || request.resource.data.data.createdByUid == userUid()
         );
 
-      allow read: if hasAdminPermission('memberApprovals', 'view')
+      allow read: if isAdmin()
         || ownsByUidOrEmail(resource.data.data.createdByUid, resource.data.data.createdBy);
 
-      allow update: if hasAdminPermission('memberApprovals', 'edit');
+      allow update: if isAdmin();
       allow delete: if false;
     }
 

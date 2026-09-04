@@ -617,7 +617,11 @@ export async function testEmailSystem() {
  * saves it to Firestore, and triggers automated email notifications.
  */
 export async function createInquiryAction(
-  inquiryData: InquiryFormData & { id?: string; returnToPortal?: boolean },
+  inquiryData: InquiryFormData & {
+    id?: string;
+    returnToPortal?: boolean;
+    userUid?: string;
+  },
 ) {
   try {
     // Check Firebase configuration first
@@ -629,7 +633,8 @@ export async function createInquiryAction(
     // Transform the form data to match the expected database structure
     // This ensures all required fields are present with proper defaults
     const currentDate = new Date();
-    const resolvedUuid = await resolveInquiryUuid(inquiryData.email);
+    const resolvedUuid =
+      inquiryData.userUid || (await resolveInquiryUuid(inquiryData.email));
     const transformedData = {
       // Core inquiry information
       name: inquiryData.name,

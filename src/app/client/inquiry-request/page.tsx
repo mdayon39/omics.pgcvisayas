@@ -428,6 +428,7 @@ export default function QuotationRequestForm() {
         methodologyFileUrl,
         id: inquiryId, // Pass the pre-generated ID
         returnToPortal, // Skip credentials in email for returning clients
+        userUid: user?.uid,
       };
 
       // Submit to server action

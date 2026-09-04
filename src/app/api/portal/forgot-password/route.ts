@@ -4,15 +4,7 @@
 // (if they changed it) or their earliest inquiry ID.
 
 import { NextRequest, NextResponse } from "next/server";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  addDoc,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { Timestamp } from "firebase/firestore";
 import { getAdminDb } from "@/lib/firebase-admin";
 
 const PORTAL_URL = "https://omics.pgcvisayas.upv.edu.ph/portal";
@@ -61,11 +53,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const snapshot = await getDocs(
-      query(collection(db, "inquiries"), where("email", "==", email)),
-    );
+    const adminDb = getAdminDb();
+    if (!adminDb) throw new Error("Firebase Admin is not configured");
 
-    if (snapshot.empty) {
+    const inquirySnapshot = await adminDb.collection("inquiries").get();
+    const matchingInquiries = inquirySnapshot.docs.filter((inquiryDoc) => {
+      const storedEmail = inquiryDoc.data().email;
+      return (
+        typeof storedEmail === "string" &&
+        storedEmail.trim().toLowerCase() === email
+      );
+    });
+
+    if (matchingInquiries.length === 0) {
       return NextResponse.json(
         {
           error:
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Filter to portal-eligible inquiries only
-    const eligible = snapshot.docs.filter((d) =>
+    const eligible = matchingInquiries.filter((d) =>
       ALLOWED_STATUSES.includes(d.data().status || ""),
     );
 
@@ -172,7 +172,7 @@ Philippine Genome Center Visayas`;
       </div>
     `;
 
-    await addDoc(collection(db, "mail"), {
+    await adminDb.collection("mail").add({
       to: [email],
       message: {
         subject: "Client Portal — Password Recovery",

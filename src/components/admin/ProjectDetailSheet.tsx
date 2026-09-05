@@ -665,29 +665,31 @@ export function ProjectDetailSheet({
                           />
                         </div>
                       )}
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold text-slate-700">
-                            Skip charge-slip requirement
-                          </p>
-                          <p className="text-[11px] text-slate-500">
-                            Allow upload without a charge slip.
-                          </p>
+                      {chargeSlips.length === 0 && (
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-700">
+                              Skip charge-slip requirement
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              Allow upload without a charge slip.
+                            </p>
+                          </div>
+                          <Switch
+                            checked={allowServiceReportWithoutChargeSlip}
+                            onCheckedChange={(checked) =>
+                              handleToggleServiceReportException(
+                                "allowServiceReportWithoutChargeSlip",
+                                checked,
+                                setAllowServiceReportWithoutChargeSlip,
+                              )
+                            }
+                            disabled={
+                              !project.pid || updatingServiceReportSetting
+                            }
+                          />
                         </div>
-                        <Switch
-                          checked={allowServiceReportWithoutChargeSlip}
-                          onCheckedChange={(checked) =>
-                            handleToggleServiceReportException(
-                              "allowServiceReportWithoutChargeSlip",
-                              checked,
-                              setAllowServiceReportWithoutChargeSlip,
-                            )
-                          }
-                          disabled={
-                            !project.pid || updatingServiceReportSetting
-                          }
-                        />
-                      </div>
+                      )}
                     </div>
                     <AdminServiceReport
                       projectId={project.pid}

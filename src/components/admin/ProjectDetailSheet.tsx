@@ -125,6 +125,14 @@ export function ProjectDetailSheet({
     allowServiceReportWithoutQuotation,
     setAllowServiceReportWithoutQuotation,
   ] = useState(Boolean(project?.allowServiceReportWithoutQuotation));
+  const [
+    allowServiceReportWithoutInquiry,
+    setAllowServiceReportWithoutInquiry,
+  ] = useState(Boolean(project?.allowServiceReportWithoutInquiry));
+  const [
+    allowServiceReportWithoutChargeSlip,
+    setAllowServiceReportWithoutChargeSlip,
+  ] = useState(Boolean(project?.allowServiceReportWithoutChargeSlip));
   const [updatingServiceReportSetting, setUpdatingServiceReportSetting] =
     useState(false);
 
@@ -132,7 +140,17 @@ export function ProjectDetailSheet({
     setAllowServiceReportWithoutQuotation(
       Boolean(project?.allowServiceReportWithoutQuotation),
     );
-  }, [project?.allowServiceReportWithoutQuotation]);
+    setAllowServiceReportWithoutInquiry(
+      Boolean(project?.allowServiceReportWithoutInquiry),
+    );
+    setAllowServiceReportWithoutChargeSlip(
+      Boolean(project?.allowServiceReportWithoutChargeSlip),
+    );
+  }, [
+    project?.allowServiceReportWithoutQuotation,
+    project?.allowServiceReportWithoutInquiry,
+    project?.allowServiceReportWithoutChargeSlip,
+  ]);
 
   useEffect(() => {
     if (!open || !project?.pid) return;
@@ -221,6 +239,33 @@ export function ProjectDetailSheet({
     }
   };
 
+  const handleToggleServiceReportException = async (
+    field:
+      | "allowServiceReportWithoutInquiry"
+      | "allowServiceReportWithoutChargeSlip",
+    checked: boolean,
+    setChecked: (value: boolean) => void,
+  ) => {
+    if (!project?.pid) return;
+
+    setUpdatingServiceReportSetting(true);
+    setChecked(checked);
+    try {
+      await updateDoc(doc(db, "projects", project.pid), { [field]: checked });
+      toast.success(
+        checked
+          ? "Service report requirement bypass enabled."
+          : "Service report requirement restored.",
+      );
+    } catch (error) {
+      console.error("Failed to update service report exception:", error);
+      setChecked(!checked);
+      toast.error("Could not update the service report setting.");
+    } finally {
+      setUpdatingServiceReportSetting(false);
+    }
+  };
+
   if (!project) return null;
 
   const iids = Array.isArray(project.iid)
@@ -239,14 +284,6 @@ export function ProjectDetailSheet({
   const hasSelectedQuotation = quotations.some(
     (q) => (q.status ?? "").toLowerCase() === "selected",
   );
-  const canAttachServiceReport =
-    linkedInquiries.length > 0 &&
-    hasApprovedInquiry &&
-    hasEligibleChargeSlip &&
-    (allowServiceReportWithoutQuotation ||
-      (quotations.length > 0 && hasSelectedQuotation));
-  const showServiceReportExceptionSection = !canAttachServiceReport;
-
   return (
     <Sheet
       open={open}
@@ -622,33 +659,77 @@ export function ProjectDetailSheet({
                         Service Reports
                       </span>
                     </div>
-                    {showServiceReportExceptionSection && (
-                      <div className="ml-5 mb-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="space-y-1">
-                            <p className="text-xs font-semibold text-slate-700">
-                              Allow service report upload without selected
-                              quotation
-                            </p>
-                            <p className="text-[11px] leading-snug text-slate-500">
-                              Enable this when the project should accept a
-                              service report even if no selected quotation is
-                              available. A Paid or Waived Charge Slip is still
-                              required.
-                            </p>
-                          </div>
-                          <Switch
-                            checked={allowServiceReportWithoutQuotation}
-                            onCheckedChange={
-                              handleToggleServiceReportWithoutQuotation
-                            }
-                            disabled={
-                              !project.pid || updatingServiceReportSetting
-                            }
-                          />
+                    <div className="ml-5 mb-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-3">
+                      <p className="text-[11px] leading-snug text-slate-500">
+                        Enable a toggle only when the corresponding prerequisite
+                        is intentionally being skipped for this project.
+                      </p>
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700">
+                            Skip inquiry requirement
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Allow upload without an inquiry or approved inquiry.
+                          </p>
                         </div>
+                        <Switch
+                          checked={allowServiceReportWithoutInquiry}
+                          onCheckedChange={(checked) =>
+                            handleToggleServiceReportException(
+                              "allowServiceReportWithoutInquiry",
+                              checked,
+                              setAllowServiceReportWithoutInquiry,
+                            )
+                          }
+                          disabled={
+                            !project.pid || updatingServiceReportSetting
+                          }
+                        />
                       </div>
-                    )}
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700">
+                            Skip quotation requirement
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Allow upload without a quotation marked Selected.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={allowServiceReportWithoutQuotation}
+                          onCheckedChange={
+                            handleToggleServiceReportWithoutQuotation
+                          }
+                          disabled={
+                            !project.pid || updatingServiceReportSetting
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700">
+                            Skip charge-slip requirement
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Allow upload without a Paid or Waived charge slip.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={allowServiceReportWithoutChargeSlip}
+                          onCheckedChange={(checked) =>
+                            handleToggleServiceReportException(
+                              "allowServiceReportWithoutChargeSlip",
+                              checked,
+                              setAllowServiceReportWithoutChargeSlip,
+                            )
+                          }
+                          disabled={
+                            !project.pid || updatingServiceReportSetting
+                          }
+                        />
+                      </div>
+                    </div>
                     <AdminServiceReport
                       projectId={project.pid}
                       clientEmail={
@@ -661,7 +742,11 @@ export function ProjectDetailSheet({
                       chargeSlips={chargeSlips}
                       linkedInquiries={linkedInquiries}
                       quotations={quotations}
+                      allowWithoutInquiry={allowServiceReportWithoutInquiry}
                       allowWithoutQuotation={allowServiceReportWithoutQuotation}
+                      allowWithoutChargeSlip={
+                        allowServiceReportWithoutChargeSlip
+                      }
                     />
                   </div>
                 )}

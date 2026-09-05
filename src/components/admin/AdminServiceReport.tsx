@@ -62,8 +62,10 @@ interface Props {
   linkedInquiries?: Inquiry[];
   /** Quotations linked to the project; at least one must be "selected" unless explicitly overridden. */
   quotations?: QuotationRecord[];
-  /** Allow service report attachment even if no quotation is available. */
+  /** Allow service report attachment without the corresponding prerequisite. */
+  allowWithoutInquiry?: boolean;
   allowWithoutQuotation?: boolean;
+  allowWithoutChargeSlip?: boolean;
 }
 
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
@@ -82,7 +84,9 @@ export default function AdminServiceReport({
   chargeSlips = [],
   linkedInquiries = [],
   quotations = [],
+  allowWithoutInquiry = false,
   allowWithoutQuotation = false,
+  allowWithoutChargeSlip = false,
 }: Props) {
   const { adminInfo } = useAuth();
   const [reports, setReports] = useState<ServiceReport[]>([]);
@@ -109,18 +113,18 @@ export default function AdminServiceReport({
     (q) => (q.status ?? "").toLowerCase() === "selected",
   );
   const canAttach =
-    linkedInquiries.length > 0 &&
-    hasApprovedInquiry &&
-    hasEligibleChargeSlip &&
+    (allowWithoutInquiry ||
+      (linkedInquiries.length > 0 && hasApprovedInquiry)) &&
+    (allowWithoutChargeSlip || hasEligibleChargeSlip) &&
     (allowWithoutQuotation || (quotations.length > 0 && hasSelectedQuotation));
   const attachBlockReason = (() => {
-    if (linkedInquiries.length === 0)
+    if (!allowWithoutInquiry && linkedInquiries.length === 0)
       return "No inquiries are linked to this project. At least one inquiry with an 'Approved Client' status is required.";
-    if (!hasApprovedInquiry)
+    if (!allowWithoutInquiry && !hasApprovedInquiry)
       return "None of the linked inquiries have an 'Approved Client' status. Update the inquiry status before attaching a service report.";
-    if (chargeSlips.length === 0)
+    if (!allowWithoutChargeSlip && chargeSlips.length === 0)
       return "No charge slips found for this project. A Paid or Waived charge slip is required before attaching a service report.";
-    if (!hasEligibleChargeSlip)
+    if (!allowWithoutChargeSlip && !hasEligibleChargeSlip)
       return "A charge slip must have a Paid or Waived status before attaching a service report.";
     if (!allowWithoutQuotation && quotations.length === 0)
       return "No quotations found for this project. At least one quotation with a 'Selected' status is required.";

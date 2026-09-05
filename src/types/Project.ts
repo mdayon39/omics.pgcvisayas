@@ -23,6 +23,8 @@ export interface Project {
   personnelAssigned?: string;
   notes?: string;
   allowServiceReportWithoutQuotation?: boolean;
+  allowServiceReportWithoutInquiry?: boolean;
+  allowServiceReportWithoutChargeSlip?: boolean;
   serviceReportDocumentationRemark?: string;
   serviceReportToggleEnabledBy?: string | null;
   serviceReportToggleEnabledByEmail?: string | null;

@@ -95,27 +95,33 @@ export default function AdminServiceReport({
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Gate: at least one linked inquiry must be "Approved Client",
-  // and either a charge slip exists or the project explicitly allows uploads
-  // without a charge slip/quotation.
+  // Gate: at least one linked inquiry must be "Approved Client", a charge
+  // slip must be paid or waived, and a selected quotation must exist unless
+  // explicitly overridden.
   const hasApprovedInquiry = linkedInquiries.some(
     (inq) => inq.status === "Approved Client",
   );
+  const hasEligibleChargeSlip = chargeSlips.some((chargeSlip) => {
+    const status = (chargeSlip.status ?? "").trim().toLowerCase();
+    return status === "paid" || status === "waived";
+  });
   const hasSelectedQuotation = quotations.some(
     (q) => (q.status ?? "").toLowerCase() === "selected",
   );
   const canAttach =
     linkedInquiries.length > 0 &&
     hasApprovedInquiry &&
-    (chargeSlips.length > 0 || allowWithoutQuotation) &&
+    hasEligibleChargeSlip &&
     (allowWithoutQuotation || (quotations.length > 0 && hasSelectedQuotation));
   const attachBlockReason = (() => {
     if (linkedInquiries.length === 0)
       return "No inquiries are linked to this project. At least one inquiry with an 'Approved Client' status is required.";
     if (!hasApprovedInquiry)
       return "None of the linked inquiries have an 'Approved Client' status. Update the inquiry status before attaching a service report.";
-    if (!allowWithoutQuotation && chargeSlips.length === 0)
-      return "No charge slips found for this project. At least one charge slip is required before attaching a service report.";
+    if (chargeSlips.length === 0)
+      return "No charge slips found for this project. A Paid or Waived charge slip is required before attaching a service report.";
+    if (!hasEligibleChargeSlip)
+      return "A charge slip must have a Paid or Waived status before attaching a service report.";
     if (!allowWithoutQuotation && quotations.length === 0)
       return "No quotations found for this project. At least one quotation with a 'Selected' status is required.";
     if (!allowWithoutQuotation && !hasSelectedQuotation)

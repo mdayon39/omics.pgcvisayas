@@ -206,8 +206,8 @@ export function ProjectDetailSheet({
       });
       toast.success(
         checked
-          ? "Service report uploads can now proceed without a charge slip."
-          : "Charge slip requirement restored for service report uploads.",
+          ? "Service report uploads can now proceed without a selected quotation."
+          : "Selected quotation requirement restored for service report uploads.",
       );
     } catch (error) {
       console.error(
@@ -232,13 +232,17 @@ export function ProjectDetailSheet({
   const hasApprovedInquiry = linkedInquiries.some(
     (inq) => inq.status === "Approved Client",
   );
+  const hasEligibleChargeSlip = chargeSlips.some((chargeSlip) => {
+    const chargeSlipStatus = (chargeSlip.status ?? "").trim().toLowerCase();
+    return chargeSlipStatus === "paid" || chargeSlipStatus === "waived";
+  });
   const hasSelectedQuotation = quotations.some(
     (q) => (q.status ?? "").toLowerCase() === "selected",
   );
   const canAttachServiceReport =
     linkedInquiries.length > 0 &&
     hasApprovedInquiry &&
-    (chargeSlips.length > 0 || allowServiceReportWithoutQuotation) &&
+    hasEligibleChargeSlip &&
     (allowServiceReportWithoutQuotation ||
       (quotations.length > 0 && hasSelectedQuotation));
   const showServiceReportExceptionSection = !canAttachServiceReport;
@@ -623,12 +627,14 @@ export function ProjectDetailSheet({
                         <div className="flex items-start justify-between gap-3">
                           <div className="space-y-1">
                             <p className="text-xs font-semibold text-slate-700">
-                              Allow service report upload without Charge Slip
+                              Allow service report upload without selected
+                              quotation
                             </p>
                             <p className="text-[11px] leading-snug text-slate-500">
                               Enable this when the project should accept a
-                              service report even if no Charge Slip is
-                              available.
+                              service report even if no selected quotation is
+                              available. A Paid or Waived Charge Slip is still
+                              required.
                             </p>
                           </div>
                           <Switch

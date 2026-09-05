@@ -302,6 +302,7 @@ interface ProjectDetails {
   fundingInstitution: string;
   status: string;
   inquiryId: string;
+  allowServiceReportWithoutChargeSlip?: boolean;
   isDraft?: boolean; // Flag for draft project requests
   originalRequestId?: string;
 }
@@ -5009,12 +5010,17 @@ export default function ClientPortalPage() {
                   const panelDocs = projectDocuments.get(selectedProjectPid);
                   const panelChargeSlipCount =
                     panelDocs?.chargeSlips.length || 0;
-                  const allChargeSlipsSettled =
+                  const hasSettledChargeSlip =
                     panelChargeSlipCount > 0 &&
-                    (panelDocs?.chargeSlips?.some(
-                      (cs) => cs.status === "paid" || cs.status === "waived",
-                    ) ??
+                    (panelDocs?.chargeSlips?.some((cs) => {
+                      const status = (cs.status ?? "").toLowerCase();
+                      return status === "paid" || status === "waived";
+                    }) ??
                       false);
+                  const canReceiveServiceReport =
+                    Boolean(
+                      projectDetails?.allowServiceReportWithoutChargeSlip,
+                    ) || hasSettledChargeSlip;
                   const sfParams = new URLSearchParams();
                   if (emailParam) sfParams.set("email", emailParam);
                   if (inquiryIdParam) sfParams.set("inquiryId", inquiryIdParam);
@@ -5370,13 +5376,6 @@ export default function ClientPortalPage() {
                                   const reportKey = `${selectedProjectPid}:${item.id}`;
                                   const isReceiving =
                                     receivingReportId === reportKey;
-                                  const isExceptionReport = Boolean(
-                                    item.exceptionEnabled ||
-                                      item.documentationRemark ||
-                                      item.uploadedByEmail ||
-                                      (projectDetails as any)
-                                        ?.allowServiceReportWithoutQuotation,
-                                  );
                                   return (
                                     <div
                                       key={item.id}
@@ -5423,27 +5422,7 @@ export default function ClientPortalPage() {
                                               </span>
                                             )}
                                           </Badge>
-                                        ) : isExceptionReport ? (
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-8 text-xs px-3 gap-1 border-blue-200 text-blue-700 hover:bg-blue-50"
-                                            disabled={isReceiving}
-                                            onClick={() =>
-                                              handleReceiveServiceReport(
-                                                selectedProjectPid,
-                                                item,
-                                              )
-                                            }
-                                          >
-                                            {isReceiving ? (
-                                              <Loader2 className="h-3 w-3 animate-spin" />
-                                            ) : (
-                                              <Download className="h-3 w-3" />
-                                            )}
-                                            Receive
-                                          </Button>
-                                        ) : !allChargeSlipsSettled ? (
+                                        ) : !canReceiveServiceReport ? (
                                           <TooltipProvider delayDuration={100}>
                                             <Tooltip>
                                               <TooltipTrigger asChild>
@@ -5461,10 +5440,12 @@ export default function ClientPortalPage() {
                                               </TooltipTrigger>
                                               <TooltipContent
                                                 side="left"
-                                                className="max-w-[200px] text-xs text-center"
+                                                className="max-w-[220px] text-xs text-center"
                                               >
-                                                Please settle all outstanding
-                                                charge slips first.
+                                                Upload the charge slip and wait
+                                                for admin approval, or wait for
+                                                the admin to enable the skip
+                                                charge-slip requirement.
                                               </TooltipContent>
                                             </Tooltip>
                                           </TooltipProvider>

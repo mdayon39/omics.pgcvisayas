@@ -644,32 +644,34 @@ export function ProjectDetailSheet({
                         Enable a toggle only when the corresponding prerequisite
                         is intentionally being skipped for this project.
                       </p>
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold text-slate-700">
-                            Skip quotation requirement
-                          </p>
-                          <p className="text-[11px] text-slate-500">
-                            Allow upload without a quotation marked Selected.
-                          </p>
+                      {quotations.length === 0 && (
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-700">
+                              Skip quotation requirement
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              Allow upload without a quotation
+                            </p>
+                          </div>
+                          <Switch
+                            checked={allowServiceReportWithoutQuotation}
+                            onCheckedChange={
+                              handleToggleServiceReportWithoutQuotation
+                            }
+                            disabled={
+                              !project.pid || updatingServiceReportSetting
+                            }
+                          />
                         </div>
-                        <Switch
-                          checked={allowServiceReportWithoutQuotation}
-                          onCheckedChange={
-                            handleToggleServiceReportWithoutQuotation
-                          }
-                          disabled={
-                            !project.pid || updatingServiceReportSetting
-                          }
-                        />
-                      </div>
+                      )}
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-xs font-semibold text-slate-700">
                             Skip charge-slip requirement
                           </p>
                           <p className="text-[11px] text-slate-500">
-                            Allow upload without a Paid or Waived charge slip.
+                            Allow upload without a charge slip.
                           </p>
                         </div>
                         <Switch

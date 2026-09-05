@@ -257,10 +257,6 @@ export function ProjectDetailSheet({
   const hasApprovedInquiry = linkedInquiries.some(
     (inq) => inq.status === "Approved Client",
   );
-  const hasEligibleChargeSlip = chargeSlips.some((chargeSlip) => {
-    const chargeSlipStatus = (chargeSlip.status ?? "").trim().toLowerCase();
-    return chargeSlipStatus === "paid" || chargeSlipStatus === "waived";
-  });
   const hasSelectedQuotation = quotations.some(
     (q) => (q.status ?? "").toLowerCase() === "selected",
   );

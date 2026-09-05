@@ -5447,10 +5447,10 @@ export default function ClientPortalPage() {
                                                 side="left"
                                                 className="max-w-[220px] text-xs text-center"
                                               >
-                                                Upload the charge slip and wait
-                                                for admin approval, or wait for
-                                                the admin to enable the skip
-                                                charge-slip requirement.
+                                                A charge slip must have a Paid
+                                                or Waived status before the
+                                                client can receive the service
+                                                report file.
                                               </TooltipContent>
                                             </Tooltip>
                                           </TooltipProvider>

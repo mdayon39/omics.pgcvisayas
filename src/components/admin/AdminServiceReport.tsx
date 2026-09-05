@@ -63,7 +63,6 @@ interface Props {
   /** Quotations linked to the project; at least one must be "selected" unless explicitly overridden. */
   quotations?: QuotationRecord[];
   /** Allow service report attachment without the corresponding prerequisite. */
-  allowWithoutInquiry?: boolean;
   allowWithoutQuotation?: boolean;
   allowWithoutChargeSlip?: boolean;
 }
@@ -84,7 +83,6 @@ export default function AdminServiceReport({
   chargeSlips = [],
   linkedInquiries = [],
   quotations = [],
-  allowWithoutInquiry = false,
   allowWithoutQuotation = false,
   allowWithoutChargeSlip = false,
 }: Props) {
@@ -113,14 +111,14 @@ export default function AdminServiceReport({
     (q) => (q.status ?? "").toLowerCase() === "selected",
   );
   const canAttach =
-    (allowWithoutInquiry ||
-      (linkedInquiries.length > 0 && hasApprovedInquiry)) &&
+    linkedInquiries.length > 0 &&
+    hasApprovedInquiry &&
     (allowWithoutChargeSlip || hasEligibleChargeSlip) &&
     (allowWithoutQuotation || (quotations.length > 0 && hasSelectedQuotation));
   const attachBlockReason = (() => {
-    if (!allowWithoutInquiry && linkedInquiries.length === 0)
+    if (linkedInquiries.length === 0)
       return "No inquiries are linked to this project. At least one inquiry with an 'Approved Client' status is required.";
-    if (!allowWithoutInquiry && !hasApprovedInquiry)
+    if (!hasApprovedInquiry)
       return "None of the linked inquiries have an 'Approved Client' status. Update the inquiry status before attaching a service report.";
     if (!allowWithoutChargeSlip && chargeSlips.length === 0)
       return "No charge slips found for this project. A Paid or Waived charge slip is required before attaching a service report.";

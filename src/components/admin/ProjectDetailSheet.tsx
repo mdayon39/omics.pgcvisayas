@@ -126,10 +126,6 @@ export function ProjectDetailSheet({
     setAllowServiceReportWithoutQuotation,
   ] = useState(Boolean(project?.allowServiceReportWithoutQuotation));
   const [
-    allowServiceReportWithoutInquiry,
-    setAllowServiceReportWithoutInquiry,
-  ] = useState(Boolean(project?.allowServiceReportWithoutInquiry));
-  const [
     allowServiceReportWithoutChargeSlip,
     setAllowServiceReportWithoutChargeSlip,
   ] = useState(Boolean(project?.allowServiceReportWithoutChargeSlip));
@@ -140,15 +136,11 @@ export function ProjectDetailSheet({
     setAllowServiceReportWithoutQuotation(
       Boolean(project?.allowServiceReportWithoutQuotation),
     );
-    setAllowServiceReportWithoutInquiry(
-      Boolean(project?.allowServiceReportWithoutInquiry),
-    );
     setAllowServiceReportWithoutChargeSlip(
       Boolean(project?.allowServiceReportWithoutChargeSlip),
     );
   }, [
     project?.allowServiceReportWithoutQuotation,
-    project?.allowServiceReportWithoutInquiry,
     project?.allowServiceReportWithoutChargeSlip,
   ]);
 
@@ -222,11 +214,6 @@ export function ProjectDetailSheet({
             ? adminInfo.email
             : project.serviceReportToggleEnabledByEmail || null,
       });
-      toast.success(
-        checked
-          ? "Service report uploads can now proceed without a selected quotation."
-          : "Selected quotation requirement restored for service report uploads.",
-      );
     } catch (error) {
       console.error(
         "Failed to update service report attachment setting:",
@@ -240,9 +227,7 @@ export function ProjectDetailSheet({
   };
 
   const handleToggleServiceReportException = async (
-    field:
-      | "allowServiceReportWithoutInquiry"
-      | "allowServiceReportWithoutChargeSlip",
+    field: "allowServiceReportWithoutChargeSlip",
     checked: boolean,
     setChecked: (value: boolean) => void,
   ) => {
@@ -252,11 +237,6 @@ export function ProjectDetailSheet({
     setChecked(checked);
     try {
       await updateDoc(doc(db, "projects", project.pid), { [field]: checked });
-      toast.success(
-        checked
-          ? "Service report requirement bypass enabled."
-          : "Service report requirement restored.",
-      );
     } catch (error) {
       console.error("Failed to update service report exception:", error);
       setChecked(!checked);
@@ -667,29 +647,6 @@ export function ProjectDetailSheet({
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-xs font-semibold text-slate-700">
-                            Skip inquiry requirement
-                          </p>
-                          <p className="text-[11px] text-slate-500">
-                            Allow upload without an inquiry or approved inquiry.
-                          </p>
-                        </div>
-                        <Switch
-                          checked={allowServiceReportWithoutInquiry}
-                          onCheckedChange={(checked) =>
-                            handleToggleServiceReportException(
-                              "allowServiceReportWithoutInquiry",
-                              checked,
-                              setAllowServiceReportWithoutInquiry,
-                            )
-                          }
-                          disabled={
-                            !project.pid || updatingServiceReportSetting
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold text-slate-700">
                             Skip quotation requirement
                           </p>
                           <p className="text-[11px] text-slate-500">
@@ -742,7 +699,6 @@ export function ProjectDetailSheet({
                       chargeSlips={chargeSlips}
                       linkedInquiries={linkedInquiries}
                       quotations={quotations}
-                      allowWithoutInquiry={allowServiceReportWithoutInquiry}
                       allowWithoutQuotation={allowServiceReportWithoutQuotation}
                       allowWithoutChargeSlip={
                         allowServiceReportWithoutChargeSlip

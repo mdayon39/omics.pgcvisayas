@@ -210,6 +210,7 @@ export default function AdminServiceReport({
         uploadedByName: adminInfo?.name || "Admin",
         uploadedByEmail: adminInfo?.email || null,
         exceptionEnabled: allowWithoutQuotation,
+        skipChargeSlipRequirement: allowWithoutChargeSlip,
         projectId,
       });
 

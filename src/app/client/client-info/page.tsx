@@ -5422,7 +5422,12 @@ export default function ClientPortalPage() {
                                               </span>
                                             )}
                                           </Badge>
-                                        ) : !canReceiveServiceReport ? (
+                                        ) : !(
+                                            canReceiveServiceReport ||
+                                            Boolean(
+                                              item.skipChargeSlipRequirement,
+                                            )
+                                          ) ? (
                                           <TooltipProvider delayDuration={100}>
                                             <Tooltip>
                                               <TooltipTrigger asChild>

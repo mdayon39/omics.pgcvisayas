@@ -5385,7 +5385,8 @@ export default function ClientPortalPage() {
                                       <div className="flex items-center gap-2 min-w-0">
                                         <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
                                         <div className="min-w-0">
-                                          {isReceived ? (
+                                          {isReceived &&
+                                          item.clientAccessEnabled !== false ? (
                                             <a
                                               href={item.fileUrl}
                                               target="_blank"

@@ -21,6 +21,7 @@ import {
 } from "firebase/storage";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -210,6 +211,7 @@ export default function AdminServiceReport({
         uploadedByEmail: adminInfo?.email || null,
         exceptionEnabled: allowWithoutQuotation,
         skipChargeSlipRequirement: allowWithoutChargeSlip,
+        clientAccessEnabled: true,
         projectId,
       });
 
@@ -342,6 +344,21 @@ Philippine Genome Center Visayas`.trim();
     }
   };
 
+  const handleClientAccessChange = async (
+    report: ServiceReport,
+    enabled: boolean,
+  ) => {
+    try {
+      await updateDoc(
+        doc(db, "projects", projectId, "serviceReports", report.id),
+        { clientAccessEnabled: enabled },
+      );
+    } catch (error) {
+      console.error("Service report client access update error:", error);
+      toast.error("Failed to update client access.");
+    }
+  };
+
   return (
     <div className="space-y-2">
       {/* Existing reports */}
@@ -419,6 +436,19 @@ Philippine Genome Center Visayas`.trim();
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 mr-1">
+                    <span className="text-[10px] text-slate-400">
+                      Client access
+                    </span>
+                    <Switch
+                      checked={report.clientAccessEnabled !== false}
+                      onCheckedChange={(enabled) =>
+                        handleClientAccessChange(report, enabled)
+                      }
+                      className="scale-75"
+                      aria-label={`${report.clientAccessEnabled === false ? "Enable" : "Disable"} client access for ${report.fileName}`}
+                    />
+                  </div>
                   <a
                     href={report.fileUrl}
                     target="_blank"

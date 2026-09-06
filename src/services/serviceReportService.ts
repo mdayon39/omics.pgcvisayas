@@ -23,6 +23,7 @@ export interface ServiceReport {
   uploadedByEmail?: string | null;
   documentationRemark?: string | null;
   exceptionEnabled?: boolean;
+  clientAccessEnabled?: boolean;
   projectId: string;
   status?: "pending" | "received";
   receivedAt?: Timestamp | null;

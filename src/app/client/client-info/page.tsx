@@ -5447,10 +5447,10 @@ export default function ClientPortalPage() {
                                                 side="left"
                                                 className="max-w-[220px] text-xs text-center"
                                               >
-                                                A charge slip must have a Paid
-                                                or Waived status before the
-                                                client can receive the service
-                                                report file.
+                                                Please settle the Charge Slip
+                                                first to receive the service
+                                                report. The status must be Paid
+                                                or Waived.
                                               </TooltipContent>
                                             </Tooltip>
                                           </TooltipProvider>

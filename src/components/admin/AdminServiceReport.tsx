@@ -116,7 +116,7 @@ export default function AdminServiceReport({
     if (!hasApprovedInquiry)
       return "None of the linked inquiries have an 'Approved Client' status. Update the inquiry status before attaching a service report.";
     if (!allowWithoutChargeSlip && chargeSlips.length === 0)
-      return "No charge slips found for this project. A Paid or Waived charge slip is required before attaching a service report.";
+      return "No charge slips found for this project. A charge slip is required before attaching a service report.";
     if (!allowWithoutQuotation && quotations.length === 0)
       return "No quotations found for this project. At least one quotation with a 'Selected' status is required.";
     if (!allowWithoutQuotation && !hasSelectedQuotation)

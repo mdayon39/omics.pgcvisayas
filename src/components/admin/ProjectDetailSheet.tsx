@@ -129,6 +129,8 @@ export function ProjectDetailSheet({
     allowServiceReportWithoutChargeSlip,
     setAllowServiceReportWithoutChargeSlip,
   ] = useState(Boolean(project?.allowServiceReportWithoutChargeSlip));
+  const [serviceReportFileSelected, setServiceReportFileSelected] =
+    useState(false);
   const [updatingServiceReportSetting, setUpdatingServiceReportSetting] =
     useState(false);
 
@@ -683,7 +685,9 @@ export function ProjectDetailSheet({
                                 )
                               }
                               disabled={
-                                !project.pid || updatingServiceReportSetting
+                                !project.pid ||
+                                updatingServiceReportSetting ||
+                                serviceReportFileSelected
                               }
                             />
                           </div>
@@ -706,6 +710,7 @@ export function ProjectDetailSheet({
                       allowWithoutChargeSlip={
                         allowServiceReportWithoutChargeSlip
                       }
+                      onFileStateChange={setServiceReportFileSelected}
                     />
                   </div>
                 )}

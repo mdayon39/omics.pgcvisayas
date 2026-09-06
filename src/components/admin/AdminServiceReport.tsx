@@ -65,6 +65,7 @@ interface Props {
   /** Allow service report attachment without the corresponding prerequisite. */
   allowWithoutQuotation?: boolean;
   allowWithoutChargeSlip?: boolean;
+  onFileStateChange?: (isFileSelectedOrUploading: boolean) => void;
 }
 
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
@@ -85,6 +86,7 @@ export default function AdminServiceReport({
   quotations = [],
   allowWithoutQuotation = false,
   allowWithoutChargeSlip = false,
+  onFileStateChange,
 }: Props) {
   const { adminInfo } = useAuth();
   const [reports, setReports] = useState<ServiceReport[]>([]);
@@ -96,6 +98,10 @@ export default function AdminServiceReport({
     null,
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    onFileStateChange?.(Boolean(pendingFile) || uploading);
+  }, [onFileStateChange, pendingFile, uploading]);
 
   // Gate: at least one linked inquiry and charge slip must exist, and a
   // selected quotation must exist unless explicitly overridden.

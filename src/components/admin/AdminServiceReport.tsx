@@ -99,6 +99,8 @@ export default function AdminServiceReport({
     null,
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isSuperAdmin =
+    adminInfo?.role?.toLowerCase().replace(/\s+/g, "") === "superadmin";
 
   useEffect(() => {
     onFileStateChange?.(Boolean(pendingFile) || uploading);
@@ -436,19 +438,21 @@ Philippine Genome Center Visayas`.trim();
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <div className="flex items-center gap-1.5 mr-1">
-                    <span className="text-[10px] text-slate-400">
-                      Client access
-                    </span>
-                    <Switch
-                      checked={report.clientAccessEnabled !== false}
-                      onCheckedChange={(enabled) =>
-                        handleClientAccessChange(report, enabled)
-                      }
-                      className="scale-75"
-                      aria-label={`${report.clientAccessEnabled === false ? "Enable" : "Disable"} client access for ${report.fileName}`}
-                    />
-                  </div>
+                  {isSuperAdmin && (
+                    <div className="flex items-center gap-1.5 mr-1">
+                      <span className="text-[10px] text-slate-400">
+                        Client access
+                      </span>
+                      <Switch
+                        checked={report.clientAccessEnabled !== false}
+                        onCheckedChange={(enabled) =>
+                          handleClientAccessChange(report, enabled)
+                        }
+                        className="scale-75"
+                        aria-label={`${report.clientAccessEnabled === false ? "Enable" : "Disable"} client access for ${report.fileName}`}
+                      />
+                    </div>
+                  )}
                   <a
                     href={report.fileUrl}
                     target="_blank"

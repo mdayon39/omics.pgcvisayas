@@ -1,25 +1,25 @@
 // Admin Projects Table Columns
 // Defines the columns and cell renderers for the admin projects data table.
 
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { ColumnDef, Row } from "@tanstack/react-table"
-import { Project } from "@/types/Project"
-import { Button } from "@/components/ui/button"
-import { ArrowUpDown } from "lucide-react"
-import useAuth from "@/hooks/useAuth"
-import { usePermissions } from "@/hooks/usePermissions"
-import { EditProjectModal } from "@/components/forms/EditProjectModal"
+import { useEffect, useState } from "react";
+import { ColumnDef, Row } from "@tanstack/react-table";
+import { Project } from "@/types/Project";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown } from "lucide-react";
+import useAuth from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
+import { EditProjectModal } from "@/components/forms/EditProjectModal";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { collection, onSnapshot, query, where } from "firebase/firestore"
-import { db } from "@/lib/firebase"
-import { ClipboardCheck, FileUp, FileCheck2 } from "lucide-react"
+} from "@/components/ui/tooltip";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { ClipboardCheck, FileUp, FileCheck2 } from "lucide-react";
 
 // Professional colors for client names in tooltip
 const CLIENT_COLORS = [
@@ -32,21 +32,41 @@ const CLIENT_COLORS = [
   "text-cyan-600",
 ];
 
-// Hook to track count of projects with unacknowledged form submissions
+const STALE_CLIENT_FORM_SUBMISSION_MS = 30 * 24 * 60 * 60 * 1000;
+
+function isActiveUnacknowledgedSubmission(data: Record<string, any>) {
+  const projectId = data?.projectId;
+  if (!projectId || data?.acknowledgedByAdmin === true) return false;
+
+  const uploadedAt = data?.uploadedAt;
+  if (uploadedAt && typeof uploadedAt.toDate === "function") {
+    const ageMs = Date.now() - uploadedAt.toDate().getTime();
+    if (ageMs > STALE_CLIENT_FORM_SUBMISSION_MS) return false;
+  }
+
+  return true;
+}
+
+// Hook to track count of projects with active, unacknowledged form submissions.
+// Old / stale records are ignored so a legacy submission does not keep the badge lit forever.
 export function useProjectFormNotifications() {
-  const [projectsWithUnacknowledged, setProjectsWithUnacknowledged] = useState<Set<string>>(new Set());
+  const [projectsWithUnacknowledged, setProjectsWithUnacknowledged] = useState<
+    Set<string>
+  >(new Set());
 
   useEffect(() => {
     const q = query(
       collection(db, "clientFormSubmissions"),
-      where("acknowledgedByAdmin", "==", false)
+      where("acknowledgedByAdmin", "==", false),
     );
 
     const unsub = onSnapshot(q, (snap) => {
       const projectIds = new Set<string>();
       snap.forEach((doc) => {
-        const projectId = doc.data().projectId;
-        if (projectId) projectIds.add(projectId);
+        const data = doc.data();
+        if (isActiveUnacknowledgedSubmission(data)) {
+          projectIds.add(data.projectId);
+        }
       });
       setProjectsWithUnacknowledged(projectIds);
     });
@@ -58,7 +78,13 @@ export function useProjectFormNotifications() {
 }
 
 // StatusCell: shows status icon, form submission indicators, and service report delivery indicators
-function StatusCell({ projectId, status }: { projectId: string; status: string }) {
+function StatusCell({
+  projectId,
+  status,
+}: {
+  projectId: string;
+  status: string;
+}) {
   const [hasUnread, setHasUnread] = useState(false);
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
   const [hasServiceReport, setHasServiceReport] = useState(false);
@@ -73,7 +99,7 @@ function StatusCell({ projectId, status }: { projectId: string; status: string }
       const qUnread = query(
         collection(db, "clientFormSubmissions"),
         where("projectId", "==", projectId),
-        where("acknowledgedByAdmin", "==", false)
+        where("acknowledgedByAdmin", "==", false),
       );
       unsubUnread = onSnapshot(qUnread, (snap) => {
         setHasUnread(!snap.empty);
@@ -83,7 +109,7 @@ function StatusCell({ projectId, status }: { projectId: string; status: string }
     const qAcknowledged = query(
       collection(db, "clientFormSubmissions"),
       where("projectId", "==", projectId),
-      where("acknowledgedByAdmin", "==", true)
+      where("acknowledgedByAdmin", "==", true),
     );
     const unsubAcknowledged = onSnapshot(qAcknowledged, (snap) => {
       setHasAcknowledged(!snap.empty);
@@ -130,7 +156,9 @@ function StatusCell({ projectId, status }: { projectId: string; status: string }
 
   return (
     <div className="px-1 flex items-center gap-1.5 h-full">
-      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${color}`}>
+      <span
+        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${color}`}
+      >
         {label}
       </span>
       {status === "Ongoing" && hasUnread && (
@@ -200,7 +228,13 @@ function StatusHeader() {
 }
 
 // Proper React component for the actions cell so hooks are valid
-function ActionCell({ row, meta }: { row: Row<Project>; meta: { onSuccess?: () => void } | undefined }) {
+function ActionCell({
+  row,
+  meta,
+}: {
+  row: Row<Project>;
+  meta: { onSuccess?: () => void } | undefined;
+}) {
   const project = row.original;
   const { adminInfo } = useAuth();
   const { canEdit } = usePermissions(adminInfo?.role);
@@ -230,7 +264,7 @@ export const columns: ColumnDef<Project>[] = [
           Project ID
           <ArrowUpDown className="ml-1 h-3 w-3" />
         </Button>
-      )
+      );
     },
     size: 70,
     cell: ({ getValue }) => (
@@ -251,28 +285,47 @@ export const columns: ColumnDef<Project>[] = [
           Date
           <ArrowUpDown className="ml-1 h-3 w-3" />
         </Button>
-      )
+      );
     },
     size: 90,
     cell: ({ getValue }) => {
       const dateValue = getValue();
-      if (!dateValue) return <div className="px-1 text-[10px] text-muted-foreground text-center">—</div>;
-      
+      if (!dateValue)
+        return (
+          <div className="px-1 text-[10px] text-muted-foreground text-center">
+            —
+          </div>
+        );
+
       try {
-        const date = dateValue instanceof Date ? dateValue : (typeof dateValue === 'object' && 'toDate' in (dateValue as any) ? (dateValue as any).toDate() : new Date(dateValue as any));
-        if (isNaN(date.getTime())) return <div className="px-1 text-[10px] text-muted-foreground text-center">—</div>;
-        
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
+        const date =
+          dateValue instanceof Date
+            ? dateValue
+            : typeof dateValue === "object" && "toDate" in (dateValue as any)
+              ? (dateValue as any).toDate()
+              : new Date(dateValue as any);
+        if (isNaN(date.getTime()))
+          return (
+            <div className="px-1 text-[10px] text-muted-foreground text-center">
+              —
+            </div>
+          );
+
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
         const yyyy = date.getFullYear();
-        
+
         return (
           <div className="font-mono text-[10px] text-slate-500 px-1 text-center tabular-nums font-medium">
             {`${mm}-${dd}-${yyyy}`}
           </div>
         );
       } catch (e) {
-        return <div className="px-1 text-[10px] text-muted-foreground text-center">—</div>;
+        return (
+          <div className="px-1 text-[10px] text-muted-foreground text-center">
+            —
+          </div>
+        );
       }
     },
   },
@@ -288,11 +341,14 @@ export const columns: ColumnDef<Project>[] = [
           Project Title
           <ArrowUpDown className="ml-1 h-3 w-3" />
         </Button>
-      )
+      );
     },
     size: 200,
     cell: ({ getValue }) => (
-      <div className="max-w-[200px] text-[11px] font-medium truncate px-1 text-slate-900" title={getValue() as string}>
+      <div
+        className="max-w-[200px] text-[11px] font-medium truncate px-1 text-slate-900"
+        title={getValue() as string}
+      >
         {getValue() as string}
       </div>
     ),
@@ -306,7 +362,7 @@ export const columns: ColumnDef<Project>[] = [
       const names = row.original.clientNames || [];
       const displayText = names.length > 0 ? names.join(", ") : "—";
       const count = names.length;
-      
+
       return (
         <TooltipProvider delayDuration={200}>
           <Tooltip>
@@ -322,21 +378,29 @@ export const columns: ColumnDef<Project>[] = [
                 )}
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right" className="p-3 bg-white border shadow-xl max-w-xs">
+            <TooltipContent
+              side="right"
+              className="p-3 bg-white border shadow-xl max-w-xs"
+            >
               <div className="space-y-1.5">
                 <div className="text-[11px] font-normal text-gray-400 uppercase tracking-wider mb-2 border-b pb-1">
                   Project Members ({count})
                 </div>
                 <div className="flex flex-wrap gap-x-2 gap-y-1">
                   {names.map((name, idx) => (
-                    <span 
-                      key={idx} 
+                    <span
+                      key={idx}
                       className={`text-[12px] font-normal ${CLIENT_COLORS[idx % CLIENT_COLORS.length]}`}
                     >
-                      {name}{idx < names.length - 1 ? "," : ""}
+                      {name}
+                      {idx < names.length - 1 ? "," : ""}
                     </span>
                   ))}
-                  {names.length === 0 && <span className="text-[12px] text-gray-500 italic">No clients assigned</span>}
+                  {names.length === 0 && (
+                    <span className="text-[12px] text-gray-500 italic">
+                      No clients assigned
+                    </span>
+                  )}
                 </div>
               </div>
             </TooltipContent>
@@ -363,23 +427,42 @@ export const columns: ColumnDef<Project>[] = [
   },
   {
     accessorKey: "sendingInstitution",
-    header: () => <div className="px-1 text-[12px] font-semibold">Institution</div>,
+    header: () => (
+      <div className="px-1 text-[12px] font-semibold">Institution</div>
+    ),
     size: 110,
     cell: ({ row }) => {
       // Render sending institution with color-coded badge
       const value = row.original.sendingInstitution || "—";
       let color = "bg-gray-50 text-gray-700 border-gray-100";
       switch (value) {
-        case "UP System": color = "bg-indigo-50 text-indigo-700 border-indigo-100"; break;
-        case "SUC/HEI": color = "bg-emerald-50 text-emerald-700 border-emerald-100"; break;
-        case "Government": color = "bg-amber-50 text-amber-700 border-amber-100"; break;
-        case "Private/Local": color = "bg-violet-50 text-violet-700 border-violet-100"; break;
-        case "International": color = "bg-rose-50 text-rose-700 border-rose-100"; break;
-        case "N/A": color = "bg-slate-50 text-slate-500 border-slate-100"; break;
+        case "UP System":
+          color = "bg-indigo-50 text-indigo-700 border-indigo-100";
+          break;
+        case "SUC/HEI":
+          color = "bg-emerald-50 text-emerald-700 border-emerald-100";
+          break;
+        case "Government":
+          color = "bg-amber-50 text-amber-700 border-amber-100";
+          break;
+        case "Private/Local":
+          color = "bg-violet-50 text-violet-700 border-violet-100";
+          break;
+        case "International":
+          color = "bg-rose-50 text-rose-700 border-rose-100";
+          break;
+        case "N/A":
+          color = "bg-slate-50 text-slate-500 border-slate-100";
+          break;
       }
       return (
-        <div className="max-w-[110px] truncate px-1 flex items-center h-full" title={value}>
-          <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium border whitespace-nowrap ${color}`}>
+        <div
+          className="max-w-[110px] truncate px-1 flex items-center h-full"
+          title={value}
+        >
+          <span
+            className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium border whitespace-nowrap ${color}`}
+          >
             {value}
           </span>
         </div>
@@ -388,20 +471,29 @@ export const columns: ColumnDef<Project>[] = [
   },
   {
     accessorKey: "startDate",
-    header: () => <div className="px-1 text-[12px] font-semibold text-right">Start Date</div>,
+    header: () => (
+      <div className="px-1 text-[12px] font-semibold text-right">
+        Start Date
+      </div>
+    ),
     size: 85,
     cell: ({ getValue }) => (
       <div className="text-[10px] text-right text-slate-500 px-1 truncate">
-        {getValue() as string || "—"}
+        {(getValue() as string) || "—"}
       </div>
     ),
   },
   {
     id: "actions",
-    header: () => <div className="px-1 text-[11px] font-semibold text-right">Actions</div>,
+    header: () => (
+      <div className="px-1 text-[11px] font-semibold text-right">Actions</div>
+    ),
     size: 60,
     cell: ({ row, table }) => (
-      <ActionCell row={row} meta={(table.options.meta as { onSuccess?: () => void }) ?? undefined} />
+      <ActionCell
+        row={row}
+        meta={(table.options.meta as { onSuccess?: () => void }) ?? undefined}
+      />
     ),
   },
-]
+];

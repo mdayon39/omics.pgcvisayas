@@ -23,6 +23,7 @@ import {
   or,
   limit,
   arrayUnion,
+  orderBy,
 } from "firebase/firestore";
 import { clientFormSchema, ClientFormData } from "@/schemas/clientSchema";
 import { Input } from "@/components/ui/input";
@@ -1066,23 +1067,47 @@ export default function ClientPortalPage() {
       setCurrentInquiry(inquiry);
     });
 
-    // Fetch Quotations for this inquiry
-    const fetchInquiryQuotations = async () => {
-      setLoadingQuotations(true);
-      try {
-        const docs = await getQuotationsByInquiryId(inquiryIdParam);
-        setInquiryQuotations(docs);
-      } catch (err) {
-        console.error("Error fetching inquiry quotations:", err);
-      } finally {
-        setLoadingQuotations(false);
-      }
-    };
+    // Subscribe to quotations for this inquiry so the Official Documents panel
+    // updates immediately when the admin sends a new quotation without requiring a refresh.
+    const quotationsRef = collection(db, "quotations");
+    const q = query(
+      quotationsRef,
+      where("inquiryId", "==", inquiryIdParam),
+      orderBy("dateIssued", "desc"),
+    );
 
-    fetchInquiryQuotations();
+    setLoadingQuotations(true);
+    const unsubQuotations = onSnapshot(
+      q,
+      (snapshot) => {
+        const docs = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          const { clientInfo = {}, ...rest } = data;
+
+          return {
+            ...rest,
+            ...clientInfo,
+            id: docSnap.id,
+            dateIssued:
+              typeof data.dateIssued === "string"
+                ? data.dateIssued
+                : (data.dateIssued?.toDate?.().toISOString?.() ??
+                  new Date().toISOString()),
+          } as QuotationRecord;
+        });
+
+        setInquiryQuotations(docs);
+        setLoadingQuotations(false);
+      },
+      (err) => {
+        console.error("Error listening to inquiry quotations:", err);
+        setLoadingQuotations(false);
+      },
+    );
 
     return () => {
       unsubInquiry();
+      unsubQuotations();
     };
   }, [inquiryIdParam]);
 

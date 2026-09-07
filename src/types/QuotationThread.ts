@@ -146,6 +146,8 @@ export interface QuotationThread {
   adminTextMessageCount?: number;
   /** Set to true once the one-time first-admin-message email has been sent. */
   firstAdminChatEmailSent?: boolean;
+  /** Tracks the last follow-up reminder sent after an admin reply while the client was inactive. */
+  adminReplyFollowUpEmailSentAt?: Timestamp | null;
 
   // Visibility
   dismissedByAdmin?: boolean;

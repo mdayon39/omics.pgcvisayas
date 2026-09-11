@@ -102,6 +102,7 @@ export default function QuotationRequestForm() {
 
   // Loading state for form submission
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   // Modal state for confirmation dialog
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -372,6 +373,7 @@ export default function QuotationRequestForm() {
    * data before final submission.
    */
   const handleFormSubmit = (data: InquiryFormData) => {
+    if (isSubmitting || hasSubmitted) return;
     setPendingData(data); // Store data temporarily
     setShowConfirmModal(true); // Show confirmation modal
   };
@@ -439,6 +441,8 @@ export default function QuotationRequestForm() {
       }
 
       if (result.success) {
+        setHasSubmitted(true);
+
         // Fallback mail enqueue: if server-side admin enqueue fails due runtime credentials,
         // enqueue mail docs from the authenticated client session.
         const fallbackDocs = (result as any)?.emailFallbackDocs;
@@ -2237,9 +2241,13 @@ export default function QuotationRequestForm() {
               <Button
                 type="submit"
                 className="h-12 px-8 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                disabled={isSubmitting}
+                disabled={isSubmitting || hasSubmitted}
               >
-                {isSubmitting ? "Submitting..." : "Submit Request"}
+                {isSubmitting
+                  ? "Submitting..."
+                  : hasSubmitted
+                    ? "Request Submitted"
+                    : "Submit Request"}
               </Button>
             </div>
           </form>

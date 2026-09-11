@@ -14,6 +14,7 @@ import {
   Receipt,
   FileSpreadsheet,
   ScrollText,
+  Send,
   Settings,
   ShieldCheck,
   Sliders,
@@ -54,6 +55,7 @@ const ROUTE_MODULE_MAP: Record<string, keyof RolePermissions> = {
   "/admin/roles": "roleManagement",
   "/admin/admins": "usersPermissions",
   "/admin/activity-logs": "activityLogs",
+  "/admin/sent-items": "activityLogs",
   "/admin/backup": "usersPermissions", // Backup uses same permissions as user management
 };
 
@@ -61,15 +63,26 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut, adminInfo } = useAuth();
-  const { canView, loading: permissionsLoading } = usePermissions(adminInfo?.role);
+  const { canView, loading: permissionsLoading } = usePermissions(
+    adminInfo?.role,
+  );
   const { openTab, activeTab, isTabOpen, setActiveTab } = useTabContext();
-  const { pendingCount, inquiryCount, newOrChargeSlipNumbers, pendingChargeSlipCount } = useApprovalNotifications();
+  const {
+    pendingCount,
+    inquiryCount,
+    newOrChargeSlipNumbers,
+    pendingChargeSlipCount,
+  } = useApprovalNotifications();
   const projectsWithUnacknowledged = useProjectFormNotifications();
   const pendingProjectFormCount = projectsWithUnacknowledged.size;
 
-  const handleNavClick = (href: string, label: string, icon: React.ElementType) => {
+  const handleNavClick = (
+    href: string,
+    label: string,
+    icon: React.ElementType,
+  ) => {
     const tabId = href.replace("/admin/", "");
-    
+
     // Always open/ensure tab exists
     openTab({
       id: tabId,
@@ -78,7 +91,7 @@ export function AdminSidebar() {
       icon,
       closable: true,
     });
-    
+
     // Navigate (React Query will handle data caching)
     router.push(href);
   };
@@ -93,42 +106,42 @@ export function AdminSidebar() {
     {
       title: "OPERATIONS",
       items: [
-        { 
-          href: "/admin/dashboard", 
-          label: "Dashboard", 
+        {
+          href: "/admin/dashboard",
+          label: "Dashboard",
           icon: LayoutDashboard,
         },
-        { 
-          href: "/admin/inquiry", 
-          label: "Inquiries", 
+        {
+          href: "/admin/inquiry",
+          label: "Inquiries",
           icon: MessageSquare,
         },
-        { 
-          href: "/admin/projects", 
-          label: "Projects", 
+        {
+          href: "/admin/projects",
+          label: "Projects",
           icon: LibraryBig,
         },
-        { 
-          href: "/admin/clients", 
-          label: "Clients", 
+        {
+          href: "/admin/clients",
+          label: "Clients",
           icon: Users,
         },
-        { 
-          href: "/admin/quotations", 
-          label: "Quotations", 
+        {
+          href: "/admin/quotations",
+          label: "Quotations",
           icon: FileText,
         },
-        { 
-          href: "/admin/charge-slips", 
-          label: "Charge Slips", 
-          icon: Receipt, 
+        {
+          href: "/admin/charge-slips",
+          label: "Charge Slips",
+          icon: Receipt,
         },
-        { 
-          href: "/admin/manual-quotation", 
-          label: "Manual Quotation", 
+        {
+          href: "/admin/manual-quotation",
+          label: "Manual Quotation",
           icon: Calculator,
         },
-      ]
+      ],
     },
     {
       title: "NOTIFICATIONS",
@@ -138,19 +151,19 @@ export function AdminSidebar() {
           label: "Projects Approval",
           icon: ShieldCheck,
         },
-      ]
+      ],
     },
     {
       title: "CONFIGURATION",
       items: [
-        { 
-          href: "/admin/services", 
-          label: "Services Catalog", 
+        {
+          href: "/admin/services",
+          label: "Services Catalog",
           icon: Settings,
         },
-        { 
-          href: "/admin/catalog-settings", 
-          label: "Catalog Settings", 
+        {
+          href: "/admin/catalog-settings",
+          label: "Catalog Settings",
           icon: Sliders,
         },
         {
@@ -163,32 +176,37 @@ export function AdminSidebar() {
           label: "Office Calendar",
           icon: CalendarDays,
         },
-      ]
+      ],
     },
     {
       title: "ADMINISTRATION",
       items: [
-        { 
-          href: "/admin/roles", 
-          label: "Role Management", 
+        {
+          href: "/admin/roles",
+          label: "Role Management",
           icon: Shield,
         },
-        { 
-          href: "/admin/admins", 
-          label: "Users & Permissions", 
+        {
+          href: "/admin/admins",
+          label: "Users & Permissions",
           icon: ShieldCheck,
         },
-        { 
-          href: "/admin/activity-logs", 
-          label: "Activity Logs", 
+        {
+          href: "/admin/activity-logs",
+          label: "Activity Logs",
           icon: ScrollText,
         },
-        { 
-          href: "/admin/backup", 
-          label: "Database Backup", 
+        {
+          href: "/admin/sent-items",
+          label: "Sent Items",
+          icon: Send,
+        },
+        {
+          href: "/admin/backup",
+          label: "Database Backup",
           icon: Database,
         },
-      ]
+      ],
     },
   ];
 
@@ -216,7 +234,9 @@ export function AdminSidebar() {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">{adminInfo?.name || user.displayName}</p>
+              <p className="text-sm font-semibold text-slate-900 truncate">
+                {adminInfo?.name || user.displayName}
+              </p>
               <p className="text-xs text-slate-500 truncate">{user.email}</p>
             </div>
             <Button
@@ -235,10 +255,14 @@ export function AdminSidebar() {
                 variant="outline"
                 className={cn(
                   "text-xs font-medium capitalize",
-                  adminInfo.role === "superadmin" && "border-purple-300 text-purple-700 bg-purple-50",
-                  adminInfo.role === "admin" && "border-blue-300 text-blue-700 bg-blue-50",
-                  adminInfo.role === "moderator" && "border-green-300 text-green-700 bg-green-50",
-                  adminInfo.role === "viewer" && "border-slate-300 text-slate-700 bg-slate-50"
+                  adminInfo.role === "superadmin" &&
+                    "border-purple-300 text-purple-700 bg-purple-50",
+                  adminInfo.role === "admin" &&
+                    "border-blue-300 text-blue-700 bg-blue-50",
+                  adminInfo.role === "moderator" &&
+                    "border-green-300 text-green-700 bg-green-50",
+                  adminInfo.role === "viewer" &&
+                    "border-slate-300 text-slate-700 bg-slate-50",
                 )}
               >
                 {adminInfo.role}
@@ -259,7 +283,7 @@ export function AdminSidebar() {
                   {section.title}
                 </h3>
               </div>
-              
+
               {/* Section Items */}
               <div className="space-y-1">
                 {section.items.map(({ href, label, icon: Icon }) => (
@@ -271,68 +295,85 @@ export function AdminSidebar() {
                       isActive(href)
                         ? "bg-[#166FB5] text-white"
                         : isTabOpen(href.replace("/admin/", ""))
-                        ? "bg-slate-100 text-slate-800 border-l-2 border-[#166FB5]"
-                        : "text-slate-700 hover:bg-slate-50"
+                          ? "bg-slate-100 text-slate-800 border-l-2 border-[#166FB5]"
+                          : "text-slate-700 hover:bg-slate-50",
                     )}
                   >
                     <Icon className="w-4 h-4" />
                     <span className="text-sm font-medium flex-1">{label}</span>
-                    
+
                     {/* Notification badge for Inquiries */}
                     {href === "/admin/inquiry" && inquiryCount > 0 && (
-                      <span className={cn(
-                        "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5",
-                        isActive(href)
-                          ? "bg-white text-[#166FB5]"
-                          : "bg-red-500 text-white animate-pulse"
-                      )}>
+                      <span
+                        className={cn(
+                          "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5",
+                          isActive(href)
+                            ? "bg-white text-[#166FB5]"
+                            : "bg-red-500 text-white animate-pulse",
+                        )}
+                      >
                         {inquiryCount}
                       </span>
                     )}
-                    
+
                     {/* Notification badge for Projects */}
-                    {href === "/admin/projects" && pendingProjectFormCount > 0 && (
-                      <span className={cn(
-                        "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5",
-                        isActive(href)
-                          ? "bg-white text-[#166FB5]"
-                          : "bg-red-500 text-white animate-pulse"
-                      )}>
-                        {pendingProjectFormCount > 99 ? "99+" : pendingProjectFormCount}
-                      </span>
-                    )}
+                    {href === "/admin/projects" &&
+                      pendingProjectFormCount > 0 && (
+                        <span
+                          className={cn(
+                            "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5",
+                            isActive(href)
+                              ? "bg-white text-[#166FB5]"
+                              : "bg-red-500 text-white animate-pulse",
+                          )}
+                        >
+                          {pendingProjectFormCount > 99
+                            ? "99+"
+                            : pendingProjectFormCount}
+                        </span>
+                      )}
 
                     {/* Notification badge for Charge Slips */}
-                    {href === "/admin/charge-slips" && pendingChargeSlipCount > 0 && (
-                      <span className={cn(
-                        "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5",
-                        isActive(href)
-                          ? "bg-white text-[#166FB5]"
-                          : "bg-red-500 text-white animate-pulse"
-                      )}>
-                        {pendingChargeSlipCount}
-                      </span>
-                    )}
-                    
+                    {href === "/admin/charge-slips" &&
+                      pendingChargeSlipCount > 0 && (
+                        <span
+                          className={cn(
+                            "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5",
+                            isActive(href)
+                              ? "bg-white text-[#166FB5]"
+                              : "bg-red-500 text-white animate-pulse",
+                          )}
+                        >
+                          {pendingChargeSlipCount}
+                        </span>
+                      )}
+
                     {/* Notification badge for Projects Approval */}
                     {href === "/admin/member-approvals" && pendingCount > 0 && (
-                      <span className={cn(
-                        "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5",
-                        isActive(href)
-                          ? "bg-white text-[#166FB5]"
-                          : "bg-red-500 text-white animate-pulse"
-                      )}>
+                      <span
+                        className={cn(
+                          "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5",
+                          isActive(href)
+                            ? "bg-white text-[#166FB5]"
+                            : "bg-red-500 text-white animate-pulse",
+                        )}
+                      >
                         {pendingCount}
                       </span>
                     )}
-                    
-                    {isTabOpen(href.replace("/admin/", "")) && !isActive(href) && href !== "/admin/member-approvals" && href !== "/admin/inquiry" && (href !== "/admin/charge-slips" || pendingChargeSlipCount === 0) && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#166FB5]" />
-                    )}
+
+                    {isTabOpen(href.replace("/admin/", "")) &&
+                      !isActive(href) &&
+                      href !== "/admin/member-approvals" &&
+                      href !== "/admin/inquiry" &&
+                      (href !== "/admin/charge-slips" ||
+                        pendingChargeSlipCount === 0) && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#166FB5]" />
+                      )}
                   </div>
                 ))}
               </div>
-              
+
               {/* Divider between sections (except last) */}
               {sectionIndex < filteredSections.length - 1 && (
                 <div className="mt-4 border-t border-slate-100" />

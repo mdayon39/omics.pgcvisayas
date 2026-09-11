@@ -102,6 +102,7 @@ export default function QuotationRequestForm() {
 
   // Loading state for form submission
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionLocked, setSubmissionLocked] = useState(false);
 
   // Modal state for confirmation dialog
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -372,6 +373,10 @@ export default function QuotationRequestForm() {
    * data before final submission.
    */
   const handleFormSubmit = (data: InquiryFormData) => {
+    if (submissionLocked) return;
+
+    // Keep the request button locked for this form session to prevent duplicates.
+    setSubmissionLocked(true);
     setPendingData(data); // Store data temporarily
     setShowConfirmModal(true); // Show confirmation modal
   };
@@ -382,7 +387,7 @@ export default function QuotationRequestForm() {
    * This function is called when the user confirms their submission in the modal.
    */
   const handleConfirmSave = async () => {
-    if (!pendingData) return;
+    if (!pendingData || isSubmitting) return;
 
     setIsSubmitting(true);
     setShowConfirmModal(false);
@@ -2237,7 +2242,8 @@ export default function QuotationRequestForm() {
               <Button
                 type="submit"
                 className="h-12 px-8 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                disabled={isSubmitting}
+                disabled={isSubmitting || submissionLocked}
+                aria-disabled={isSubmitting || submissionLocked}
               >
                 {isSubmitting ? "Submitting..." : "Submit Request"}
               </Button>

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { deleteQuotation } from "@/services/quotationService";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import useAuth from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const categoryColors: Record<string, string> = {
   laboratory: "bg-green-100 text-green-800",
@@ -31,10 +33,16 @@ function toMillis(v: unknown): number {
 const ActionCell = ({ row }: { row: any }) => {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
+  const { adminInfo } = useAuth();
+  const { canDelete } = usePermissions(adminInfo?.role);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row click
-    if (!window.confirm(`Are you sure you want to delete quotation ${row.original.referenceNumber}?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete quotation ${row.original.referenceNumber}?`,
+      )
+    ) {
       return;
     }
 
@@ -53,15 +61,17 @@ const ActionCell = ({ row }: { row: any }) => {
 
   return (
     <div className="flex justify-end pr-2">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-        onClick={handleDelete}
-        disabled={isDeleting}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      {canDelete("quotations") && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={handleDelete}
+          disabled={isDeleting}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 };
@@ -95,7 +105,7 @@ export const columns: ColumnDef<QuotationRecord>[] = [
     accessorKey: "institution",
     header: "Institution",
     cell: ({ getValue }) => {
-      const institution = getValue() as string || "—";
+      const institution = (getValue() as string) || "—";
       return (
         <div className="max-w-[200px] truncate text-left" title={institution}>
           {institution}
@@ -149,9 +159,12 @@ export const columns: ColumnDef<QuotationRecord>[] = [
         cancelled: "bg-slate-100 text-slate-600 border-slate-300",
         completed: "bg-purple-100 text-purple-800 border-purple-300",
       };
-      const color = statusColors[status] || "bg-gray-100 text-gray-800 border-gray-300";
+      const color =
+        statusColors[status] || "bg-gray-100 text-gray-800 border-gray-300";
       return (
-        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${color} capitalize`}>
+        <span
+          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${color} capitalize`}
+        >
           {status}
         </span>
       );

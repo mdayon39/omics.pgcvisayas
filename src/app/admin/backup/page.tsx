@@ -1,25 +1,42 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { 
-  Download, 
-  Upload, 
-  Database, 
-  Calendar, 
-  FileText, 
-  Trash2, 
-  AlertTriangle, 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Download,
+  Upload,
+  Database,
+  Calendar,
+  FileText,
+  Trash2,
+  AlertTriangle,
   CheckCircle,
   Clock,
   HardDrive,
-  RefreshCw
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
+import { PermissionGuard } from "@/components/PermissionGuard";
 
 interface BackupItem {
   id: string;
@@ -38,13 +55,23 @@ interface DatabaseStats {
 }
 
 export default function BackupPage() {
+  return (
+    <PermissionGuard module="databaseBackup" action="view">
+      <BackupContent />
+    </PermissionGuard>
+  );
+}
+
+function BackupContent() {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [backupProgress, setBackupProgress] = useState(0);
   const [restoreProgress, setRestoreProgress] = useState(0);
   const [backups, setBackups] = useState<BackupItem[]>([]);
   const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
-  const [restoringBackupId, setRestoringBackupId] = useState<string | null>(null);
+  const [restoringBackupId, setRestoringBackupId] = useState<string | null>(
+    null,
+  );
   const { toast } = useToast();
 
   // Load existing backups and database stats on component mount
@@ -55,13 +82,13 @@ export default function BackupPage() {
 
   const loadBackups = async () => {
     try {
-      const response = await fetch('/api/admin/restore');
+      const response = await fetch("/api/admin/restore");
       if (response.ok) {
         const data = await response.json();
         setBackups(data.backups || []);
       }
     } catch (error) {
-      console.error('Failed to load backups:', error);
+      console.error("Failed to load backups:", error);
       toast({
         title: "Error",
         description: "Failed to load existing backups",
@@ -72,13 +99,13 @@ export default function BackupPage() {
 
   const loadDatabaseStats = async () => {
     try {
-      const response = await fetch('/api/admin/backup/stats');
+      const response = await fetch("/api/admin/backup/stats");
       if (response.ok) {
         const data = await response.json();
         setDbStats(data);
       }
     } catch (error) {
-      console.error('Failed to load database stats:', error);
+      console.error("Failed to load database stats:", error);
     }
   };
 
@@ -87,8 +114,8 @@ export default function BackupPage() {
     setBackupProgress(0);
 
     try {
-      console.log('🚀 Starting backup request...');
-      
+      console.log("🚀 Starting backup request...");
+
       // Start progress simulation
       const progressInterval = setInterval(() => {
         setBackupProgress((prev) => {
@@ -100,27 +127,28 @@ export default function BackupPage() {
         });
       }, 500);
 
-      const response = await fetch('/api/admin/backup', {
-        method: 'POST',
+      const response = await fetch("/api/admin/backup", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
       clearInterval(progressInterval);
 
-      console.log('Response status:', response.status, response.statusText);
-      
+      console.log("Response status:", response.status, response.statusText);
+
       const result = await response.json();
-      
-      console.log('Backup response:', result);
+
+      console.log("Backup response:", result);
 
       if (!response.ok || !result.success) {
-        const errorMsg = result.details || result.error || result.message || 'Backup failed';
-        console.error('Backup error details:', {
+        const errorMsg =
+          result.details || result.error || result.message || "Backup failed";
+        console.error("Backup error details:", {
           status: response.status,
           statusText: response.statusText,
-          result
+          result,
         });
         throw new Error(errorMsg);
       }
@@ -129,19 +157,19 @@ export default function BackupPage() {
 
       // If backup data is available for download (Vercel environment)
       if (result.downloadReady && result.data) {
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
         const filename = `firestore-backup-${timestamp}.json`;
-        
+
         // Create download link
         const dataStr = JSON.stringify(result.data, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const dataBlob = new Blob([dataStr], { type: "application/json" });
         const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
         link.download = filename;
         link.click();
         URL.revokeObjectURL(url);
-        
+
         toast({
           title: "Success",
           description: `Backup created and downloaded as ${filename}`,
@@ -150,7 +178,7 @@ export default function BackupPage() {
       } else {
         toast({
           title: "Success",
-          description: `Database backup created successfully. ${result.output || ''}`,
+          description: `Database backup created successfully. ${result.output || ""}`,
           variant: "default",
         });
       }
@@ -160,10 +188,10 @@ export default function BackupPage() {
         loadBackups();
         setBackupProgress(0);
       }, 1000);
-
     } catch (error) {
-      console.error('❌ Backup failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create backup';
+      console.error("❌ Backup failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create backup";
       toast({
         title: "Backup Error",
         description: errorMessage,
@@ -192,10 +220,10 @@ export default function BackupPage() {
         });
       }, 800);
 
-      const response = await fetch('/api/admin/restore', {
-        method: 'POST',
+      const response = await fetch("/api/admin/restore", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ backupId }),
       });
@@ -203,7 +231,7 @@ export default function BackupPage() {
       clearInterval(progressInterval);
 
       if (!response.ok) {
-        throw new Error('Restore failed');
+        throw new Error("Restore failed");
       }
 
       setRestoreProgress(100);
@@ -219,9 +247,8 @@ export default function BackupPage() {
         loadDatabaseStats();
         setRestoreProgress(0);
       }, 1000);
-
     } catch (error) {
-      console.error('Restore failed:', error);
+      console.error("Restore failed:", error);
       toast({
         title: "Error",
         description: "Failed to restore backup",
@@ -236,11 +263,11 @@ export default function BackupPage() {
   const handleDeleteBackup = async (backupId: string) => {
     try {
       const response = await fetch(`/api/admin/restore?backupId=${backupId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error('Delete failed');
+        throw new Error("Delete failed");
       }
 
       toast({
@@ -250,9 +277,8 @@ export default function BackupPage() {
       });
 
       loadBackups();
-
     } catch (error) {
-      console.error('Delete failed:', error);
+      console.error("Delete failed:", error);
       toast({
         title: "Error",
         description: "Failed to delete backup",
@@ -270,7 +296,7 @@ export default function BackupPage() {
   };
 
   const formatDuration = (seconds: number) => {
-    if (!seconds) return '';
+    if (!seconds) return "";
     if (seconds < 60) return `${Math.round(seconds)}s`;
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.round(seconds % 60);
@@ -287,8 +313,8 @@ export default function BackupPage() {
             Create and manage Firestore database backups
           </p>
         </div>
-        
-        <Button 
+
+        <Button
           onClick={loadBackups}
           variant="outline"
           size="sm"
@@ -311,15 +337,21 @@ export default function BackupPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <div className="text-2xl font-bold text-slate-900">{dbStats.totalCollections}</div>
+                <div className="text-2xl font-bold text-slate-900">
+                  {dbStats.totalCollections}
+                </div>
                 <div className="text-sm text-slate-600">Collections</div>
               </div>
               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{dbStats.totalDocuments}</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {dbStats.totalDocuments}
+                </div>
                 <div className="text-sm text-slate-600">Documents</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{dbStats.estimatedSize}</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {dbStats.estimatedSize}
+                </div>
                 <div className="text-sm text-slate-600">Est. Size</div>
               </div>
             </div>
@@ -338,9 +370,10 @@ export default function BackupPage() {
         <CardContent>
           <div className="space-y-4">
             <p className="text-slate-600">
-              Create a complete backup of your Firestore database including all collections and documents.
+              Create a complete backup of your Firestore database including all
+              collections and documents.
             </p>
-            
+
             {isBackingUp && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
@@ -348,8 +381,8 @@ export default function BackupPage() {
                   <span>{Math.round(backupProgress)}%</span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-[#166FB5] h-2.5 rounded-full transition-all duration-300" 
+                  <div
+                    className="bg-[#166FB5] h-2.5 rounded-full transition-all duration-300"
                     style={{ width: `${backupProgress}%` }}
                   ></div>
                 </div>
@@ -358,7 +391,7 @@ export default function BackupPage() {
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button 
+                <Button
                   disabled={isBackingUp}
                   className="gap-2 bg-[#166FB5] hover:bg-[#145ca3]"
                 >
@@ -370,8 +403,9 @@ export default function BackupPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Create Database Backup</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will create a complete backup of your Firestore database. 
-                    The process may take several minutes depending on your data size.
+                    This will create a complete backup of your Firestore
+                    database. The process may take several minutes depending on
+                    your data size.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -411,12 +445,14 @@ export default function BackupPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <FileText className="w-5 h-5 text-[#166FB5]" />
-                        <h3 className="font-medium text-slate-900">{backup.name}</h3>
+                        <h3 className="font-medium text-slate-900">
+                          {backup.name}
+                        </h3>
                         <Badge variant="outline" className="text-xs">
                           {backup.size}
                         </Badge>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4" />
@@ -431,7 +467,7 @@ export default function BackupPage() {
                           {backup.collections.length} collections
                         </div>
                       </div>
-                      
+
                       {backup.duration && backup.duration > 0 && (
                         <div className="mt-2 text-xs text-slate-500">
                           Backup completed in {formatDuration(backup.duration)}
@@ -442,8 +478,8 @@ export default function BackupPage() {
                     <div className="flex items-center gap-2">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             disabled={isRestoring}
                             className="gap-2"
@@ -463,19 +499,28 @@ export default function BackupPage() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Restore Database</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Restore Database
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will restore your database to the state of this backup. 
-                              <strong className="text-red-600"> This action cannot be undone.</strong>
-                              <br /><br />
-                              Backup: {backup.name}<br />
-                              Created: {formatDate(backup.timestamp)}<br />
+                              This will restore your database to the state of
+                              this backup.
+                              <strong className="text-red-600">
+                                {" "}
+                                This action cannot be undone.
+                              </strong>
+                              <br />
+                              <br />
+                              Backup: {backup.name}
+                              <br />
+                              Created: {formatDate(backup.timestamp)}
+                              <br />
                               Documents: {backup.totalDocuments}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
+                            <AlertDialogAction
                               onClick={() => handleRestoreBackup(backup.id)}
                               className="bg-red-600 hover:bg-red-700"
                             >
@@ -487,8 +532,8 @@ export default function BackupPage() {
 
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             className="gap-2 text-red-600 hover:text-red-700"
                           >
@@ -499,14 +544,16 @@ export default function BackupPage() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Backup</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete this backup? This action cannot be undone.
-                              <br /><br />
+                              Are you sure you want to delete this backup? This
+                              action cannot be undone.
+                              <br />
+                              <br />
                               <strong>{backup.name}</strong>
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
+                            <AlertDialogAction
                               onClick={() => handleDeleteBackup(backup.id)}
                               className="bg-red-600 hover:bg-red-700"
                             >
@@ -538,15 +585,16 @@ export default function BackupPage() {
                 <span className="text-slate-500">{restoreProgress}%</span>
               </div>
               <div className="w-full bg-slate-200 rounded-full h-2">
-                <div 
-                  className="bg-[#166FB5] h-2 rounded-full transition-all duration-300" 
+                <div
+                  className="bg-[#166FB5] h-2 rounded-full transition-all duration-300"
                   style={{ width: `${restoreProgress}%` }}
                 ></div>
               </div>
               <div className="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-yellow-800">
-                  Please do not close this page or navigate away during the restore process.
+                  Please do not close this page or navigate away during the
+                  restore process.
                 </p>
               </div>
             </div>

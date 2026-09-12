@@ -8,7 +8,14 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { MessageCircle, Search, X } from "lucide-react";
+import {
+  MessageCircle,
+  MoreHorizontal,
+  RotateCcw,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -18,15 +25,48 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 import usePresenceStatus from "@/hooks/usePresenceStatus";
+import useAuth from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
+import {
+  dismissThreadNotification,
+  markLatestClientMessageAsUnseen,
+} from "@/services/quotationThreadService";
 
 export function MessageNotificationCenter() {
   const router = useRouter();
+  const { adminInfo } = useAuth();
+  const { canEdit } = usePermissions(adminInfo?.role);
+  const canManageClientMessages = canEdit("clientMessages");
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [markingUnseenId, setMarkingUnseenId] = useState<string | null>(null);
+  const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [confirmDismissOpen, setConfirmDismissOpen] = useState(false);
+  const [pendingDismiss, setPendingDismiss] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const { notifications, totalUnread, markViewed, markAllViewed } =
     useMessageNotifications();
 
@@ -50,6 +90,50 @@ export function MessageNotificationCenter() {
     markViewed(inquiryId);
     setOpen(false);
     router.push(`/admin/inquiry?inquiryId=${inquiryId}&focus=messages`);
+  };
+
+  const requestDismiss = (
+    event: React.MouseEvent,
+    inquiryId: string,
+    clientName: string,
+  ) => {
+    event.stopPropagation();
+    if (dismissingId) return;
+    setPendingDismiss({ id: inquiryId, name: clientName });
+    setConfirmDismissOpen(true);
+  };
+
+  const confirmDismiss = async () => {
+    if (!pendingDismiss || dismissingId) return;
+    try {
+      setDismissingId(pendingDismiss.id);
+      await dismissThreadNotification(pendingDismiss.id);
+      toast.success("Notification dismissed");
+      setConfirmDismissOpen(false);
+      setPendingDismiss(null);
+    } catch {
+      toast.error("Failed to dismiss notification");
+    } finally {
+      setDismissingId(null);
+    }
+  };
+
+  const handleMarkAsUnseen = async (
+    event: React.MouseEvent,
+    inquiryId: string,
+  ) => {
+    event.stopPropagation();
+    if (markingUnseenId === inquiryId) return;
+    try {
+      setMarkingUnseenId(inquiryId);
+      const nextUnread = await markLatestClientMessageAsUnseen(inquiryId);
+      if (nextUnread > 0) toast.success("Marked client message as unseen");
+      else toast.info("No seen client message available to mark as unseen");
+    } catch {
+      toast.error("Failed to mark message as unseen");
+    } finally {
+      setMarkingUnseenId(null);
+    }
   };
 
   return (
@@ -139,6 +223,11 @@ export function MessageNotificationCenter() {
                     key={n.inquiryId}
                     notification={n}
                     onClick={() => handleNotificationClick(n.inquiryId)}
+                    canManageClientMessages={canManageClientMessages}
+                    handleDismiss={requestDismiss}
+                    handleMarkAsUnseen={handleMarkAsUnseen}
+                    dismissingId={dismissingId}
+                    markingUnseenId={markingUnseenId}
                   />
                 ))}
               </div>
@@ -146,6 +235,36 @@ export function MessageNotificationCenter() {
           </ScrollArea>
         </PopoverContent>
       </Popover>
+
+      <AlertDialog
+        open={confirmDismissOpen}
+        onOpenChange={(nextOpen) => {
+          setConfirmDismissOpen(nextOpen);
+          if (!nextOpen) setPendingDismiss(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dismiss client message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the notification for{" "}
+              {pendingDismiss?.name || "this client"}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={dismissingId !== null}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDismiss}
+              disabled={!pendingDismiss || dismissingId !== null}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {dismissingId ? "Dismissing..." : "Dismiss message"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
@@ -157,9 +276,26 @@ export function MessageNotificationCenter() {
 interface NotificationItemProps {
   notification: any;
   onClick: () => void;
+  canManageClientMessages: boolean;
+  handleDismiss: (
+    event: React.MouseEvent,
+    inquiryId: string,
+    clientName: string,
+  ) => void;
+  handleMarkAsUnseen: (event: React.MouseEvent, inquiryId: string) => void;
+  dismissingId: string | null;
+  markingUnseenId: string | null;
 }
 
-function NotificationItem({ notification: n, onClick }: NotificationItemProps) {
+function NotificationItem({
+  notification: n,
+  onClick,
+  canManageClientMessages,
+  handleDismiss,
+  handleMarkAsUnseen,
+  dismissingId,
+  markingUnseenId,
+}: NotificationItemProps) {
   const presence = usePresenceStatus(`client_${n.inquiryId}`);
 
   return (
@@ -226,6 +362,55 @@ function NotificationItem({ notification: n, onClick }: NotificationItemProps) {
                 <span className="flex-shrink-0 inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold ring-2 ring-white">
                   {n.unreadCount}
                 </span>
+              )}
+              {canManageClientMessages && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={(event) => event.stopPropagation()}
+                      className="p-1 rounded-md hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-all z-20"
+                      aria-label="Client message options"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-36">
+                    {n.unreadCount > 0 ? (
+                      <DropdownMenuItem
+                        onClick={(event) =>
+                          handleDismiss(event, n.inquiryId, n.clientName)
+                        }
+                        disabled={dismissingId === n.inquiryId}
+                        className="text-[11px] cursor-pointer text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-3.5 w-3.5" /> Dismiss
+                      </DropdownMenuItem>
+                    ) : (
+                      <>
+                        <DropdownMenuItem
+                          onClick={(event) =>
+                            handleMarkAsUnseen(event, n.inquiryId)
+                          }
+                          disabled={markingUnseenId === n.inquiryId}
+                          className="text-[11px] cursor-pointer"
+                        >
+                          <RotateCcw className="mr-2 h-3.5 w-3.5" /> Mark as
+                          unseen
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(event) =>
+                            handleDismiss(event, n.inquiryId, n.clientName)
+                          }
+                          disabled={dismissingId === n.inquiryId}
+                          className="text-[11px] cursor-pointer text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-3.5 w-3.5" /> Dismiss
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </div>

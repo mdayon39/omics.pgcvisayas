@@ -40,6 +40,7 @@ export interface RolePermissions {
   roleManagement: ModulePermission;
   activityLogs: ModulePermission;
   sentItems: ModulePermission;
+  clientMessages: ModulePermission;
   databaseBackup: ModulePermission;
 }
 
@@ -62,6 +63,7 @@ export const MODULE_LABELS: Record<keyof RolePermissions, string> = {
   roleManagement: "Role Management",
   activityLogs: "Activity Logs",
   sentItems: "Sent Items",
+  clientMessages: "Client Messages",
   databaseBackup: "Database Backup",
 };
 
@@ -89,6 +91,7 @@ export const MODULE_SECTIONS = {
     "roleManagement",
     "activityLogs",
     "sentItems",
+    "clientMessages",
     "databaseBackup",
   ],
 } as const;
@@ -119,6 +122,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     roleManagement: { view: false, create: false, edit: false, delete: false },
     activityLogs: { view: false, create: false, edit: false, delete: false },
     sentItems: { view: false, create: false, edit: false, delete: false },
+    clientMessages: { view: true, create: false, edit: false, delete: false },
     databaseBackup: { view: false, create: false, edit: false, delete: false },
   },
   moderator: {
@@ -145,6 +149,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     roleManagement: { view: false, create: false, edit: false, delete: false },
     activityLogs: { view: false, create: false, edit: false, delete: false },
     sentItems: { view: false, create: false, edit: false, delete: false },
+    clientMessages: { view: true, create: false, edit: false, delete: false },
     databaseBackup: { view: false, create: false, edit: false, delete: false },
   },
   admin: {
@@ -171,6 +176,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     roleManagement: { view: false, create: false, edit: false, delete: false },
     activityLogs: { view: true, create: false, edit: false, delete: false },
     sentItems: { view: true, create: false, edit: false, delete: false },
+    clientMessages: { view: true, create: false, edit: true, delete: false },
     databaseBackup: { view: false, create: false, edit: false, delete: false },
   },
   superadmin: {
@@ -192,6 +198,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     roleManagement: { view: true, create: false, edit: true, delete: false },
     activityLogs: { view: true, create: false, edit: false, delete: true },
     sentItems: { view: true, create: false, edit: false, delete: true },
+    clientMessages: { view: true, create: false, edit: true, delete: true },
     databaseBackup: { view: true, create: true, edit: true, delete: true },
   },
 };

@@ -40,6 +40,7 @@ type SentEmail = {
   subject: string;
   category: EmailCategory;
   status: EmailStatus;
+  sentAt: Date;
   createdAt: Date;
   error?: string;
 };
@@ -94,6 +95,17 @@ function getStatus(data: Record<string, any>): EmailStatus {
   return "Pending";
 }
 
+function getSentAt(data: Record<string, any>): Date {
+  return toDate(
+    data?.delivery?.endTime ||
+      data?.delivery?.sentAt ||
+      data?.sentAt ||
+      data?.sent_at ||
+      data?.createdAt ||
+      data?.timestamp,
+  );
+}
+
 function formatDate(date: Date) {
   if (date.getTime() === 0) return "Unknown";
   return date.toLocaleString("en-US", {
@@ -144,14 +156,14 @@ function SentItemsContent() {
               subject,
               category: categorizeEmail(subject),
               status: getStatus(data),
+              sentAt: getSentAt(data),
               createdAt: toDate(data.createdAt || data.timestamp),
               error: data.delivery?.error || data.error,
             } satisfies SentEmail;
           })
           .filter((email) => isClientFacingEmail(email.subject))
           .sort(
-            (left, right) =>
-              right.createdAt.getTime() - left.createdAt.getTime(),
+            (left, right) => right.sentAt.getTime() - left.sentAt.getTime(),
           );
 
         setEmails(records);
@@ -278,7 +290,7 @@ function SentItemsContent() {
           <table className="w-full text-sm">
             <thead className="border-b bg-slate-50 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Sent date and time</th>
                 <th className="px-4 py-3">Recipient</th>
                 <th className="px-4 py-3">Category</th>
                 <th className="px-4 py-3">Subject</th>
@@ -307,7 +319,7 @@ function SentItemsContent() {
                 filteredEmails.map((email) => (
                   <tr key={email.id} className="hover:bg-slate-50">
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
-                      {formatDate(email.createdAt)}
+                      {formatDate(email.sentAt)}
                     </td>
                     <td className="px-4 py-3 text-xs font-medium">
                       {email.recipient}

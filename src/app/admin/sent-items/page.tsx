@@ -36,6 +36,7 @@ type EmailStatus = "Sent" | "Failed" | "Pending";
 
 type SentEmail = {
   id: string;
+  inquiryId: string;
   recipient: string;
   subject: string;
   category: EmailCategory;
@@ -152,6 +153,7 @@ function SentItemsContent() {
 
             return {
               id: mailDoc.id,
+              inquiryId: String(data.inquiryId || ""),
               recipient: recipient || "Unknown recipient",
               subject,
               category: categorizeEmail(subject),
@@ -185,6 +187,7 @@ function SentItemsContent() {
       const matchesStatus = status === "all" || email.status === status;
       const matchesSearch =
         !normalizedSearch ||
+        email.inquiryId.toLowerCase().includes(normalizedSearch) ||
         email.recipient.toLowerCase().includes(normalizedSearch) ||
         email.subject.toLowerCase().includes(normalizedSearch);
       return matchesCategory && matchesStatus && matchesSearch;
@@ -235,7 +238,7 @@ function SentItemsContent() {
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search recipient or subject..."
+            placeholder="Search inquiry ID, recipient, or subject..."
             className="max-w-sm"
           />
           <Select
@@ -287,20 +290,21 @@ function SentItemsContent() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full table-fixed text-sm">
             <thead className="border-b bg-slate-50 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Sent date and time</th>
-                <th className="px-4 py-3">Recipient</th>
-                <th className="px-4 py-3">Category</th>
+                <th className="w-[150px] px-4 py-3">Sent date and time</th>
+                <th className="w-[150px] px-4 py-3">Inquiry ID</th>
+                <th className="w-[220px] px-4 py-3">Recipient</th>
+                <th className="w-[180px] px-4 py-3">Category</th>
                 <th className="px-4 py-3">Subject</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="w-[150px] px-4 py-3">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="h-32 text-center">
+                  <td colSpan={6} className="h-32 text-center">
                     <RefreshCw className="mr-2 inline h-4 w-4 animate-spin" />
                     Loading email records...
                   </td>
@@ -308,7 +312,7 @@ function SentItemsContent() {
               ) : filteredEmails.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="h-32 text-center text-muted-foreground"
                   >
                     <Mail className="mr-2 inline h-4 w-4" />
@@ -317,20 +321,37 @@ function SentItemsContent() {
                 </tr>
               ) : (
                 filteredEmails.map((email) => (
-                  <tr key={email.id} className="hover:bg-slate-50">
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
+                  <tr key={email.id} className="h-16 hover:bg-slate-50">
+                    <td
+                      className="truncate whitespace-nowrap px-4 py-3 text-xs text-muted-foreground"
+                      title={formatDate(email.sentAt)}
+                    >
                       {formatDate(email.sentAt)}
                     </td>
-                    <td className="px-4 py-3 text-xs font-medium">
+                    <td
+                      className="truncate px-4 py-3 font-mono text-xs"
+                      title={email.inquiryId || "No inquiry ID"}
+                    >
+                      {email.inquiryId || "—"}
+                    </td>
+                    <td
+                      className="truncate px-4 py-3 text-xs font-medium"
+                      title={email.recipient}
+                    >
                       {email.recipient}
                     </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="outline">{email.category}</Badge>
+                    <td className="truncate px-4 py-3" title={email.category}>
+                      <Badge variant="outline" className="max-w-full truncate">
+                        {email.category}
+                      </Badge>
                     </td>
-                    <td className="max-w-md px-4 py-3 text-xs">
+                    <td
+                      className="truncate px-4 py-3 text-xs"
+                      title={email.subject}
+                    >
                       {email.subject}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="truncate px-4 py-3">
                       <Badge
                         className={
                           email.status === "Sent"
@@ -350,7 +371,10 @@ function SentItemsContent() {
                         {email.status}
                       </Badge>
                       {email.error && (
-                        <p className="mt-1 max-w-xs text-[10px] text-red-600">
+                        <p
+                          className="truncate text-[10px] text-red-600"
+                          title={String(email.error)}
+                        >
                           {String(email.error)}
                         </p>
                       )}

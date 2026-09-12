@@ -98,13 +98,11 @@ function formatChargeSlipDate(value?: any) {
   if (!value) return "—";
   // Handle Firestore Timestamp
   if (typeof value?.toDate === "function") {
-    return value
-      .toDate()
-      .toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+    return value.toDate().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   }
   const d = new Date(value);
   return isNaN(d.getTime())
@@ -403,32 +401,36 @@ export function ClientDetailSheet({
                 Set the current standing of this client account.
               </p>
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  disabled={statusSaving}
-                  onClick={() => handleStatusChange("Approved")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-all ${
-                    clientStatus === "Approved"
-                      ? "bg-emerald-600 text-white border-emerald-600 shadow"
-                      : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-                  }`}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Approved
-                </button>
-                <button
-                  type="button"
-                  disabled={statusSaving}
-                  onClick={() => handleStatusChange("Cancelled")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-all ${
-                    clientStatus === "Cancelled"
-                      ? "bg-rose-600 text-white border-rose-600 shadow"
-                      : "bg-white text-rose-700 border-rose-200 hover:bg-rose-50"
-                  }`}
-                >
-                  <Ban className="h-4 w-4" />
-                  Cancelled
-                </button>
+                {canEdit("clients") && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={statusSaving}
+                      onClick={() => handleStatusChange("Approved")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-all ${
+                        clientStatus === "Approved"
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow"
+                          : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                      }`}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      Approved
+                    </button>
+                    <button
+                      type="button"
+                      disabled={statusSaving}
+                      onClick={() => handleStatusChange("Cancelled")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-all ${
+                        clientStatus === "Cancelled"
+                          ? "bg-rose-600 text-white border-rose-600 shadow"
+                          : "bg-white text-rose-700 border-rose-200 hover:bg-rose-50"
+                      }`}
+                    >
+                      <Ban className="h-4 w-4" />
+                      Cancelled
+                    </button>
+                  </>
+                )}
                 {statusSaving && (
                   <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
                 )}

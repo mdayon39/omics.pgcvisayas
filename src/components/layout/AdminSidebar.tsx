@@ -216,6 +216,16 @@ export function AdminSidebar() {
       ...section,
       items: section.items.filter((item) => {
         const routeModule = ROUTE_MODULE_MAP[item.href];
+        if (
+          adminInfo?.role === "viewer" &&
+          [
+            "/admin/services",
+            "/admin/catalog-settings",
+            "/admin/configurations",
+          ].includes(item.href)
+        ) {
+          return false;
+        }
         return routeModule && canView(routeModule);
       }),
     }))

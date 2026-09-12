@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { Card } from "@/components/ui/card";
@@ -20,6 +20,7 @@ import {
   Clock3,
   Mail,
   RefreshCw,
+  Trash2,
   XCircle,
 } from "lucide-react";
 
@@ -132,6 +133,7 @@ function SentItemsContent() {
   const [category, setCategory] = useState<EmailCategory | "all">("all");
   const [status, setStatus] = useState<EmailStatus | "all">("all");
   const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -200,13 +202,58 @@ function SentItemsContent() {
     Failed: emails.filter((email) => email.status === "Failed").length,
   };
 
+  const clearPendingAndFailed = async () => {
+    const removableEmails = emails.filter(
+      (email) => email.status === "Pending" || email.status === "Failed",
+    );
+
+    if (removableEmails.length === 0) return;
+    if (
+      !window.confirm(
+        `Permanently delete ${removableEmails.length} pending or failed email record${removableEmails.length === 1 ? "" : "s"}?`,
+      )
+    ) {
+      return;
+    }
+
+    setClearing(true);
+    try {
+      await Promise.all(
+        removableEmails.map((email) => deleteDoc(doc(db, "mail", email.id))),
+      );
+    } catch (error) {
+      console.error("Failed to clear pending and failed email records:", error);
+      window.alert(
+        "Some email records could not be deleted. Please try again.",
+      );
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div className="container mx-auto space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Sent Items</h1>
-        <p className="mt-1 text-muted-foreground">
-          Monitor automated client email delivery from the mail queue.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Sent Items</h1>
+          <p className="mt-1 text-muted-foreground">
+            Monitor automated client email delivery from the mail queue.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={clearPendingAndFailed}
+          disabled={clearing || counts.Pending + counts.Failed === 0}
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+          title="Permanently delete pending and failed email records"
+        >
+          {clearing ? (
+            <RefreshCw className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+          Clear pending and failed
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

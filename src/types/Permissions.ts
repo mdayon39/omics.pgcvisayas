@@ -25,13 +25,13 @@ export interface RolePermissions {
   officialReceipts: ModulePermission;
   sampleForms: ModulePermission;
   manualQuotation: ModulePermission;
-  
+
   // Configuration
   serviceCatalog: ModulePermission;
   catalogSettings: ModulePermission;
   configurations: ModulePermission;
   officeCalendar: ModulePermission;
-  
+
   // Approvals
   memberApprovals: ModulePermission;
 
@@ -39,6 +39,7 @@ export interface RolePermissions {
   usersPermissions: ModulePermission;
   roleManagement: ModulePermission;
   activityLogs: ModulePermission;
+  sentItems: ModulePermission;
   databaseBackup: ModulePermission;
 }
 
@@ -60,6 +61,7 @@ export const MODULE_LABELS: Record<keyof RolePermissions, string> = {
   usersPermissions: "Users & Permissions",
   roleManagement: "Role Management",
   activityLogs: "Activity Logs",
+  sentItems: "Sent Items",
   databaseBackup: "Database Backup",
 };
 
@@ -75,9 +77,20 @@ export const MODULE_SECTIONS = {
     "sampleForms",
     "manualQuotation",
   ],
-  configuration: ["serviceCatalog", "catalogSettings", "configurations", "officeCalendar"],
+  configuration: [
+    "serviceCatalog",
+    "catalogSettings",
+    "configurations",
+    "officeCalendar",
+  ],
   approvals: ["memberApprovals"],
-  administration: ["usersPermissions", "roleManagement", "activityLogs", "databaseBackup"],
+  administration: [
+    "usersPermissions",
+    "roleManagement",
+    "activityLogs",
+    "sentItems",
+    "databaseBackup",
+  ],
 } as const;
 
 // Default permissions for each role
@@ -97,9 +110,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     configurations: { view: false, create: false, edit: false, delete: false },
     officeCalendar: { view: true, create: false, edit: false, delete: false },
     memberApprovals: { view: false, create: false, edit: false, delete: false },
-    usersPermissions: { view: false, create: false, edit: false, delete: false },
+    usersPermissions: {
+      view: false,
+      create: false,
+      edit: false,
+      delete: false,
+    },
     roleManagement: { view: false, create: false, edit: false, delete: false },
     activityLogs: { view: false, create: false, edit: false, delete: false },
+    sentItems: { view: false, create: false, edit: false, delete: false },
     databaseBackup: { view: false, create: false, edit: false, delete: false },
   },
   moderator: {
@@ -117,9 +136,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     configurations: { view: false, create: false, edit: false, delete: false },
     officeCalendar: { view: true, create: true, edit: true, delete: false },
     memberApprovals: { view: false, create: false, edit: false, delete: false },
-    usersPermissions: { view: false, create: false, edit: false, delete: false },
+    usersPermissions: {
+      view: false,
+      create: false,
+      edit: false,
+      delete: false,
+    },
     roleManagement: { view: false, create: false, edit: false, delete: false },
     activityLogs: { view: false, create: false, edit: false, delete: false },
+    sentItems: { view: false, create: false, edit: false, delete: false },
     databaseBackup: { view: false, create: false, edit: false, delete: false },
   },
   admin: {
@@ -137,9 +162,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     configurations: { view: true, create: true, edit: true, delete: true },
     officeCalendar: { view: true, create: true, edit: true, delete: true },
     memberApprovals: { view: true, create: false, edit: true, delete: false },
-    usersPermissions: { view: false, create: false, edit: false, delete: false },
+    usersPermissions: {
+      view: false,
+      create: false,
+      edit: false,
+      delete: false,
+    },
     roleManagement: { view: false, create: false, edit: false, delete: false },
     activityLogs: { view: true, create: false, edit: false, delete: false },
+    sentItems: { view: true, create: false, edit: false, delete: false },
     databaseBackup: { view: false, create: false, edit: false, delete: false },
   },
   superadmin: {
@@ -160,6 +191,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     usersPermissions: { view: true, create: true, edit: true, delete: true },
     roleManagement: { view: true, create: false, edit: true, delete: false },
     activityLogs: { view: true, create: false, edit: false, delete: true },
+    sentItems: { view: true, create: false, edit: false, delete: true },
     databaseBackup: { view: true, create: true, edit: true, delete: true },
   },
 };

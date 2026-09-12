@@ -122,7 +122,7 @@ function formatDate(date: Date) {
 
 export default function SentItemsPage() {
   return (
-    <PermissionGuard module="activityLogs" action="view">
+    <PermissionGuard module="sentItems" action="view">
       <SentItemsContent />
     </PermissionGuard>
   );

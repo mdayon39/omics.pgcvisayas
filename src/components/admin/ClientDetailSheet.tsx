@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { logActivity } from "@/services/activityLogService";
 import useAuth from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { EditClientModal } from "@/components/forms/EditClientModal";
 
 interface ClientDetailSheetProps {
@@ -45,7 +46,9 @@ interface ClientDetailSheetProps {
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        {label}
+      </span>
       <span className="text-sm font-medium text-slate-800">
         {value ?? <span className="text-slate-400 italic">—</span>}
       </span>
@@ -61,7 +64,13 @@ function SectionCard({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SectionHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
+function SectionHeader({
+  icon,
+  label,
+}: {
+  icon: React.ReactNode;
+  label: string;
+}) {
   return (
     <div className="flex items-center gap-2 py-2">
       <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#166FB5] to-[#4038AF]" />
@@ -78,17 +87,33 @@ function formatDate(value?: string | Date) {
   const d = value instanceof Date ? value : new Date(value);
   return isNaN(d.getTime())
     ? "—"
-    : d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    : d.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
 }
 
 function formatChargeSlipDate(value?: any) {
   if (!value) return "—";
   // Handle Firestore Timestamp
   if (typeof value?.toDate === "function") {
-    return value.toDate().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    return value
+      .toDate()
+      .toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
   }
   const d = new Date(value);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
 }
 
 const sexLabel: Record<string, string> = {
@@ -111,9 +136,12 @@ export function ClientDetailSheet({
   onClientUpdated,
 }: ClientDetailSheetProps) {
   const { adminInfo } = useAuth();
+  const { canEdit } = usePermissions(adminInfo?.role);
   const [chargeSlips, setChargeSlips] = useState<ChargeSlipRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [clientStatus, setClientStatus] = useState<"Approved" | "Cancelled">("Approved");
+  const [clientStatus, setClientStatus] = useState<"Approved" | "Cancelled">(
+    "Approved",
+  );
   const [statusSaving, setStatusSaving] = useState(false);
 
   useEffect(() => {
@@ -151,12 +179,16 @@ export function ClientDetailSheet({
     };
 
     loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, client?.cid]);
 
   if (!client) return null;
 
-  const pids = Array.isArray(client.pid) ? client.pid : client.pid ? [client.pid] : [];
+  const pids = Array.isArray(client.pid)
+    ? client.pid
+    : client.pid
+      ? [client.pid]
+      : [];
 
   const handleStatusChange = async (newStatus: "Approved" | "Cancelled") => {
     if (!client.cid || newStatus === clientStatus) return;
@@ -185,7 +217,12 @@ export function ClientDetailSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <SheetContent
         side="right"
         className="w-full sm:max-w-2xl overflow-y-auto p-0 border-l shadow-2xl"
@@ -205,26 +242,39 @@ export function ClientDetailSheet({
                   {client.cid}
                 </Badge>
                 {client.haveSubmitted && (
-                  <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="text-emerald-700 border-emerald-200 bg-emerald-50 text-xs"
+                  >
                     Submitted
                   </Badge>
                 )}
                 {client.isContactPerson && (
-                  <Badge variant="outline" className="text-purple-700 border-purple-200 bg-purple-50 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="text-purple-700 border-purple-200 bg-purple-50 text-xs"
+                  >
                     Contact Person
                   </Badge>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <EditClientModal
-                client={client}
-                onSuccess={() => {
-                  onClose();
-                  onClientUpdated?.();
-                }}
-              />
-              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+              {canEdit("clients") && (
+                <EditClientModal
+                  client={client}
+                  onSuccess={() => {
+                    onClose();
+                    onClientUpdated?.();
+                  }}
+                />
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -232,22 +282,35 @@ export function ClientDetailSheet({
         </div>
 
         <div className="px-6 py-5 space-y-6">
-
           {/* ── Identity ── */}
           <SectionCard>
-            <SectionHeader icon={<User className="h-4 w-4 text-[#166FB5]" />} label="Identity" />
+            <SectionHeader
+              icon={<User className="h-4 w-4 text-[#166FB5]" />}
+              label="Identity"
+            />
             <Separator />
             <div className="grid grid-cols-2 gap-4">
               <InfoRow label="Full Name" value={client.name} />
-              <InfoRow label="Sex" value={client.sex ? sexLabel[client.sex] ?? client.sex : undefined} />
+              <InfoRow
+                label="Sex"
+                value={
+                  client.sex ? (sexLabel[client.sex] ?? client.sex) : undefined
+                }
+              />
               <InfoRow label="Year" value={client.year?.toString()} />
-              <InfoRow label="Registered" value={formatDate(client.createdAt)} />
+              <InfoRow
+                label="Registered"
+                value={formatDate(client.createdAt)}
+              />
             </div>
           </SectionCard>
 
           {/* ── Contact Information ── */}
           <SectionCard>
-            <SectionHeader icon={<Mail className="h-4 w-4 text-indigo-600" />} label="Contact Information" />
+            <SectionHeader
+              icon={<Mail className="h-4 w-4 text-indigo-600" />}
+              label="Contact Information"
+            />
             <Separator />
             <div className="grid grid-cols-2 gap-4">
               <InfoRow
@@ -280,17 +343,29 @@ export function ClientDetailSheet({
 
           {/* ── Affiliation ── */}
           <SectionCard>
-            <SectionHeader icon={<Building2 className="h-4 w-4 text-emerald-600" />} label="Affiliation" />
+            <SectionHeader
+              icon={<Building2 className="h-4 w-4 text-emerald-600" />}
+              label="Affiliation"
+            />
             <Separator />
             <div className="grid grid-cols-1 gap-4">
-              <InfoRow label="Institution / Affiliation" value={client.affiliation} />
-              <InfoRow label="Affiliation Address" value={client.affiliationAddress} />
+              <InfoRow
+                label="Institution / Affiliation"
+                value={client.affiliation}
+              />
+              <InfoRow
+                label="Affiliation Address"
+                value={client.affiliationAddress}
+              />
             </div>
           </SectionCard>
 
           {/* ── Status Flags ── */}
           <SectionCard>
-            <SectionHeader icon={<CheckCircle2 className="h-4 w-4 text-violet-600" />} label="Account Status" />
+            <SectionHeader
+              icon={<CheckCircle2 className="h-4 w-4 text-violet-600" />}
+              label="Account Status"
+            />
             <Separator />
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
@@ -299,7 +374,9 @@ export function ClientDetailSheet({
                 ) : (
                   <Circle className="h-4 w-4 text-slate-300" />
                 )}
-                <span className="text-sm text-slate-700">Has Submitted Inquiry</span>
+                <span className="text-sm text-slate-700">
+                  Has Submitted Inquiry
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 {client.isContactPerson ? (
@@ -307,14 +384,19 @@ export function ClientDetailSheet({
                 ) : (
                   <Circle className="h-4 w-4 text-slate-300" />
                 )}
-                <span className="text-sm text-slate-700">Is Contact Person</span>
+                <span className="text-sm text-slate-700">
+                  Is Contact Person
+                </span>
               </div>
             </div>
           </SectionCard>
 
           {/* ── Client Status ── */}
           <SectionCard>
-            <SectionHeader icon={<ShieldCheck className="h-4 w-4 text-rose-600" />} label="Client Status" />
+            <SectionHeader
+              icon={<ShieldCheck className="h-4 w-4 text-rose-600" />}
+              label="Client Status"
+            />
             <Separator />
             <div className="space-y-3">
               <p className="text-xs text-slate-500">
@@ -356,10 +438,15 @@ export function ClientDetailSheet({
 
           {/* ── Linked Projects ── */}
           <SectionCard>
-            <SectionHeader icon={<Briefcase className="h-4 w-4 text-orange-600" />} label={`Linked Projects (${pids.length})`} />
+            <SectionHeader
+              icon={<Briefcase className="h-4 w-4 text-orange-600" />}
+              label={`Linked Projects (${pids.length})`}
+            />
             <Separator />
             {pids.length === 0 ? (
-              <p className="text-sm text-slate-400 italic">No linked projects</p>
+              <p className="text-sm text-slate-400 italic">
+                No linked projects
+              </p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {pids.map((pid) => (
@@ -383,10 +470,16 @@ export function ClientDetailSheet({
             <div className="flex items-center gap-2 py-2">
               <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#166FB5] to-[#4038AF]" />
               <Receipt className="h-4 w-4 text-slate-700" />
-              <span className="text-sm font-semibold text-slate-700">Charge Slips</span>
-              {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400 ml-1" />}
+              <span className="text-sm font-semibold text-slate-700">
+                Charge Slips
+              </span>
+              {loading && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400 ml-1" />
+              )}
               {!loading && (
-                <span className="text-[10px] text-slate-500">({chargeSlips.length})</span>
+                <span className="text-[10px] text-slate-500">
+                  ({chargeSlips.length})
+                </span>
               )}
             </div>
             <Separator />
@@ -397,7 +490,9 @@ export function ClientDetailSheet({
                 Loading charge slips…
               </div>
             ) : chargeSlips.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">No charge slips found for this client.</p>
+              <p className="text-xs text-slate-400 italic">
+                No charge slips found for this client.
+              </p>
             ) : (
               <div className="space-y-2">
                 {chargeSlips.map((cs) => (
@@ -413,7 +508,8 @@ export function ClientDetailSheet({
                         {cs.status && (
                           <span
                             className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold border capitalize ${
-                              csStatusColor[cs.status] ?? "bg-gray-50 text-gray-600 border-gray-200"
+                              csStatusColor[cs.status] ??
+                              "bg-gray-50 text-gray-600 border-gray-200"
                             }`}
                           >
                             {cs.status}
@@ -422,7 +518,9 @@ export function ClientDetailSheet({
                       </div>
                       <div className="text-[10px] text-slate-500">
                         {cs.project?.pid && (
-                          <span className="font-mono text-blue-600 mr-2">{cs.project.pid}</span>
+                          <span className="font-mono text-blue-600 mr-2">
+                            {cs.project.pid}
+                          </span>
                         )}
                         {formatChargeSlipDate((cs as any).dateIssued)}
                       </div>
@@ -443,14 +541,22 @@ export function ClientDetailSheet({
 
           {/* ── Metadata ── */}
           <SectionCard>
-            <SectionHeader icon={<CalendarDays className="h-4 w-4 text-slate-500" />} label="Metadata" />
+            <SectionHeader
+              icon={<CalendarDays className="h-4 w-4 text-slate-500" />}
+              label="Metadata"
+            />
             <Separator />
             <div className="grid grid-cols-2 gap-4">
-              <InfoRow label="Client ID (CID)" value={<span className="font-mono text-xs">{client.cid}</span>} />
-              <InfoRow label="Record Created" value={formatDate(client.createdAt)} />
+              <InfoRow
+                label="Client ID (CID)"
+                value={<span className="font-mono text-xs">{client.cid}</span>}
+              />
+              <InfoRow
+                label="Record Created"
+                value={formatDate(client.createdAt)}
+              />
             </div>
           </SectionCard>
-
         </div>
       </SheetContent>
     </Sheet>

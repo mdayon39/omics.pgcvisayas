@@ -36,6 +36,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { logActivity } from "@/services/activityLogService";
 import useAuth from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { EditProjectModal } from "@/components/forms/EditProjectModal";
 import AdminFormSubmissions from "@/components/admin/AdminFormSubmissions";
 import AdminServiceReport from "@/components/admin/AdminServiceReport";
@@ -116,6 +117,7 @@ export function ProjectDetailSheet({
   onProjectUpdated,
 }: ProjectDetailSheetProps) {
   const { adminInfo } = useAuth();
+  const { canEdit } = usePermissions(adminInfo?.role);
 
   const [quotations, setQuotations] = useState<QuotationRecord[]>([]);
   const [chargeSlips, setChargeSlips] = useState<ChargeSlipRecord[]>([]);
@@ -296,13 +298,15 @@ export function ProjectDetailSheet({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <EditProjectModal
-                project={project}
-                onSuccess={() => {
-                  onClose();
-                  onProjectUpdated?.();
-                }}
-              />
+              {canEdit("projects") && (
+                <EditProjectModal
+                  project={project}
+                  onSuccess={() => {
+                    onClose();
+                    onProjectUpdated?.();
+                  }}
+                />
+              )}
               <Button
                 variant="ghost"
                 size="icon"

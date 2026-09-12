@@ -4,8 +4,18 @@
  */
 
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { UserRole, RolePermissions, DEFAULT_ROLE_PERMISSIONS } from "@/types/Permissions";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import {
+  UserRole,
+  RolePermissions,
+  DEFAULT_ROLE_PERMISSIONS,
+} from "@/types/Permissions";
 
 const ROLES_COLLECTION = "rolePermissions";
 
@@ -13,7 +23,9 @@ const ROLES_COLLECTION = "rolePermissions";
  * Get permissions for a specific role
  * Merges with default permissions to ensure all modules are present
  */
-export async function getRolePermissions(role: UserRole): Promise<RolePermissions> {
+export async function getRolePermissions(
+  role: UserRole,
+): Promise<RolePermissions> {
   try {
     const docRef = doc(db, ROLES_COLLECTION, role);
     const docSnap = await getDoc(docRef);
@@ -23,13 +35,19 @@ export async function getRolePermissions(role: UserRole): Promise<RolePermission
     if (docSnap.exists()) {
       const storedPerms = docSnap.data() as Partial<RolePermissions>;
       // Merge stored permissions with defaults to ensure new modules are included
-      const mergedPerms: RolePermissions = {
-        ...defaultPerms,
-        ...storedPerms,
-      };
-      
+      const mergedPerms = Object.keys(defaultPerms).reduce((result, module) => {
+        const moduleKey = module as keyof RolePermissions;
+        result[moduleKey] = {
+          ...defaultPerms[moduleKey],
+          ...(storedPerms[moduleKey] || {}),
+        };
+        return result;
+      }, {} as RolePermissions);
+
       // Check if we need to update Firestore with missing modules
-      const hasAllModules = Object.keys(defaultPerms).every(key => key in storedPerms);
+      const hasAllModules = Object.keys(defaultPerms).every(
+        (key) => key in storedPerms,
+      );
       if (!hasAllModules) {
         // Update Firestore with merged permissions
         await updateDoc(docRef, {
@@ -37,7 +55,7 @@ export async function getRolePermissions(role: UserRole): Promise<RolePermission
           updatedAt: serverTimestamp(),
         });
       }
-      
+
       return mergedPerms;
     } else {
       // Initialize with default permissions if not exists
@@ -59,12 +77,12 @@ export async function getRolePermissions(role: UserRole): Promise<RolePermission
  */
 export async function updateRolePermissions(
   role: UserRole,
-  permissions: RolePermissions
+  permissions: RolePermissions,
 ): Promise<void> {
   try {
     const docRef = doc(db, ROLES_COLLECTION, role);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       await updateDoc(docRef, {
         ...permissions,
@@ -90,7 +108,7 @@ export async function updateRolePermissions(
 export async function hasPermission(
   userRole: UserRole,
   module: keyof RolePermissions,
-  action: keyof RolePermissions[keyof RolePermissions]
+  action: keyof RolePermissions[keyof RolePermissions],
 ): Promise<boolean> {
   try {
     const permissions = await getRolePermissions(userRole);
@@ -106,7 +124,7 @@ export async function hasPermission(
  */
 export async function canAccessModule(
   userRole: UserRole,
-  module: keyof RolePermissions
+  module: keyof RolePermissions,
 ): Promise<boolean> {
   return hasPermission(userRole, module, "view");
 }

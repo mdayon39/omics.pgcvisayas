@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { PermissionGuard } from "@/components/PermissionGuard";
+import useAuth from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -128,12 +129,17 @@ export default function SentItemsPage() {
 }
 
 function SentItemsContent() {
+  const { adminInfo } = useAuth();
+  const isSuperadmin = adminInfo?.role === "superadmin";
   const [emails, setEmails] = useState<SentEmail[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<EmailCategory | "all">("all");
   const [status, setStatus] = useState<EmailStatus | "all">("all");
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
+  const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -231,6 +237,68 @@ function SentItemsContent() {
     }
   };
 
+  const selectableEmails = emails.filter(
+    (email) => email.status === "Pending" || email.status === "Failed",
+  );
+  const selectedEmails = emails.filter((email) =>
+    selectedEmailIds.has(email.id),
+  );
+
+  const toggleEmailSelection = (email: SentEmail) => {
+    if (!isSuperadmin || email.status === "Sent") return;
+    setSelectedEmailIds((current) => {
+      const next = new Set(current);
+      if (next.has(email.id)) next.delete(email.id);
+      else next.add(email.id);
+      return next;
+    });
+  };
+
+  const toggleAllVisibleSelection = () => {
+    if (!isSuperadmin) return;
+    const visibleSelectableIds = filteredEmails
+      .filter((email) => email.status !== "Sent")
+      .map((email) => email.id);
+    const allSelected = visibleSelectableIds.every((id) =>
+      selectedEmailIds.has(id),
+    );
+
+    setSelectedEmailIds((current) => {
+      const next = new Set(current);
+      visibleSelectableIds.forEach((id) => {
+        if (allSelected) next.delete(id);
+        else next.add(id);
+      });
+      return next;
+    });
+  };
+
+  const deleteSelectedEmails = async () => {
+    if (!isSuperadmin || selectedEmails.length === 0) return;
+    if (
+      !window.confirm(
+        `Permanently delete ${selectedEmails.length} selected pending or failed email record${selectedEmails.length === 1 ? "" : "s"}?`,
+      )
+    ) {
+      return;
+    }
+
+    setClearing(true);
+    try {
+      await Promise.all(
+        selectedEmails.map((email) => deleteDoc(doc(db, "mail", email.id))),
+      );
+      setSelectedEmailIds(new Set());
+    } catch (error) {
+      console.error("Failed to delete selected email records:", error);
+      window.alert(
+        "Some selected email records could not be deleted. Please try again.",
+      );
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -240,20 +308,34 @@ function SentItemsContent() {
             Monitor automated client email delivery from the mail queue.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={clearPendingAndFailed}
-          disabled={clearing || counts.Pending + counts.Failed === 0}
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-          title="Permanently delete pending and failed email records"
-        >
-          {clearing ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
-          Clear pending and failed
-        </button>
+        {isSuperadmin && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={deleteSelectedEmails}
+              disabled={clearing || selectedEmails.length === 0}
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              title="Permanently delete selected pending and failed email records"
+            >
+              {clearing ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              Delete selected ({selectedEmails.length})
+            </button>
+            <button
+              type="button"
+              onClick={clearPendingAndFailed}
+              disabled={clearing || selectableEmails.length === 0}
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              title="Permanently delete all pending and failed email records"
+            >
+              <Trash2 className="h-4 w-4" />
+              Clear all pending and failed
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -340,6 +422,23 @@ function SentItemsContent() {
           <table className="w-full table-fixed text-sm">
             <thead className="border-b bg-slate-50 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
+                {isSuperadmin && (
+                  <th className="w-[48px] px-4 py-3">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all visible pending and failed emails"
+                      checked={
+                        filteredEmails.some(
+                          (email) => email.status !== "Sent",
+                        ) &&
+                        filteredEmails
+                          .filter((email) => email.status !== "Sent")
+                          .every((email) => selectedEmailIds.has(email.id))
+                      }
+                      onChange={toggleAllVisibleSelection}
+                    />
+                  </th>
+                )}
                 <th className="w-[150px] px-4 py-3">Sent date and time</th>
                 <th className="w-[150px] px-4 py-3">Inquiry ID</th>
                 <th className="w-[220px] px-4 py-3">Recipient</th>
@@ -351,7 +450,10 @@ function SentItemsContent() {
             <tbody className="divide-y">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="h-32 text-center">
+                  <td
+                    colSpan={isSuperadmin ? 7 : 6}
+                    className="h-32 text-center"
+                  >
                     <RefreshCw className="mr-2 inline h-4 w-4 animate-spin" />
                     Loading email records...
                   </td>
@@ -359,7 +461,7 @@ function SentItemsContent() {
               ) : filteredEmails.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={isSuperadmin ? 7 : 6}
                     className="h-32 text-center text-muted-foreground"
                   >
                     <Mail className="mr-2 inline h-4 w-4" />
@@ -369,6 +471,17 @@ function SentItemsContent() {
               ) : (
                 filteredEmails.map((email) => (
                   <tr key={email.id} className="h-16 hover:bg-slate-50">
+                    {isSuperadmin && (
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select email to ${email.recipient}`}
+                          checked={selectedEmailIds.has(email.id)}
+                          disabled={email.status === "Sent" || clearing}
+                          onChange={() => toggleEmailSelection(email)}
+                        />
+                      </td>
+                    )}
                     <td
                       className="truncate whitespace-nowrap px-4 py-3 text-xs text-muted-foreground"
                       title={formatDate(email.sentAt)}

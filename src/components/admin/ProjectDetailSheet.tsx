@@ -25,6 +25,7 @@ import {
   Briefcase,
   Building2,
   CalendarDays,
+  Clipboard,
   FileText,
   Loader2,
   Receipt,
@@ -247,6 +248,16 @@ export function ProjectDetailSheet({
       toast.error("Could not update the service report setting.");
     } finally {
       setUpdatingServiceReportSetting(false);
+    }
+  };
+
+  const handleCopy = async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied to clipboard`);
+    } catch (error) {
+      console.error(`Failed to copy ${label.toLowerCase()}:`, error);
+      toast.error(`Could not copy ${label.toLowerCase()}`);
     }
   };
 
@@ -488,6 +499,17 @@ export function ProjectDetailSheet({
                             key={inq.id}
                             className="flex items-center gap-2 py-1 border-b border-slate-50 last:border-0"
                           >
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleCopy(inq.id, "Inquiry ID")}
+                              className="h-6 w-6 shrink-0 text-slate-400 hover:text-blue-600"
+                              aria-label={`Copy inquiry ID ${inq.id}`}
+                              title="Copy inquiry ID"
+                            >
+                              <Clipboard className="h-3.5 w-3.5" />
+                            </Button>
                             <a
                               href={`/admin/inquiry/${inq.id}`}
                               target="_blank"
@@ -496,6 +518,27 @@ export function ProjectDetailSheet({
                             >
                               {inq.id}
                             </a>
+                            {inq.email && (
+                              <div className="ml-auto flex min-w-0 items-center gap-1">
+                                <span
+                                  className="max-w-[150px] truncate text-[11px] text-slate-500"
+                                  title={inq.email}
+                                >
+                                  {inq.email}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleCopy(inq.email!, "Email")}
+                                  className="h-6 w-6 shrink-0 text-slate-400 hover:text-blue-600"
+                                  aria-label={`Copy email ${inq.email}`}
+                                  title="Copy email"
+                                >
+                                  <Clipboard className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            )}
                             <span
                               className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${inqColor}`}
                             >
@@ -528,6 +571,17 @@ export function ProjectDetailSheet({
                           key={q.id}
                           className="flex items-center gap-2 py-1 border-b border-slate-50 last:border-0"
                         >
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleCopy(q.referenceNumber, "Quotation")}
+                            className="h-6 w-6 shrink-0 text-slate-400 hover:text-blue-600"
+                            aria-label={`Copy quotation ${q.referenceNumber}`}
+                            title="Copy quotation reference"
+                          >
+                            <Clipboard className="h-3.5 w-3.5" />
+                          </Button>
                           <a
                             href={`/admin/quotations/${q.referenceNumber}`}
                             target="_blank"
@@ -612,6 +666,17 @@ export function ProjectDetailSheet({
                             key={cs.id}
                             className="flex items-center gap-2 py-1 border-b border-slate-50 last:border-0"
                           >
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleCopy(cs.chargeSlipNumber, "Charge slip")}
+                              className="h-6 w-6 shrink-0 text-slate-400 hover:text-blue-600"
+                              aria-label={`Copy charge slip ${cs.chargeSlipNumber}`}
+                              title="Copy charge slip number"
+                            >
+                              <Clipboard className="h-3.5 w-3.5" />
+                            </Button>
                             <a
                               href={`/admin/charge-slips/${cs.chargeSlipNumber}`}
                               target="_blank"

@@ -25,7 +25,8 @@ import {
   Briefcase,
   Building2,
   CalendarDays,
-  Clipboard,
+  ChevronDown,
+  Copy,
   FileText,
   Loader2,
   Receipt,
@@ -66,12 +67,18 @@ function SectionHeader({
   icon,
   label,
   count,
+  collapsible = false,
+  isOpen = true,
+  onToggle,
 }: {
   icon: React.ReactNode;
   label: string;
   count?: number;
+  collapsible?: boolean;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }) {
-  return (
+  const content = (
     <div className="flex items-center gap-2 py-2">
       <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#166FB5] to-[#4038AF]" />
       <div className="flex items-center gap-1.5 text-slate-700">
@@ -82,6 +89,23 @@ function SectionHeader({
         <span className="text-[10px] text-slate-500">({count})</span>
       )}
     </div>
+  );
+
+  if (!collapsible) return content;
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={isOpen}
+      className="flex w-full items-center justify-between rounded-md text-left hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    >
+      {content}
+      <ChevronDown
+        className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+        aria-hidden="true"
+      />
+    </button>
   );
 }
 
@@ -136,6 +160,11 @@ export function ProjectDetailSheet({
     useState(false);
   const [updatingServiceReportSetting, setUpdatingServiceReportSetting] =
     useState(false);
+  const [openSections, setOpenSections] = useState({
+    overview: true,
+    people: true,
+    institution: true,
+  });
 
   useEffect(() => {
     setAllowServiceReportWithoutQuotation(
@@ -148,6 +177,10 @@ export function ProjectDetailSheet({
     project?.allowServiceReportWithoutQuotation,
     project?.allowServiceReportWithoutChargeSlip,
   ]);
+
+  useEffect(() => {
+    setOpenSections({ overview: true, people: true, institution: true });
+  }, [project?.pid]);
 
   useEffect(() => {
     if (!open || !project?.pid) return;
@@ -261,6 +294,13 @@ export function ProjectDetailSheet({
     }
   };
 
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections((current) => ({
+      ...current,
+      [section]: !current[section],
+    }));
+  };
+
   if (!project) return null;
 
   const iids = Array.isArray(project.iid)
@@ -336,29 +376,36 @@ export function ProjectDetailSheet({
             <SectionHeader
               icon={<Briefcase className="h-4 w-4 text-[#166FB5]" />}
               label="Project Overview"
+              collapsible
+              isOpen={openSections.overview}
+              onToggle={() => toggleSection("overview")}
             />
-            <Separator />
-            <div className="grid grid-cols-2 gap-4">
-              <InfoRow label="Year" value={project.year?.toString()} />
-              <InfoRow
-                label="Start Date"
-                value={formatDate(project.startDate)}
-              />
-              <InfoRow label="Project Tag" value={project.projectTag} />
-            </div>
-            <InfoRow
-              label="Project Title"
-              value={<span className="text-sm">{project.title}</span>}
-            />
-            {project.notes && (
-              <InfoRow
-                label="Notes"
-                value={
-                  <span className="text-sm text-slate-600">
-                    {project.notes}
-                  </span>
-                }
-              />
+            {openSections.overview && (
+              <>
+                <Separator />
+                <div className="grid grid-cols-2 gap-4">
+                  <InfoRow label="Year" value={project.year?.toString()} />
+                  <InfoRow
+                    label="Start Date"
+                    value={formatDate(project.startDate)}
+                  />
+                  <InfoRow label="Project Tag" value={project.projectTag} />
+                </div>
+                <InfoRow
+                  label="Project Title"
+                  value={<span className="text-sm">{project.title}</span>}
+                />
+                {project.notes && (
+                  <InfoRow
+                    label="Notes"
+                    value={
+                      <span className="text-sm text-slate-600">
+                        {project.notes}
+                      </span>
+                    }
+                  />
+                )}
+              </>
             )}
           </section>
 
@@ -367,32 +414,39 @@ export function ProjectDetailSheet({
             <SectionHeader
               icon={<Users className="h-4 w-4 text-indigo-600" />}
               label="People"
+              collapsible
+              isOpen={openSections.people}
+              onToggle={() => toggleSection("people")}
             />
-            <Separator />
-            <div className="grid grid-cols-2 gap-4">
-              <InfoRow label="Project Lead" value={project.lead} />
-              <InfoRow
-                label="Personnel Assigned"
-                value={project.personnelAssigned}
-              />
-            </div>
-            {(project.clientNames?.length ?? 0) > 0 && (
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                  Clients / Members
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {project.clientNames!.map((name, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-xs font-medium text-indigo-700"
-                    >
-                      <User className="h-3 w-3" />
-                      {name}
-                    </div>
-                  ))}
+            {openSections.people && (
+              <>
+                <Separator />
+                <div className="grid grid-cols-2 gap-4">
+                  <InfoRow label="Project Lead" value={project.lead} />
+                  <InfoRow
+                    label="Personnel Assigned"
+                    value={project.personnelAssigned}
+                  />
                 </div>
-              </div>
+                {(project.clientNames?.length ?? 0) > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      Clients / Members
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {project.clientNames!.map((name, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-xs font-medium text-indigo-700"
+                        >
+                          <User className="h-3 w-3" />
+                          {name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </section>
 
@@ -401,26 +455,33 @@ export function ProjectDetailSheet({
             <SectionHeader
               icon={<Building2 className="h-4 w-4 text-emerald-600" />}
               label="Institution & Funding"
+              collapsible
+              isOpen={openSections.institution}
+              onToggle={() => toggleSection("institution")}
             />
-            <Separator />
-            <div className="grid grid-cols-2 gap-4">
-              <InfoRow
-                label="Sending Institution"
-                value={project.sendingInstitution}
-              />
-              <InfoRow
-                label="Funding Category"
-                value={project.fundingCategory}
-              />
-              <InfoRow
-                label="Funding Institution"
-                value={project.fundingInstitution}
-              />
-              <InfoRow
-                label="Created At"
-                value={formatDate(project.createdAt)}
-              />
-            </div>
+            {openSections.institution && (
+              <>
+                <Separator />
+                <div className="grid grid-cols-2 gap-4">
+                  <InfoRow
+                    label="Sending Institution"
+                    value={project.sendingInstitution}
+                  />
+                  <InfoRow
+                    label="Funding Category"
+                    value={project.fundingCategory}
+                  />
+                  <InfoRow
+                    label="Funding Institution"
+                    value={project.fundingInstitution}
+                  />
+                  <InfoRow
+                    label="Created At"
+                    value={formatDate(project.createdAt)}
+                  />
+                </div>
+              </>
+            )}
           </section>
 
           {/* ── Services Requested ── */}
@@ -508,7 +569,7 @@ export function ProjectDetailSheet({
                               aria-label={`Copy inquiry ID ${inq.id}`}
                               title="Copy inquiry ID"
                             >
-                              <Clipboard className="h-3.5 w-3.5" />
+                              <Copy className="h-3.5 w-3.5" />
                             </Button>
                             <a
                               href={`/admin/inquiry/${inq.id}`}
@@ -518,14 +579,13 @@ export function ProjectDetailSheet({
                             >
                               {inq.id}
                             </a>
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${inqColor}`}
+                            >
+                              {inqStatus}
+                            </span>
                             {inq.email && (
                               <div className="ml-auto flex min-w-0 items-center gap-1">
-                                <span
-                                  className="max-w-[150px] truncate text-[11px] text-slate-500"
-                                  title={inq.email}
-                                >
-                                  {inq.email}
-                                </span>
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -535,15 +595,16 @@ export function ProjectDetailSheet({
                                   aria-label={`Copy email ${inq.email}`}
                                   title="Copy email"
                                 >
-                                  <Clipboard className="h-3.5 w-3.5" />
+                                  <Copy className="h-3.5 w-3.5" />
                                 </Button>
+                                <span
+                                  className="max-w-[150px] truncate text-[11px] text-slate-500"
+                                  title={inq.email}
+                                >
+                                  {inq.email}
+                                </span>
                               </div>
                             )}
-                            <span
-                              className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${inqColor}`}
-                            >
-                              {inqStatus}
-                            </span>
                           </div>
                         );
                       })}
@@ -580,7 +641,7 @@ export function ProjectDetailSheet({
                             aria-label={`Copy quotation ${q.referenceNumber}`}
                             title="Copy quotation reference"
                           >
-                            <Clipboard className="h-3.5 w-3.5" />
+                            <Copy className="h-3.5 w-3.5" />
                           </Button>
                           <a
                             href={`/admin/quotations/${q.referenceNumber}`}
@@ -675,7 +736,7 @@ export function ProjectDetailSheet({
                               aria-label={`Copy charge slip ${cs.chargeSlipNumber}`}
                               title="Copy charge slip number"
                             >
-                              <Clipboard className="h-3.5 w-3.5" />
+                              <Copy className="h-3.5 w-3.5" />
                             </Button>
                             <a
                               href={`/admin/charge-slips/${cs.chargeSlipNumber}`}

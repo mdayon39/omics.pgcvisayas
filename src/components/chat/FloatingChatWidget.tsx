@@ -139,6 +139,37 @@ function formatThreadLabel(inq: InquirySummary): string {
   return service;
 }
 
+function getInquiryStatusStyle(status: string): string {
+  switch (status.trim().toLowerCase()) {
+    case "pending":
+      return "bg-amber-100 text-amber-800";
+    case "ongoing quotation":
+    case "in progress":
+    case "under_review":
+      return "bg-blue-100 text-blue-800";
+    case "approved client":
+    case "approved":
+    case "converted":
+      return "bg-emerald-100 text-emerald-800";
+    case "quotation only":
+    case "quoted":
+      return "bg-violet-100 text-violet-800";
+    case "service not offered":
+    case "cancelled":
+    case "rejected":
+      return "bg-rose-100 text-rose-800";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+}
+
+function formatInquiryStatus(status: string): string {
+  return status
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
 export default function FloatingChatWidget({
   inquiryId,
   role,
@@ -499,9 +530,19 @@ export default function FloatingChatWidget({
                   </div>
                 )}
                 <div className="flex flex-col">
-                  <span className="font-bold text-sm tracking-tight leading-tight">
-                    {role === "admin" ? (inquiryData?.name || "Client") : "PGC Visayas Support"}
-                  </span>
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span className="min-w-0 truncate font-bold text-sm tracking-tight leading-tight">
+                      {role === "admin" ? (inquiryData?.name || "Client") : "PGC Visayas Support"}
+                    </span>
+                    {role === "admin" && inquiryData?.status && (
+                      <span
+                        className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${getInquiryStatusStyle(inquiryData.status)}`}
+                        aria-label={`Inquiry status: ${formatInquiryStatus(inquiryData.status)}`}
+                      >
+                        {formatInquiryStatus(inquiryData.status)}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {role === "admin" ? (
                       <PresenceIndicator

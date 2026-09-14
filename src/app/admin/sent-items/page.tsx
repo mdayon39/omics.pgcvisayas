@@ -46,6 +46,7 @@ type SentEmail = {
   sentAt: Date;
   createdAt: Date;
   error?: string;
+  searchText: string;
 };
 
 function toDate(value: any): Date {
@@ -109,6 +110,34 @@ function getSentAt(data: Record<string, any>): Date {
   );
 }
 
+function getSearchableText(value: unknown, seen = new Set<object>()): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "object") {
+    if (seen.has(value)) return "";
+    seen.add(value);
+
+    if (typeof (value as { toDate?: unknown }).toDate === "function") {
+      const date = (value as { toDate: () => Date }).toDate();
+      return date instanceof Date && !Number.isNaN(date.getTime())
+        ? date.toISOString()
+        : String(value);
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => getSearchableText(item, seen)).join(" ");
+    }
+
+    return Object.entries(value)
+      .map(([key, nestedValue]) => `${key} ${getSearchableText(nestedValue, seen)}`)
+      .join(" ");
+  }
+  return "";
+}
+
 function formatDate(date: Date) {
   if (date.getTime() === 0) return "Unknown";
   return date.toLocaleString("en-US", {
@@ -158,6 +187,13 @@ function SentItemsContent() {
               message.subject || data.subject || "No subject",
             );
             const recipient = recipients.map(String).join(", ");
+            const searchText = getSearchableText({
+              ...data,
+              message,
+              recipients,
+              subject,
+              recipient,
+            }).toLowerCase();
 
             return {
               id: mailDoc.id,
@@ -169,6 +205,7 @@ function SentItemsContent() {
               sentAt: getSentAt(data),
               createdAt: toDate(data.createdAt || data.timestamp),
               error: data.delivery?.error || data.error,
+              searchText,
             } satisfies SentEmail;
           })
           .filter((email) => isClientFacingEmail(email.subject))
@@ -195,9 +232,7 @@ function SentItemsContent() {
       const matchesStatus = status === "all" || email.status === status;
       const matchesSearch =
         !normalizedSearch ||
-        email.inquiryId.toLowerCase().includes(normalizedSearch) ||
-        email.recipient.toLowerCase().includes(normalizedSearch) ||
-        email.subject.toLowerCase().includes(normalizedSearch);
+        email.searchText.includes(normalizedSearch);
       return matchesCategory && matchesStatus && matchesSearch;
     });
   }, [emails, search, category, status]);
@@ -367,7 +402,7 @@ function SentItemsContent() {
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search inquiry ID, recipient, or subject..."
+            placeholder="Search all email fields (email, project, quotation, charge slip...)"
             className="max-w-sm"
           />
           <Select

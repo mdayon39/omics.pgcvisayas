@@ -161,9 +161,9 @@ export function ProjectDetailSheet({
   const [updatingServiceReportSetting, setUpdatingServiceReportSetting] =
     useState(false);
   const [openSections, setOpenSections] = useState({
-    overview: true,
-    people: true,
-    institution: true,
+    overview: false,
+    people: false,
+    institution: false,
   });
 
   useEffect(() => {
@@ -179,7 +179,7 @@ export function ProjectDetailSheet({
   ]);
 
   useEffect(() => {
-    setOpenSections({ overview: true, people: true, institution: true });
+    setOpenSections({ overview: false, people: false, institution: false });
   }, [project?.pid]);
 
   useEffect(() => {
@@ -370,7 +370,7 @@ export function ProjectDetailSheet({
           </SheetHeader>
         </div>
 
-        <div className="px-6 py-5 space-y-6">
+        <div className="flex flex-col gap-6 px-6 py-5">
           {/* ── Project Overview ── */}
           <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
             <SectionHeader
@@ -508,7 +508,7 @@ export function ProjectDetailSheet({
           )}
 
           {/* ── Documents ── */}
-          <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-5">
+          <section className="order-first bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-5">
             <div className="flex items-center gap-2 py-2">
               <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#166FB5] to-[#4038AF]" />
               <FileText className="h-4 w-4 text-slate-700" />

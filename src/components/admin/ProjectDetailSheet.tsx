@@ -701,11 +701,14 @@ export function ProjectDetailSheet({
                     <AdminServiceReport
                       projectId={project.pid}
                       clientEmail={
-                        chargeSlips[0]?.clientInfo?.email ??
-                        quotations[0]?.email
+                        chargeSlips[0]?.clientInfo?.email ||
+                        quotations[0]?.email ||
+                        linkedInquiries.find((inquiry) => inquiry.email)?.email
                       }
                       clientName={
-                        chargeSlips[0]?.clientInfo?.name ?? quotations[0]?.name
+                        chargeSlips[0]?.clientInfo?.name ||
+                        quotations[0]?.name ||
+                        linkedInquiries.find((inquiry) => inquiry.email)?.name
                       }
                       chargeSlips={chargeSlips}
                       linkedInquiries={linkedInquiries}

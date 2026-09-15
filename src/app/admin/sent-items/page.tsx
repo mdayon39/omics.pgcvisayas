@@ -22,6 +22,7 @@ import {
   Mail,
   RefreshCw,
   Trash2,
+  X,
   XCircle,
 } from "lucide-react";
 
@@ -159,7 +160,8 @@ export default function SentItemsPage() {
 
 function SentItemsContent() {
   const { adminInfo } = useAuth();
-  const isSuperadmin = adminInfo?.role === "superadmin";
+  const isSuperadmin =
+    adminInfo?.role?.toLowerCase().replace(/[-_\s]/g, "") === "superadmin";
   const [emails, setEmails] = useState<SentEmail[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<EmailCategory | "all">("all");
@@ -244,6 +246,8 @@ function SentItemsContent() {
   };
 
   const clearPendingAndFailed = async () => {
+    if (!isSuperadmin) return;
+
     const removableEmails = emails.filter(
       (email) => email.status === "Pending" || email.status === "Failed",
     );
@@ -280,7 +284,7 @@ function SentItemsContent() {
   );
 
   const toggleEmailSelection = (email: SentEmail) => {
-    if (!isSuperadmin || email.status === "Sent") return;
+    if (!isSuperadmin) return;
     setSelectedEmailIds((current) => {
       const next = new Set(current);
       if (next.has(email.id)) next.delete(email.id);
@@ -291,9 +295,7 @@ function SentItemsContent() {
 
   const toggleAllVisibleSelection = () => {
     if (!isSuperadmin) return;
-    const visibleSelectableIds = filteredEmails
-      .filter((email) => email.status !== "Sent")
-      .map((email) => email.id);
+    const visibleSelectableIds = filteredEmails.map((email) => email.id);
     const allSelected = visibleSelectableIds.every((id) =>
       selectedEmailIds.has(id),
     );
@@ -312,7 +314,7 @@ function SentItemsContent() {
     if (!isSuperadmin || selectedEmails.length === 0) return;
     if (
       !window.confirm(
-        `Permanently delete ${selectedEmails.length} selected pending or failed email record${selectedEmails.length === 1 ? "" : "s"}?`,
+        `Permanently delete ${selectedEmails.length} selected email record${selectedEmails.length === 1 ? "" : "s"}?`,
       )
     ) {
       return;
@@ -350,7 +352,7 @@ function SentItemsContent() {
               onClick={deleteSelectedEmails}
               disabled={clearing || selectedEmails.length === 0}
               className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-              title="Permanently delete selected pending and failed email records"
+              title="Permanently delete selected email records"
             >
               {clearing ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -405,6 +407,22 @@ function SentItemsContent() {
             placeholder="Search all email fields (email, project, quotation, charge slip...)"
             className="max-w-sm"
           />
+          {(search || category !== "all" || status !== "all") && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setCategory("all");
+                setStatus("all");
+              }}
+              className="inline-flex h-10 items-center gap-1.5 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              aria-label="Clear sent items search and filters"
+              title="Clear search and filters"
+            >
+              <X className="h-4 w-4" />
+              Clear
+            </button>
+          )}
           <Select
             value={category}
             onValueChange={(value) =>
@@ -461,14 +479,12 @@ function SentItemsContent() {
                   <th className="w-[48px] px-4 py-3">
                     <input
                       type="checkbox"
-                      aria-label="Select all visible pending and failed emails"
+                      aria-label="Select all visible emails"
                       checked={
-                        filteredEmails.some(
-                          (email) => email.status !== "Sent",
-                        ) &&
-                        filteredEmails
-                          .filter((email) => email.status !== "Sent")
-                          .every((email) => selectedEmailIds.has(email.id))
+                        filteredEmails.length > 0 &&
+                        filteredEmails.every((email) =>
+                          selectedEmailIds.has(email.id),
+                        )
                       }
                       onChange={toggleAllVisibleSelection}
                     />
@@ -512,7 +528,7 @@ function SentItemsContent() {
                           type="checkbox"
                           aria-label={`Select email to ${email.recipient}`}
                           checked={selectedEmailIds.has(email.id)}
-                          disabled={email.status === "Sent" || clearing}
+                          disabled={clearing}
                           onChange={() => toggleEmailSelection(email)}
                         />
                       </td>

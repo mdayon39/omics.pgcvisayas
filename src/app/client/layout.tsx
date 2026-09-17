@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import Header from "@/components/ui/header";
 import Link from "next/link";
-import { HelpCircle } from "lucide-react";
+import { CreditCard, HelpCircle } from "lucide-react";
 import {
   DEFAULT_PORTAL_FEATURES,
   getConfigurationSettings,
@@ -76,6 +76,16 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               <HelpCircle className="w-4 h-4" />
               <span className="hidden sm:inline">FAQs</span>
             </Link>
+            <a
+              href="https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2Fmode_of_payment.pdf?alt=media&token=279c10a9-ce74-40ef-8e7d-80a86820a8e0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#166FB5] hover:bg-slate-100 rounded-lg transition-colors border border-slate-100"
+              title="Mode of Payment"
+            >
+              <CreditCard className="w-4 h-4" />
+              <span className="hidden sm:inline">Mode of Payment</span>
+            </a>
           </div>
         }
       />

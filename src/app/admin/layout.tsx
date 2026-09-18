@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut, loading } = useAuth();
@@ -85,6 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {/* Right Header Content */}
               <div className="flex items-center gap-4">
                 <MessageNotificationCenter />
+                <ThemeToggle />
                 
                 {/* Admin Menu */}
                 <DropdownMenu>

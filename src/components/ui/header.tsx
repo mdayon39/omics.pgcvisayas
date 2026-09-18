@@ -2,6 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LogOut, User, Settings, Info, Key, ChevronDown, Menu, HelpCircle } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -70,6 +71,7 @@ export default function Header({
             <div className="flex items-center gap-2">
               {/* Extra slot: FAQs button, notification bell, etc. */}
               {extras}
+              <ThemeToggle />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

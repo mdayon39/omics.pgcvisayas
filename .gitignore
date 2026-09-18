@@ -53,6 +53,7 @@ temp-upload-test.pdf
 scripts/serviceAccountKey.json
 
 # PGC Specific
+/backups/
 clientscripts/
 projectscripts/
 .env*.local

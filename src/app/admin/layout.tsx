@@ -21,7 +21,6 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut, loading } = useAuth();
@@ -59,9 +58,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <TabProvider>
-      <div className="flex flex-col h-screen bg-slate-50/30 dark:bg-slate-950 overflow-hidden transition-colors">
+      <div className="flex flex-col h-screen bg-slate-50/30 overflow-hidden">
         {/* New Consolidated Top Header */}
-        <header className="bg-white/90 dark:bg-slate-950/90 backdrop-blur-md shadow-sm border-b border-slate-100 dark:border-slate-800 sticky top-0 z-50 transition-colors">
+        <header className="bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-100 sticky top-0 z-50">
           <div className="w-full px-4 py-3">
             <div className="flex justify-between items-center px-2">
               {/* Logo Section */}
@@ -77,7 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <div className="text-sm font-semibold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent uppercase tracking-wider">
                     PHILIPPINE GENOME CENTER VISAYAS
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                  <div className="text-[10px] text-slate-500 font-medium">
                     UNIVERSITY OF THE PHILIPPINES VISAYAS, MIAGAO, ILOILO
                   </div>
                 </div>
@@ -86,7 +85,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {/* Right Header Content */}
               <div className="flex items-center gap-4">
                 <MessageNotificationCenter />
-                <ThemeToggle />
                 
                 {/* Admin Menu */}
                 <DropdownMenu>
@@ -94,13 +92,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-slate-100 dark:border-slate-700"
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors border border-slate-100"
                     >
                       <Menu className="w-6 h-6 text-[#166FB5]" />
                     </Button>
                   </DropdownMenuTrigger>
                   
-                  <DropdownMenuContent className="w-[200px] mt-2 p-1.5 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-900" align="end">
+                  <DropdownMenuContent className="w-[200px] mt-2 p-1.5 rounded-xl border-slate-200" align="end">
                     <DropdownMenuItem className="flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer text-slate-700 hover:bg-slate-50 transition-colors">
                       <Settings className="w-4 h-4 text-[#166FB5]" />
                       <span className="font-medium">Settings</span>
@@ -136,12 +134,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <AdminSidebar />
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {/* Tab Bar Container */}
-            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-10">
+            <div className="bg-white border-b border-slate-200 z-10">
               <TabBar />
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-50/30 via-blue-50/20 to-indigo-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+            <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-50/30 via-blue-50/20 to-indigo-50/30">
               <TabContent>{children}</TabContent>
             </main>
           </div>

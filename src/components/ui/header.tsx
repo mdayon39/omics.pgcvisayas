@@ -42,7 +42,7 @@ export default function Header({
   };
 
   return (
-    <header className="bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-100 sticky top-0 z-50">
+    <header className="bg-white/90 dark:bg-slate-950/90 backdrop-blur-md shadow-sm border-b border-slate-100 dark:border-slate-800 sticky top-0 z-50 transition-colors">
       <div className="w-full px-4 py-3">
         <div className="flex justify-between items-center px-2">
           {/* Logo Section */}
@@ -60,7 +60,7 @@ export default function Header({
               <div className="text-sm font-semibold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent uppercase tracking-wider">
                 PHILIPPINE GENOME CENTER VISAYAS
               </div>
-              <div className="text-[10px] text-slate-500 font-medium">
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                 UNIVERSITY OF THE PHILIPPINES VISAYAS, MIAGAO, ILOILO
               </div>
             </div>

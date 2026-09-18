@@ -222,10 +222,10 @@ export function AdminSidebar() {
     .filter((section) => section.items.length > 0); // Hide empty sections
 
   return (
-    <div className="flex flex-col h-full w-64 bg-white border-r border-slate-200">
+    <div className="flex flex-col h-full w-64 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 transition-colors">
       {/* Admin profile — pinned at the top */}
       {user && (
-        <div className="p-4 border-b border-slate-100 flex-shrink-0">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9 flex-shrink-0">
               <AvatarImage src={user.photoURL || ""} />
@@ -234,10 +234,10 @@ export function AdminSidebar() {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                 {adminInfo?.name || user.displayName}
               </p>
-              <p className="text-xs text-slate-500 truncate">{user.email}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
             </div>
             <Button
               onClick={signOut}
@@ -296,7 +296,7 @@ export function AdminSidebar() {
                         ? "bg-[#166FB5] text-white"
                         : isTabOpen(href.replace("/admin/", ""))
                           ? "bg-slate-100 text-slate-800 border-l-2 border-[#166FB5]"
-                          : "text-slate-700 hover:bg-slate-50",
+                          : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900",
                     )}
                   >
                     <Icon className="w-4 h-4" />
@@ -376,7 +376,7 @@ export function AdminSidebar() {
 
               {/* Divider between sections (except last) */}
               {sectionIndex < filteredSections.length - 1 && (
-                <div className="mt-4 border-t border-slate-100" />
+                <div className="mt-4 border-t border-slate-100 dark:border-slate-800" />
               )}
             </div>
           ))}

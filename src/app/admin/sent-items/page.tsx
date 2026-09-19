@@ -9,6 +9,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -19,6 +26,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
+  Eye,
   Mail,
   RefreshCw,
   Trash2,
@@ -46,6 +54,8 @@ type SentEmail = {
   status: EmailStatus;
   sentAt: Date;
   createdAt: Date;
+  messageText: string;
+  messageHtml: string;
   error?: string;
   searchText: string;
 };
@@ -171,6 +181,7 @@ function SentItemsContent() {
   const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(
     new Set(),
   );
+  const [viewingEmail, setViewingEmail] = useState<SentEmail | null>(null);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -206,6 +217,8 @@ function SentItemsContent() {
               status: getStatus(data),
               sentAt: getSentAt(data),
               createdAt: toDate(data.createdAt || data.timestamp),
+              messageText: String(message.text || ""),
+              messageHtml: String(message.html || ""),
               error: data.delivery?.error || data.error,
               searchText,
             } satisfies SentEmail;
@@ -496,13 +509,14 @@ function SentItemsContent() {
                 <th className="w-[180px] px-4 py-3">Category</th>
                 <th className="px-4 py-3">Subject</th>
                 <th className="w-[150px] px-4 py-3">Status</th>
+                <th className="w-[100px] px-4 py-3">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {loading ? (
                 <tr>
                   <td
-                    colSpan={isSuperadmin ? 7 : 6}
+                    colSpan={isSuperadmin ? 8 : 7}
                     className="h-32 text-center"
                   >
                     <RefreshCw className="mr-2 inline h-4 w-4 animate-spin" />
@@ -512,7 +526,7 @@ function SentItemsContent() {
               ) : filteredEmails.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={isSuperadmin ? 7 : 6}
+                    colSpan={isSuperadmin ? 8 : 7}
                     className="h-32 text-center text-muted-foreground"
                   >
                     <Mail className="mr-2 inline h-4 w-4" />
@@ -590,6 +604,17 @@ function SentItemsContent() {
                         </p>
                       )}
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setViewingEmail(email)}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-[#166FB5]"
+                        title="View email message"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        View
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -597,6 +622,34 @@ function SentItemsContent() {
           </table>
         </div>
       </Card>
+      <Dialog
+        open={Boolean(viewingEmail)}
+        onOpenChange={(open) => {
+          if (!open) setViewingEmail(null);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{viewingEmail?.subject || "Email message"}</DialogTitle>
+            <DialogDescription>
+              To: {viewingEmail?.recipient || "Unknown recipient"}
+              {viewingEmail ? ` | ${formatDate(viewingEmail.sentAt)}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {viewingEmail?.messageHtml ? (
+            <iframe
+              title="Email message preview"
+              srcDoc={viewingEmail.messageHtml}
+              sandbox=""
+              className="h-[60vh] w-full rounded-md border bg-white"
+            />
+          ) : (
+            <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-md border bg-slate-50 p-4 text-sm text-slate-700">
+              {viewingEmail?.messageText || "No email message content available."}
+            </pre>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

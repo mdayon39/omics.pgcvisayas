@@ -21,7 +21,6 @@ export default function Dashboard() {
 }
 
 function DashboardPage() {
-  const [projectStatus, setProjectStatus] = React.useState("all");
   // Custom hook to fetch and manage dashboard data and state
   const {
     userName,              
@@ -37,15 +36,6 @@ function DashboardPage() {
     handleTimeFilterChange
   } = useDashboardData();
 
-  const statusFilteredProjects = React.useMemo(() => {
-    if (projectStatus === "all") return filteredProjects;
-
-    return filteredProjects.filter((project) => {
-      const status = String(project.status || "").trim().toLowerCase();
-      return status === projectStatus.toLowerCase();
-    });
-  }, [filteredProjects, projectStatus]);
-
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 rounded-lg">
       {/* Header section with welcome message and time filter */}
@@ -53,30 +43,9 @@ function DashboardPage() {
         <h1 className="text-2xl md:text-3xl font-bold mb-4">
           Welcome, {userName}!
         </h1>
-        <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+        <div className="flex flex-wrap gap-2 w-full">
           {/* Time filter for dashboard data */}
           <TimeFilter onFilterChange={handleTimeFilterChange} />
-          <div className="flex flex-wrap items-center gap-1 rounded-md border bg-white p-1">
-            {[
-              { value: "all", label: "All" },
-              { value: "Ongoing", label: "Ongoing" },
-              { value: "Completed", label: "Completed" },
-              { value: "Cancelled", label: "Cancelled" },
-            ].map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setProjectStatus(option.value)}
-                className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
-                  projectStatus === option.value
-                    ? "bg-[#166FB5] text-white"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -102,8 +71,8 @@ function DashboardPage() {
         ) : (
           // Main dashboard content
           <DashboardContent
-            totalProjects={statusFilteredProjects.length}
-            filteredProjects={statusFilteredProjects}
+            totalProjects={totalProjects}
+            filteredProjects={filteredProjects}
             filteredClients={filteredClients}
             totalIncome={totalIncome}
             timeRange={timeRange}

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import useAuth from "@/hooks/useAuth";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
+  Copy,
   Eye,
   Mail,
   RefreshCw,
@@ -48,6 +50,7 @@ type EmailStatus = "Sent" | "Failed" | "Pending";
 type SentEmail = {
   id: string;
   inquiryId: string;
+  clientName: string;
   recipient: string;
   subject: string;
   category: EmailCategory;
@@ -183,12 +186,24 @@ function SentItemsContent() {
   );
   const [viewingEmail, setViewingEmail] = useState<SentEmail | null>(null);
 
+  const handleCopy = async (value: string, label: string) => {
+    if (!value || value === "—") return;
+
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied to clipboard`);
+    } catch (error) {
+      console.error(`Failed to copy ${label.toLowerCase()}:`, error);
+      toast.error(`Could not copy ${label.toLowerCase()}`);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onSnapshot(
       collection(db, "mail"),
-      (snapshot) => {
-        const records = snapshot.docs
-          .map((mailDoc) => {
+      async (snapshot) => {
+        const records = await Promise.all(
+          snapshot.docs.map(async (mailDoc) => {
             const data = mailDoc.data();
             const recipients = Array.isArray(data.to)
               ? data.to
@@ -199,18 +214,36 @@ function SentItemsContent() {
             const subject = String(
               message.subject || data.subject || "No subject",
             );
+            const inquiryId = String(data.inquiryId || "");
             const recipient = recipients.map(String).join(", ");
+            const inquirySnap = inquiryId
+              ? await getDoc(doc(db, "inquiries", inquiryId))
+              : null;
+            const inquiryData = inquirySnap?.exists()
+              ? inquirySnap.data()
+              : null;
+            const clientName = String(
+              data.clientName ||
+                data.client_name ||
+                inquiryData?.name ||
+                inquiryData?.fullName ||
+                inquiryData?.clientName ||
+                recipient ||
+                "Unknown client",
+            );
             const searchText = getSearchableText({
               ...data,
               message,
               recipients,
               subject,
+              clientName,
               recipient,
             }).toLowerCase();
 
             return {
               id: mailDoc.id,
-              inquiryId: String(data.inquiryId || ""),
+              inquiryId,
+              clientName,
               recipient: recipient || "Unknown recipient",
               subject,
               category: categorizeEmail(subject),
@@ -223,12 +256,14 @@ function SentItemsContent() {
               searchText,
             } satisfies SentEmail;
           })
+        );
+        const filteredRecords = records
           .filter((email) => isClientFacingEmail(email.subject))
           .sort(
             (left, right) => right.sentAt.getTime() - left.sentAt.getTime(),
           );
 
-        setEmails(records);
+        setEmails(filteredRecords);
         setLoading(false);
       },
       (error) => {
@@ -505,6 +540,7 @@ function SentItemsContent() {
                 )}
                 <th className="w-[150px] px-4 py-3">Sent date and time</th>
                 <th className="w-[150px] px-4 py-3">Inquiry ID</th>
+                <th className="w-[200px] px-4 py-3">Client name</th>
                 <th className="w-[220px] px-4 py-3">Recipient</th>
                 <th className="w-[180px] px-4 py-3">Category</th>
                 <th className="px-4 py-3">Subject</th>
@@ -516,7 +552,7 @@ function SentItemsContent() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={isSuperadmin ? 8 : 7}
+                    colSpan={isSuperadmin ? 9 : 8}
                     className="h-32 text-center"
                   >
                     <RefreshCw className="mr-2 inline h-4 w-4 animate-spin" />
@@ -526,7 +562,7 @@ function SentItemsContent() {
               ) : filteredEmails.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={isSuperadmin ? 8 : 7}
+                    colSpan={isSuperadmin ? 9 : 8}
                     className="h-32 text-center text-muted-foreground"
                   >
                     <Mail className="mr-2 inline h-4 w-4" />
@@ -554,16 +590,63 @@ function SentItemsContent() {
                       {formatDate(email.sentAt)}
                     </td>
                     <td
-                      className="truncate px-4 py-3 font-mono text-xs"
+                      className="px-4 py-3 font-mono text-xs"
                       title={email.inquiryId || "No inquiry ID"}
                     >
-                      {email.inquiryId || "—"}
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate">
+                          {email.inquiryId || "—"}
+                        </span>
+                        {email.inquiryId && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(email.inquiryId, "Inquiry ID")}
+                            aria-label={`Copy inquiry ID ${email.inquiryId}`}
+                            title="Copy inquiry ID"
+                            className="shrink-0 rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#166FB5]"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td
-                      className="truncate px-4 py-3 text-xs font-medium"
+                      className="px-4 py-3 text-xs font-medium"
+                      title={email.clientName}
+                    >
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate">{email.clientName}</span>
+                        {email.clientName && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(email.clientName, "Name")}
+                            aria-label={`Copy name ${email.clientName}`}
+                            title="Copy name"
+                            className="shrink-0 rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#166FB5]"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td
+                      className="px-4 py-3 text-xs font-medium"
                       title={email.recipient}
                     >
-                      {email.recipient}
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate">{email.recipient}</span>
+                        {email.recipient && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(email.recipient, "Email")}
+                            aria-label={`Copy email ${email.recipient}`}
+                            title="Copy email"
+                            className="shrink-0 rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#166FB5]"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="truncate px-4 py-3" title={email.category}>
                       <Badge variant="outline" className="max-w-full truncate">

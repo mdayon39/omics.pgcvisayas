@@ -594,9 +594,6 @@ function SentItemsContent() {
                       title={email.inquiryId || "No inquiry ID"}
                     >
                       <div className="flex min-w-0 items-center gap-1.5">
-                        <span className="truncate">
-                          {email.inquiryId || "—"}
-                        </span>
                         {email.inquiryId && (
                           <button
                             type="button"
@@ -608,6 +605,9 @@ function SentItemsContent() {
                             <Copy className="h-3.5 w-3.5" />
                           </button>
                         )}
+                        <span className="truncate">
+                          {email.inquiryId || "—"}
+                        </span>
                       </div>
                     </td>
                     <td
@@ -615,7 +615,6 @@ function SentItemsContent() {
                       title={email.clientName}
                     >
                       <div className="flex min-w-0 items-center gap-1.5">
-                        <span className="truncate">{email.clientName}</span>
                         {email.clientName && (
                           <button
                             type="button"
@@ -627,6 +626,7 @@ function SentItemsContent() {
                             <Copy className="h-3.5 w-3.5" />
                           </button>
                         )}
+                        <span className="truncate">{email.clientName}</span>
                       </div>
                     </td>
                     <td
@@ -634,7 +634,6 @@ function SentItemsContent() {
                       title={email.recipient}
                     >
                       <div className="flex min-w-0 items-center gap-1.5">
-                        <span className="truncate">{email.recipient}</span>
                         {email.recipient && (
                           <button
                             type="button"
@@ -646,6 +645,7 @@ function SentItemsContent() {
                             <Copy className="h-3.5 w-3.5" />
                           </button>
                         )}
+                        <span className="truncate">{email.recipient}</span>
                       </div>
                     </td>
                     <td className="truncate px-4 py-3" title={email.category}>

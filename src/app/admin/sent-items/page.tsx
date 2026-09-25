@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, deleteDoc, doc, getDoc, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import useAuth from "@/hooks/useAuth";
@@ -202,13 +209,32 @@ function SentItemsContent() {
     const unsubscribe = onSnapshot(
       collection(db, "mail"),
       async (snapshot) => {
+        const inquiriesByEmail = new Map<string, Record<string, any>>();
+        const hasEmailOnlyRecord = snapshot.docs.some(
+          (mailDoc) => !mailDoc.data().inquiryId,
+        );
+        if (hasEmailOnlyRecord) {
+          const inquiriesSnapshot = await getDocs(collection(db, "inquiries"));
+          inquiriesSnapshot.forEach((inquiryDoc) => {
+            const inquiryData = inquiryDoc.data();
+            const email = String(inquiryData.email || "")
+              .trim()
+              .toLowerCase();
+            if (email && !inquiriesByEmail.has(email)) {
+              inquiriesByEmail.set(email, inquiryData);
+            }
+          });
+        }
+
         const records = await Promise.all(
           snapshot.docs.map(async (mailDoc) => {
             const data = mailDoc.data();
-            const recipients = Array.isArray(data.to)
-              ? data.to
-              : data.to
-                ? [data.to]
+            const rawRecipients =
+              data.to || data.recipientEmail || data.email || data.recipient;
+            const recipients = Array.isArray(rawRecipients)
+              ? rawRecipients
+              : rawRecipients
+                ? [rawRecipients]
                 : [];
             const message = data.message || {};
             const subject = String(
@@ -216,19 +242,22 @@ function SentItemsContent() {
             );
             const inquiryId = String(data.inquiryId || "");
             const recipient = recipients.map(String).join(", ");
-            const inquirySnap = inquiryId
-              ? await getDoc(doc(db, "inquiries", inquiryId))
-              : null;
-            const inquiryData = inquirySnap?.exists()
-              ? inquirySnap.data()
-              : null;
+            const recipientEmail = String(recipients[0] || "")
+              .trim()
+              .toLowerCase();
+            let inquiryData: Record<string, any> | null = null;
+            if (inquiryId) {
+              const inquirySnap = await getDoc(doc(db, "inquiries", inquiryId));
+              inquiryData = inquirySnap.exists() ? inquirySnap.data() : null;
+            } else if (recipientEmail) {
+              inquiryData = inquiriesByEmail.get(recipientEmail) || null;
+            }
             const clientName = String(
               data.clientName ||
                 data.client_name ||
                 inquiryData?.name ||
                 inquiryData?.fullName ||
                 inquiryData?.clientName ||
-                recipient ||
                 "Unknown client",
             );
             const searchText = getSearchableText({

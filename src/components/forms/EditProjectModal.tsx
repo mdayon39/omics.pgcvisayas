@@ -386,6 +386,7 @@ export function EditProjectModal({ project, onSuccess }: EditProjectModalProps) 
                       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                         <PopoverTrigger asChild>
                           <Button
+                            type="button"
                             variant="outline"
                             className={`w-full justify-start text-left font-normal h-9 ${!displayDate ? "text-muted-foreground" : ""}`}
                           >

@@ -17,5 +17,8 @@ export async function editProject(data: AdminProjectData): Promise<void> {
   // Reference the project document by pid
   const docRef = doc(db, "projects", data.pid);
   // Merge the new data into the existing document
-  await setDoc(docRef, data, { merge: true });
+  const firestoreData = Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined)
+  );
+  await setDoc(docRef, firestoreData, { merge: true });
 }

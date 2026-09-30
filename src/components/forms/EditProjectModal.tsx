@@ -32,9 +32,6 @@ import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { ref, listAll, deleteObject } from "firebase/storage";
 import { toast } from "sonner";
 import { deleteProjectRequest } from "@/services/projectRequestService";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { editProject } from "@/services/editProject";
 import { logActivity } from "@/services/activityLogService";
@@ -44,7 +41,14 @@ import useAuth from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getActiveCatalogItems } from "@/services/catalogSettingsService";
 import { CatalogItem } from "@/types/CatalogSettings";
-import { X, Search, ChevronDown, Plus } from "lucide-react";
+import { X, Search, Plus } from "lucide-react";
+
+function formatDateForInput(date?: Date): string {
+  if (!date || Number.isNaN(date.getTime())) return "";
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
 
 interface EditProjectModalProps {
   project: Project;
@@ -65,7 +69,6 @@ export function EditProjectModal({ project, onSuccess }: EditProjectModalProps) 
   const [personnelOptions, setPersonnelOptions] = useState<CatalogItem[]>([]);
   const [inquiryOptions, setInquiryOptions] = useState<Inquiry[]>([]);
   const [inquirySearch, setInquirySearch] = useState("");
-  const [popoverOpen, setPopoverOpen] = useState(false);
 
   useEffect(() => {
     getInquiries().then((inquiries) => {
@@ -193,8 +196,8 @@ export function EditProjectModal({ project, onSuccess }: EditProjectModalProps) 
       serviceRequested,
       // Ensure startDate is properly formatted for storage (as string YYYY-MM-DD if needed, or Date)
       // Based on types/Project.ts, startDate is a string.
-      startDate: data.startDate instanceof Date 
-        ? data.startDate.toLocaleDateString('en-CA') // Format as YYYY-MM-DD
+      startDate: data.startDate instanceof Date
+        ? formatDateForInput(data.startDate)
         : data.startDate
     };
 
@@ -383,34 +386,17 @@ export function EditProjectModal({ project, onSuccess }: EditProjectModalProps) 
                   return (
                     <FormItem>
                       <FormLabel className="text-xs">Start Date</FormLabel>
-                      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className={`w-full justify-start text-left font-normal h-9 ${!displayDate ? "text-muted-foreground" : ""}`}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {displayDate ?
-                              displayDate.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-                              : "Pick a date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 z-[110]" align="start">
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <Calendar
-                              mode="single"
-                              selected={displayDate}
-                              onSelect={(date) => {
-                                console.log('Date selected:', date);
-                                field.onChange(date || undefined);
-                                setPopoverOpen(false);
-                              }}
-                              initialFocus
-                            />
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          className="h-9"
+                          value={formatDateForInput(displayDate)}
+                          onChange={(event) => {
+                            const [year, month, day] = event.target.value.split("-").map(Number);
+                            field.onChange(event.target.value ? new Date(year, month - 1, day) : undefined);
+                          }}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   );

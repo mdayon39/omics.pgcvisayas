@@ -1840,8 +1840,9 @@ export async function sendProjectApprovalEmail(
 
           <p style="margin: 0 0 20px 0;">
             If you encounter any issues accessing the portal or have questions about the submission
-            requirements, please do not hesitate to reach out via the <strong>portal chat box</strong> or
-            check our <a href="https://omics.pgcvisayas.upv.edu.ph/faqs" style="color: #2563eb; text-decoration: none;">FAQs</a>.
+            requirements, please do not hesitate to reach out to us via email at
+            <a href="mailto:sequencing.pgc.upvisayas@up.edu.ph" style="color: #2563eb; text-decoration: none;">sequencing.pgc.upvisayas@up.edu.ph</a>
+            or check our <a href="https://omics.pgcvisayas.upv.edu.ph/faqs" style="color: #2563eb; text-decoration: none;">FAQs</a>.<br><br>
             We look forward to working with you!
           </p>
 
@@ -1873,7 +1874,9 @@ Once your submission is received, we will coordinate with you regarding the phys
 
 Access your client portal here: ${portalUrl}
 
-If you encounter any issues accessing the portal or have questions about the submission requirements, please do not hesitate to reach out. We look forward to working with you!
+If you encounter any issues accessing the portal or have questions about the submission requirements, please do not hesitate to reach out to us via email at sequencing.pgc.upvisayas@up.edu.ph or check our FAQs: https://omics.pgcvisayas.upv.edu.ph/faqs.
+
+We look forward to working with you!
 
 Yours in utilizing OMICS for a better Philippines,
 Philippine Genome Center Visayas`.trim();

@@ -35,6 +35,8 @@ import { logActivity } from "@/services/activityLogService";
 import useAuth from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { EditClientModal } from "@/components/forms/EditClientModal";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface ClientDetailSheetProps {
   client: Client | null;
@@ -135,8 +137,12 @@ export function ClientDetailSheet({
 }: ClientDetailSheetProps) {
   const { adminInfo } = useAuth();
   const { canEdit } = usePermissions(adminInfo?.role);
+  const isSuperAdmin =
+    adminInfo?.role?.toLowerCase().replace(/[-_\s]/g, "") === "superadmin";
   const [chargeSlips, setChargeSlips] = useState<ChargeSlipRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [haveSubmitted, setHaveSubmitted] = useState(false);
+  const [submissionSaving, setSubmissionSaving] = useState(false);
   const [clientStatus, setClientStatus] = useState<"Approved" | "Cancelled">(
     "Approved",
   );
@@ -147,6 +153,7 @@ export function ClientDetailSheet({
 
     // Sync status from client prop
     setClientStatus(client.status || "Approved");
+    setHaveSubmitted(!!client.haveSubmitted);
 
     const loadData = async () => {
       setLoading(true);
@@ -214,6 +221,35 @@ export function ClientDetailSheet({
     }
   };
 
+  const handleHaveSubmittedChange = async (newValue: boolean) => {
+    if (!client.cid || newValue === haveSubmitted) return;
+    setSubmissionSaving(true);
+    try {
+      await updateClient(client.cid, { haveSubmitted: newValue });
+      setHaveSubmitted(newValue);
+      await logActivity({
+        userId: adminInfo?.email || "system",
+        userEmail: adminInfo?.email || "system@pgc.admin",
+        userName: adminInfo?.name || "System",
+        action: "UPDATE",
+        entityType: "client",
+        entityId: client.cid,
+        entityName: client.name || client.cid,
+        description: `Updated client haveSubmitted to ${newValue}`,
+        changesBefore: { haveSubmitted },
+        changesAfter: { haveSubmitted: newValue },
+        changedFields: ["haveSubmitted"],
+      });
+      toast.success("Submission status updated.");
+      onClientUpdated?.();
+    } catch (err) {
+      console.error("Failed to update client submission status:", err);
+      toast.error("Failed to update submission status.");
+    } finally {
+      setSubmissionSaving(false);
+    }
+  };
+
   return (
     <Sheet
       open={open}
@@ -239,7 +275,7 @@ export function ClientDetailSheet({
                 >
                   {client.cid}
                 </Badge>
-                {client.haveSubmitted && (
+                {haveSubmitted && (
                   <Badge
                     variant="outline"
                     className="text-emerald-700 border-emerald-200 bg-emerald-50 text-xs"
@@ -366,15 +402,42 @@ export function ClientDetailSheet({
             />
             <Separator />
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                {client.haveSubmitted ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                ) : (
-                  <Circle className="h-4 w-4 text-slate-300" />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {haveSubmitted ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-slate-300" />
+                  )}
+                  <span className="text-sm text-slate-700">
+                    Has Submitted Inquiry
+                  </span>
+                </div>
+                {isSuperAdmin && (
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={haveSubmitted ? "true" : "false"}
+                      onValueChange={(value) =>
+                        handleHaveSubmittedChange(value === "true")
+                      }
+                      disabled={submissionSaving}
+                    >
+                      <SelectTrigger
+                        className="h-8 w-24 text-xs"
+                        aria-label="Have submitted"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">True</SelectItem>
+                        <SelectItem value="false">False</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {submissionSaving && (
+                      <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                    )}
+                  </div>
                 )}
-                <span className="text-sm text-slate-700">
-                  Has Submitted Inquiry
-                </span>
               </div>
               <div className="flex items-center gap-2">
                 {client.isContactPerson ? (

@@ -48,21 +48,24 @@ export async function getClientById(cid: string): Promise<Client | null> {
     const parsed = clientSchema.safeParse({ id: snapshot.id, ...data });
 
     if (!parsed.success) {
-      console.warn("Failed to validate client:", cid, parsed.error);
-      return null;
+      console.warn("Client has legacy fields; using available client data:", cid, parsed.error);
     }
+
+    const clientData = parsed.success
+      ? parsed.data
+      : { ...data, cid: data.cid ?? snapshot.id };
 
     // Normalize parsed.client so it matches the Client type:
     // - convert any nullable fields that are `null` to `undefined`
     // - convert nullable cid (null) to undefined
     // - normalize createdAt to a Date or undefined
     const sanitized = Object.fromEntries(
-      Object.entries(parsed.data).map(([k, v]) => [k, v === null ? undefined : v])
+      Object.entries(clientData).map(([k, v]) => [k, v === null ? undefined : v])
     ) as any;
 
     const client: Client = {
       ...sanitized,
-      cid: sanitized.cid ?? undefined,
+      cid: sanitized.cid ?? snapshot.id,
       createdAt: sanitized.createdAt
         ? typeof sanitized.createdAt === "string"
           ? new Date(sanitized.createdAt)

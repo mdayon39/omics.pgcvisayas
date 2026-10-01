@@ -23,6 +23,7 @@ import PresenceIndicator from "@/components/chat/PresenceIndicator";
 import { useOfficeAvailability } from "@/hooks/useOfficeAvailability";
 import { getConfigurationSettings } from "@/services/configurationSettingsService";
 import { ConfigurationSettings } from "@/types/ConfigurationSettings";
+import { useChatTabAttention } from "@/hooks/useChatTabAttention";
 
 type NavigatorWithBadge = Navigator & {
   setAppBadge?: (contents?: number) => Promise<void>;
@@ -402,6 +403,10 @@ export default function FloatingChatWidget({
   const totalUnreadCount = allInquiries && allInquiries.length > 1
     ? Array.from(perThreadUnread.values()).reduce((a, b) => a + b, 0)
     : unreadCount;
+  useChatTabAttention(
+    role === "client" ? "client-chat" : "admin-client-chat",
+    totalUnreadCount,
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;

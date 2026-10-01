@@ -41,6 +41,7 @@ import {
 } from "@/services/adminChatService";
 import { uploadFile } from "@/lib/fileUpload";
 import { AdminChannel, AdminMessage } from "@/types/AdminChat";
+import { useChatTabAttention } from "@/hooks/useChatTabAttention";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -383,6 +384,7 @@ export default function AdminChatWidget() {
     const key = emailToKey(myEmail);
     return sum + (ch.unreadCounts?.[key] ?? 0);
   }, 0);
+  useChatTabAttention("admin-dm", totalUnread);
 
   const getChannelFor = useCallback(
     (adminEmail: string) =>

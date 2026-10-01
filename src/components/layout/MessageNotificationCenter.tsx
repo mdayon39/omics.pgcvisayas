@@ -42,6 +42,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
+import { useChatTabAttention } from "@/hooks/useChatTabAttention";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -69,6 +70,7 @@ export function MessageNotificationCenter() {
   } | null>(null);
   const { notifications, totalUnread, markViewed, markAllViewed } =
     useMessageNotifications();
+  useChatTabAttention("admin-client-notifications", totalUnread);
 
   const filteredNotifications = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();

@@ -6,6 +6,7 @@ import {
   getChargeSlipById,
   updateChargeSlip,
 } from "@/services/chargeSlipService";
+import { getClientById } from "@/services/clientProjectService";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -104,6 +105,12 @@ const formatDate = (
 const isTimestamp = (val: any): val is Timestamp =>
   val?.seconds !== undefined && val?.nanoseconds !== undefined;
 
+const isMissingClientValue = (value?: string | null) =>
+  !value ||
+  ["unknown client", "no institution", "no designation", "n/a", "—"].includes(
+    value.trim().toLowerCase(),
+  );
+
 export default function ChargeSlipDetailPage() {
   return (
     <PermissionGuard module="chargeSlips" action="view">
@@ -177,6 +184,54 @@ function ChargeSlipDetailContent() {
         dateOfOR: data.dateOfOR?.toDate?.() || data.dateOfOR,
         createdAt: data.createdAt?.toDate?.() || data.createdAt || new Date(),
       };
+
+      const linkedClientId = chargeSlipData.cid || chargeSlipData.client?.cid;
+      if (linkedClientId) {
+        const linkedClient = await getClientById(linkedClientId);
+        if (linkedClient) {
+          const existingClient = chargeSlipData.client || ({} as ChargeSlipRecord["client"]);
+          const existingClientInfo = chargeSlipData.clientInfo || {
+            name: "",
+            institution: "",
+            designation: "",
+            email: "",
+          };
+
+          chargeSlipData.client = {
+            ...existingClient,
+            ...linkedClient,
+            name: isMissingClientValue(existingClient.name)
+              ? linkedClient.name
+              : existingClient.name,
+            affiliation: isMissingClientValue(existingClient.affiliation)
+              ? linkedClient.affiliation
+              : existingClient.affiliation,
+            designation: isMissingClientValue(existingClient.designation)
+              ? linkedClient.designation
+              : existingClient.designation,
+            email: isMissingClientValue(existingClient.email)
+              ? linkedClient.email
+              : existingClient.email,
+          };
+          chargeSlipData.clientInfo = {
+            ...existingClientInfo,
+            name: isMissingClientValue(existingClientInfo.name)
+              ? linkedClient.name || existingClientInfo.name
+              : existingClientInfo.name,
+            institution: isMissingClientValue(existingClientInfo.institution)
+              ? linkedClient.affiliation || existingClientInfo.institution
+              : existingClientInfo.institution,
+            designation: isMissingClientValue(existingClientInfo.designation)
+              ? linkedClient.designation || existingClientInfo.designation
+              : existingClientInfo.designation,
+            email: isMissingClientValue(existingClientInfo.email)
+              ? linkedClient.email || existingClientInfo.email
+              : existingClientInfo.email,
+            address:
+              existingClientInfo.address || linkedClient.affiliationAddress,
+          };
+        }
+      }
 
       setRecord(chargeSlipData);
       setDvNumber(chargeSlipData.dvNumber ?? "");

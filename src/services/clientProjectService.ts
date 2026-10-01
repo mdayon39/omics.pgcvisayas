@@ -25,7 +25,10 @@ function safeDate(input: any): string | undefined {
  */
 export async function getClientById(cid: string): Promise<Client | null> {
   try {
-    const docRef = doc(db, "clients", cid);
+    const normalizedCid = cid.trim().toUpperCase();
+    if (!normalizedCid) return null;
+
+    const docRef = doc(db, "clients", normalizedCid);
     const snapshot = await getDoc(docRef);
 
     if (!snapshot.exists()) return null;

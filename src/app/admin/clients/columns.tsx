@@ -7,7 +7,6 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Client } from "@/types/Client"
 import { clientSchema } from "@/schemas/clientSchema"
 import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
 import { toast } from "sonner";
 import { ArrowUpDown } from "lucide-react"
 import useAuth from "@/hooks/useAuth"
@@ -215,9 +214,13 @@ export const columns: ColumnDef<Client>[] = [
     cell: (ctx: any) => {
       const { row, meta } = ctx;
       const client = row.original;
-      const router = useRouter();
       const { adminInfo } = useAuth();
       const { canEdit, canCreate } = usePermissions(adminInfo?.role);
+      const projectIds = Array.isArray(client.pid)
+        ? client.pid
+        : client.pid
+          ? [client.pid]
+          : [];
 
       return (
         <div className="flex items-center gap-1 justify-end px-1">
@@ -225,20 +228,10 @@ export const columns: ColumnDef<Client>[] = [
             <EditClientModal client={client} onSuccess={meta?.onSuccess} />
           )}
           {canCreate("chargeSlips") && (
-            <Button
-              onClick={(event) => {
-                event.stopPropagation();
-                const primaryPid = Array.isArray(client.pid) ? client.pid[0] : client.pid;
-                if (!client.cid || !primaryPid) return;
-                router.push(`/admin/charge-slips/new?clientId=${encodeURIComponent(client.cid)}&projectId=${encodeURIComponent(primaryPid)}`);
-              }}
-              variant="outline"
-              size="sm"
-              className="h-7 text-[9px] px-2 py-0 border-blue-200 text-blue-700 hover:bg-blue-50 font-semibold"
-              data-stop-row-click="true"
-            >
-              Charge Slip
-            </Button>
+            <ChargeSlipButton
+              clientId={client.cid || ""}
+              projectIds={projectIds}
+            />
           )}
         </div>
       );

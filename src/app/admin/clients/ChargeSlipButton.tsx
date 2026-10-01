@@ -41,10 +41,14 @@ export function ChargeSlipButton({ clientId, projectIds }: ChargeSlipButtonProps
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            onClick={handleCreateNew}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleCreateNew();
+            }}
             variant="outline"
             size="sm"
-            className="whitespace-nowrap h-8 w-[100px] px-2 text-xs bg-white hover:bg-slate-50 border-slate-200 text-slate-700 font-medium flex items-center justify-between"
+            className="whitespace-nowrap h-7 w-[100px] px-2 text-[9px] bg-white hover:bg-slate-50 border-blue-200 text-blue-700 font-semibold flex items-center justify-between"
+            data-stop-row-click="true"
           >
             <span>Charge Slip</span>
             <div className="flex items-center justify-center w-6">

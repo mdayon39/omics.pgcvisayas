@@ -103,6 +103,9 @@ export function EditClientModal({ client, onSuccess }: EditClientModalProps) {
       proj.title?.toLowerCase().includes(projectSearch.toLowerCase()) ||
       proj.lead?.toLowerCase().includes(projectSearch.toLowerCase())
   );
+  const availableProjectOptions = filteredProjectOptions.filter(
+    (project) => !projects.includes(project.pid || "")
+  );
 
   const onSubmit = async (data: AdminClientData) => {
     setIsLoading(true);
@@ -674,22 +677,27 @@ export function EditClientModal({ client, onSuccess }: EditClientModalProps) {
                     
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Add New Project</h4>
+                      <Input
+                        value={projectSearch}
+                        onChange={(event) => setProjectSearch(event.target.value)}
+                        placeholder="Search by project ID, title, or lead"
+                        aria-label="Search projects to add"
+                        className="h-9 mb-2"
+                      />
                       <div className="flex gap-2">
                         <Select value={selectedNewProject} onValueChange={setSelectedNewProject}>
                           <SelectTrigger className="h-9 flex-1">
                             <SelectValue placeholder="Select project to add" />
                           </SelectTrigger>
                           <SelectContent className="max-h-[200px]">
-                            {projectOptions
-                              .filter(p => !projects.includes(p.pid || ""))
-                              .map((proj) => (
-                                <SelectItem key={proj.pid} value={proj.pid || ""}>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium text-sm">{proj.pid}</span>
-                                    <span className="text-xs text-gray-500">{proj.title}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
+                            {availableProjectOptions.map((proj) => (
+                              <SelectItem key={proj.pid} value={proj.pid || ""}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-sm">{proj.pid}</span>
+                                  <span className="text-xs text-gray-500">{proj.title}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <Button
@@ -703,6 +711,9 @@ export function EditClientModal({ client, onSuccess }: EditClientModalProps) {
                           Add
                         </Button>
                       </div>
+                      {projectSearch && availableProjectOptions.length === 0 && (
+                        <p className="mt-2 text-xs text-gray-500">No matching projects available.</p>
+                      )}
                     </div>
                   </>
                 )}

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Trash2, Pencil, UserCog, User, Mail, Phone, Building2, Briefcase, FolderOpen, Save, Plus, X } from 'lucide-react';
+import { Trash2, Pencil, UserCog, User, Mail, Phone, Building2, Briefcase, FolderOpen, Save, Plus, Search, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -677,27 +677,36 @@ export function EditClientModal({ client, onSuccess }: EditClientModalProps) {
                     
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Add New Project</h4>
-                      <Input
-                        value={projectSearch}
-                        onChange={(event) => setProjectSearch(event.target.value)}
-                        placeholder="Search by project ID, title, or lead"
-                        aria-label="Search projects to add"
-                        className="h-9 mb-2"
-                      />
                       <div className="flex gap-2">
                         <Select value={selectedNewProject} onValueChange={setSelectedNewProject}>
                           <SelectTrigger className="h-9 flex-1">
                             <SelectValue placeholder="Select project to add" />
                           </SelectTrigger>
-                          <SelectContent className="max-h-[200px]">
-                            {availableProjectOptions.map((proj) => (
-                              <SelectItem key={proj.pid} value={proj.pid || ""}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-sm">{proj.pid}</span>
-                                  <span className="text-xs text-gray-500">{proj.title}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
+                          <SelectContent className="max-h-[250px] w-[350px]">
+                            <div className="px-2 py-1 sticky top-0 bg-white border-b z-10 flex items-center gap-2 mb-1">
+                              <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                              <Input
+                                placeholder="Search project ID, title, or lead..."
+                                aria-label="Search projects to add"
+                                className="h-7 text-xs border-none focus-visible:ring-0 shadow-none px-0"
+                                value={projectSearch}
+                                onChange={(event) => setProjectSearch(event.target.value)}
+                              />
+                            </div>
+                            {availableProjectOptions.length > 0 ? (
+                              availableProjectOptions.map((proj) => (
+                                <SelectItem key={proj.pid} value={proj.pid || ""}>
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="font-medium text-sm">{proj.pid}</span>
+                                    <span className="text-xs text-gray-500">{proj.title}</span>
+                                  </div>
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="py-4 text-center text-xs text-gray-500">
+                                {projectSearch ? "No matching projects found" : "All available projects are already linked"}
+                              </div>
+                            )}
                           </SelectContent>
                         </Select>
                         <Button
@@ -711,9 +720,6 @@ export function EditClientModal({ client, onSuccess }: EditClientModalProps) {
                           Add
                         </Button>
                       </div>
-                      {projectSearch && availableProjectOptions.length === 0 && (
-                        <p className="mt-2 text-xs text-gray-500">No matching projects available.</p>
-                      )}
                     </div>
                   </>
                 )}

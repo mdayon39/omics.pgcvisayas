@@ -120,6 +120,22 @@ function getStatus(data: Record<string, any>): EmailStatus {
   return "Pending";
 }
 
+function getKnownClientName(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const name = value.trim();
+    if (
+      name &&
+      !["unknown", "unknown client", "valued client"].includes(
+        name.toLowerCase(),
+      )
+    ) {
+      return name;
+    }
+  }
+  return "";
+}
+
 function getSentAt(data: Record<string, any>): Date {
   return toDate(
     data?.delivery?.endTime ||
@@ -206,6 +222,32 @@ function SentItemsContent() {
   };
 
   useEffect(() => {
+    let clientsByEmailPromise: Promise<Map<string, Record<string, any>>> | null =
+      null;
+    const getClientsByEmail = () => {
+      if (!clientsByEmailPromise) {
+        clientsByEmailPromise = getDocs(collection(db, "clients"))
+          .then((clientsSnapshot) => {
+            const clientsByEmail = new Map<string, Record<string, any>>();
+            clientsSnapshot.forEach((clientDoc) => {
+              const clientData = clientDoc.data();
+              const email = String(clientData.email || "")
+                .trim()
+                .toLowerCase();
+              if (email && !clientsByEmail.has(email)) {
+                clientsByEmail.set(email, clientData);
+              }
+            });
+            return clientsByEmail;
+          })
+          .catch((error) => {
+            console.error("Failed to load clients for sent email names:", error);
+            return new Map<string, Record<string, any>>();
+          });
+      }
+      return clientsByEmailPromise;
+    };
+
     const unsubscribe = onSnapshot(
       collection(db, "mail"),
       async (snapshot) => {
@@ -252,14 +294,21 @@ function SentItemsContent() {
             } else if (recipientEmail) {
               inquiryData = inquiriesByEmail.get(recipientEmail) || null;
             }
-            const clientName = String(
-              data.clientName ||
-                data.client_name ||
-                inquiryData?.name ||
-                inquiryData?.fullName ||
-                inquiryData?.clientName ||
-                "Unknown client",
+            const knownName = getKnownClientName(
+              data.clientName,
+              data.client_name,
+              inquiryData?.name,
+              inquiryData?.fullName,
+              inquiryData?.clientName,
             );
+            const clientData =
+              !knownName && recipientEmail
+                ? (await getClientsByEmail()).get(recipientEmail)
+                : null;
+            const clientName =
+              knownName ||
+              getKnownClientName(clientData?.name, clientData?.fullName) ||
+              "Unknown client";
             const searchText = getSearchableText({
               ...data,
               message,

@@ -15,7 +15,7 @@ import { db } from "@/lib/firebase";
 export interface ServiceReport {
   id: string;
   fileName: string;
-  fileUrl?: string;
+  fileUrl: string;
   storagePath: string;
   uploadedAt: Timestamp | null;
   uploadedBy: string;

@@ -16,6 +16,7 @@ import {
 import {
   ref as storageRef,
   uploadBytesResumable,
+  getDownloadURL,
   deleteObject,
 } from "firebase/storage";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,6 @@ import { ServiceReport } from "@/services/serviceReportService";
 import { ChargeSlipRecord } from "@/types/ChargeSlipRecord";
 import { Inquiry } from "@/types/Inquiry";
 import { QuotationRecord } from "@/types/Quotation";
-import { openServiceReport } from "@/lib/openServiceReport";
 
 interface Props {
   projectId: string;
@@ -160,13 +160,6 @@ export default function AdminServiceReport({
     setPendingFile(file);
   };
 
-  const handleOpenReport = (report: ServiceReport) => {
-    openServiceReport(projectId, report.id).catch((error) => {
-      console.error("Failed to open service report:", error);
-      toast.error(error instanceof Error ? error.message : "Unable to open service report.");
-    });
-  };
-
   const handleUpload = async () => {
     const file = pendingFile;
     if (!file) return;
@@ -174,6 +167,7 @@ export default function AdminServiceReport({
     setUploading(true);
     setUploadProgress(0);
     try {
+      const ext = file.name.split(".").pop();
       const uniqueName = `${Date.now()}-${file.name}`;
       const path = `serviceReports/${projectId}/${uniqueName}`;
       const sRef = storageRef(storage, path);
@@ -192,6 +186,8 @@ export default function AdminServiceReport({
         );
       });
 
+      const fileUrl = await getDownloadURL(sRef);
+
       const projectUpdate: Record<string, unknown> = {};
 
       if (adminInfo?.name) {
@@ -207,6 +203,7 @@ export default function AdminServiceReport({
 
       await addDoc(collection(db, "projects", projectId, "serviceReports"), {
         fileName: file.name,
+        fileUrl,
         storagePath: path,
         fileSize: file.size,
         contentType: file.type,
@@ -392,14 +389,15 @@ Philippine Genome Center Visayas`.trim();
                 <div className="flex items-center gap-2 min-w-0">
                   <FileText className="h-3.5 w-3.5 text-blue-500 shrink-0" />
                   <div className="min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenReport(report)}
+                    <a
+                      href={report.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-xs font-medium text-blue-700 hover:underline truncate block"
                       title={report.fileName}
                     >
                       {report.fileName}
-                    </button>
+                    </a>
                     {uploadedAtDate && (
                       <span className="text-[10px] text-slate-400 block">
                         {uploadedAtDate}{" "}
@@ -455,15 +453,15 @@ Philippine Genome Center Visayas`.trim();
                       />
                     </div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenReport(report)}
+                  <a
+                    href={report.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Download"
-                    aria-label={`Download ${report.fileName}`}
                   >
                     <Download className="h-3.5 w-3.5 text-slate-400 hover:text-blue-600" />
-                  </button>
+                  </a>
                   {(!isReceived ||
                     adminInfo?.role?.toLowerCase().replace(/\s+/g, "") ===
                       "superadmin") && (

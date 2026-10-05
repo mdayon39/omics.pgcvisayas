@@ -42,6 +42,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "Service report access is not configured on the server." }, { status: 503 });
   }
 
+  let stage = "read-report-record";
   try {
     const { projectId, reportId } = await params;
     const reportSnapshot = await adminDb
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const isAdmin = adminSnapshot.exists;
 
     if (!isAdmin) {
+      stage = "check-client-project-access";
       const clientsSnapshot = await adminDb
         .collection("clients")
         .where("email", "==", email)
@@ -89,17 +91,20 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       }
     }
 
+    stage = "resolve-storage-bucket";
     const bucket = getStorageBucket();
     if (!bucket) {
       return NextResponse.json({ error: "File storage is unavailable." }, { status: 503 });
     }
 
+    stage = "check-storage-file";
     const file = bucket.file(storagePath);
     const [exists] = await file.exists();
     if (!exists) {
       return NextResponse.json({ error: "Service report file not found." }, { status: 404 });
     }
 
+    stage = "download-storage-file";
     const [[fileBuffer], [metadata]] = await Promise.all([
       file.download(),
       file.getMetadata(),
@@ -115,13 +120,17 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       },
     });
   } catch (error) {
-    console.error("Service report access failed:", error);
+    console.error(`Service report access failed during ${stage}:`, error);
     const errorCode =
       typeof error === "object" && error !== null && "code" in error
         ? String(error.code)
         : undefined;
     return NextResponse.json(
-      { error: "Unable to access service report.", ...(errorCode ? { code: errorCode } : {}) },
+      {
+        error: "Unable to access service report.",
+        stage,
+        ...(errorCode ? { code: errorCode } : {}),
+      },
       { status: 500 },
     );
   }

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import admin, { getFirestoreDb, getStorageBucket } from "@/lib/firebase-admin";
 
@@ -114,10 +115,25 @@ export async function POST(
       return NextResponse.json({ error: "Report file not found." }, { status: 404 });
     }
 
-    const [url] = await file.getSignedUrl({
-      action: "read",
-      expires: Date.now() + 15 * 60 * 1000,
-    });
+    const [metadata] = await file.getMetadata();
+    const existingTokens = String(
+      metadata.metadata?.firebaseStorageDownloadTokens || "",
+    )
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const downloadToken = existingTokens[0] || randomUUID();
+
+    if (existingTokens.length === 0) {
+      await file.setMetadata({
+        metadata: {
+          ...metadata.metadata,
+          firebaseStorageDownloadTokens: downloadToken,
+        },
+      });
+    }
+
+    const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${encodeURIComponent(downloadToken)}`;
     return NextResponse.json({ url }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Failed to authorize service report access:", error);

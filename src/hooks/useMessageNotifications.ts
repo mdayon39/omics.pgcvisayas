@@ -27,6 +27,7 @@ export interface MessageNotification {
   lastMessageByName?: string;
   lastMessageByRole?: "admin" | "client";
   lastMessagePreview?: string;
+  pinnedByAdmin: boolean;
   /** Local-only flag — true after the admin opens this thread from the panel */
   viewed: boolean;
 }
@@ -75,6 +76,7 @@ export function useMessageNotifications() {
             lastMessagePreview:
               latestMessage?.content?.trim().substring(0, 120) ||
               data.lastMessagePreview,
+            pinnedByAdmin: data.pinnedByAdmin === true,
             viewed: viewedRef.current.has(docSnap.id),
           };
         })

@@ -11,6 +11,8 @@ import React, { useMemo, useState } from "react";
 import {
   MessageCircle,
   MoreHorizontal,
+  Pin,
+  PinOff,
   RotateCcw,
   Search,
   Trash2,
@@ -52,6 +54,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import {
   dismissThreadNotification,
   markLatestClientMessageAsUnseen,
+  setThreadPinned,
 } from "@/services/quotationThreadService";
 
 export function MessageNotificationCenter() {
@@ -63,6 +66,7 @@ export function MessageNotificationCenter() {
   const [searchQuery, setSearchQuery] = useState("");
   const [markingUnseenId, setMarkingUnseenId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [pinningId, setPinningId] = useState<string | null>(null);
   const [confirmDismissOpen, setConfirmDismissOpen] = useState(false);
   const [pendingDismiss, setPendingDismiss] = useState<{
     id: string;
@@ -74,18 +78,22 @@ export function MessageNotificationCenter() {
 
   const filteredNotifications = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return notifications;
+    const matchingNotifications = query
+      ? notifications.filter((notification) => {
+          const haystack = [
+            notification.clientName,
+            notification.clientAffiliation,
+            notification.clientEmail,
+          ]
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(query);
+        })
+      : notifications;
 
-    return notifications.filter((notification) => {
-      const haystack = [
-        notification.clientName,
-        notification.clientAffiliation,
-        notification.clientEmail,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(query);
-    });
+    return [...matchingNotifications].sort(
+      (left, right) => Number(right.pinnedByAdmin) - Number(left.pinnedByAdmin),
+    );
   }, [notifications, searchQuery]);
 
   const handleNotificationClick = (inquiryId: string) => {
@@ -135,6 +143,24 @@ export function MessageNotificationCenter() {
       toast.error("Failed to mark message as unseen");
     } finally {
       setMarkingUnseenId(null);
+    }
+  };
+
+  const handleTogglePinned = async (
+    event: React.MouseEvent,
+    inquiryId: string,
+    pinned: boolean,
+  ) => {
+    event.stopPropagation();
+    if (pinningId) return;
+    try {
+      setPinningId(inquiryId);
+      await setThreadPinned(inquiryId, pinned);
+      toast.success(pinned ? "Conversation pinned to top" : "Conversation unpinned");
+    } catch {
+      toast.error("Failed to update pinned conversation");
+    } finally {
+      setPinningId(null);
     }
   };
 
@@ -228,8 +254,10 @@ export function MessageNotificationCenter() {
                     canManageClientMessages={canManageClientMessages}
                     handleDismiss={requestDismiss}
                     handleMarkAsUnseen={handleMarkAsUnseen}
+                    handleTogglePinned={handleTogglePinned}
                     dismissingId={dismissingId}
                     markingUnseenId={markingUnseenId}
+                    pinningId={pinningId}
                   />
                 ))}
               </div>
@@ -285,8 +313,14 @@ interface NotificationItemProps {
     clientName: string,
   ) => void;
   handleMarkAsUnseen: (event: React.MouseEvent, inquiryId: string) => void;
+  handleTogglePinned: (
+    event: React.MouseEvent,
+    inquiryId: string,
+    pinned: boolean,
+  ) => void;
   dismissingId: string | null;
   markingUnseenId: string | null;
+  pinningId: string | null;
 }
 
 function NotificationItem({
@@ -295,8 +329,10 @@ function NotificationItem({
   canManageClientMessages,
   handleDismiss,
   handleMarkAsUnseen,
+  handleTogglePinned,
   dismissingId,
   markingUnseenId,
+  pinningId,
 }: NotificationItemProps) {
   const presence = usePresenceStatus(`client_${n.inquiryId}`);
 
@@ -348,6 +384,12 @@ function NotificationItem({
                 >
                   {n.clientName}
                 </p>
+                {n.pinnedByAdmin && (
+                  <Pin
+                    className="inline h-3 w-3 text-amber-600 fill-amber-600"
+                    aria-label="Pinned conversation"
+                  />
+                )}
                 {n.lastMessageAt && (
                   <span className="text-[10px] text-slate-400 whitespace-nowrap">
                     {formatDistanceToNow(n.lastMessageAt, {
@@ -378,6 +420,24 @@ function NotificationItem({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-36">
+                    <DropdownMenuItem
+                      onClick={(event) =>
+                        handleTogglePinned(event, n.inquiryId, !n.pinnedByAdmin)
+                      }
+                      disabled={pinningId === n.inquiryId}
+                      className="text-[11px] cursor-pointer"
+                    >
+                      {n.pinnedByAdmin ? (
+                        <PinOff className="mr-2 h-3.5 w-3.5" />
+                      ) : (
+                        <Pin className="mr-2 h-3.5 w-3.5" />
+                      )}
+                      {pinningId === n.inquiryId
+                        ? "Updating..."
+                        : n.pinnedByAdmin
+                          ? "Unpin from top"
+                          : "Pin to top"}
+                    </DropdownMenuItem>
                     {n.unreadCount > 0 ? (
                       <DropdownMenuItem
                         onClick={(event) =>

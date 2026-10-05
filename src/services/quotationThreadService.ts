@@ -999,6 +999,22 @@ export async function dismissThreadNotification(
   }
 }
 
+/** Pin or unpin a client conversation in the admin message notification list. */
+export async function setThreadPinned(
+  inquiryId: string,
+  pinned: boolean,
+): Promise<void> {
+  try {
+    await updateDoc(doc(db, THREADS_COLLECTION, inquiryId), {
+      pinnedByAdmin: pinned,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error updating pinned thread:", error);
+    throw error;
+  }
+}
+
 /**
  * Client approves quotation
  */

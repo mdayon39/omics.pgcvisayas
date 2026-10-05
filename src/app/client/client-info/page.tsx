@@ -95,7 +95,6 @@ import {
   getServiceReportsByProjectId,
   markServiceReportReceived,
 } from "@/services/serviceReportService";
-import { openServiceReport } from "@/lib/openServiceReport";
 import {
   getConfigurationSettings,
   DEFAULT_PORTAL_FEATURES,
@@ -3058,12 +3057,8 @@ export default function ClientPortalPage() {
   const handleReceiveServiceReport = useCallback(
     async (pid: string, report: any) => {
       const reportKey = `${pid}:${report.id}`;
-      const reportWindow = window.open("about:blank", "_blank");
       setReceivingReportId(reportKey);
       try {
-        if (!reportWindow) {
-          throw new Error("Allow pop-ups to open the service report.");
-        }
         await markServiceReportReceived(
           pid,
           report.id,
@@ -3091,15 +3086,13 @@ export default function ClientPortalPage() {
         });
         toast.success(`"${report.fileName}" marked as received.`);
 
-        await openServiceReport(pid, report.id, reportWindow);
+        // Auto-open PDF in new tab
+        if (report.fileUrl) {
+          window.open(report.fileUrl, "_blank", "noopener,noreferrer");
+        }
       } catch (err) {
-        reportWindow?.close();
         console.error("Failed to mark service report as received:", err);
-        toast.error(
-          err instanceof Error
-            ? err.message
-            : "Failed to access the service report. Please try again.",
-        );
+        toast.error("Failed to mark as received. Please try again.");
       } finally {
         setReceivingReportId(null);
       }
@@ -5422,25 +5415,14 @@ export default function ClientPortalPage() {
                                         <div className="min-w-0">
                                           {isReceived &&
                                           item.clientAccessEnabled !== false ? (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                void openServiceReport(
-                                                  selectedProjectPid,
-                                                  item.id,
-                                                ).catch((error) => {
-                                                  console.error("Failed to open service report:", error);
-                                                  toast.error(
-                                                    error instanceof Error
-                                                      ? error.message
-                                                      : "Could not open service report.",
-                                                  );
-                                                });
-                                              }}
+                                            <a
+                                              href={item.fileUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
                                               className="text-sm text-blue-700 hover:underline truncate block"
                                             >
                                               {item.fileName || item.id}
-                                            </button>
+                                            </a>
                                           ) : (
                                             <span className="text-sm text-slate-600 truncate block">
                                               {item.fileName || item.id}

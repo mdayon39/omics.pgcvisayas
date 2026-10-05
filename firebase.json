@@ -1,11 +1,5 @@
 {
   "firestore": {
     "rules": "firestore.rules"
-  },
-  "storage": [
-    {
-      "bucket": "pgc-genomebase.firebasestorage.app",
-      "rules": "storage.rules"
-    }
-  ]
+  }
 }

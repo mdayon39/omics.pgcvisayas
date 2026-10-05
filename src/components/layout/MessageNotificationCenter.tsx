@@ -11,8 +11,6 @@ import React, { useMemo, useState } from "react";
 import {
   MessageCircle,
   MoreHorizontal,
-  Pin,
-  PinOff,
   RotateCcw,
   Search,
   Trash2,
@@ -54,7 +52,6 @@ import { usePermissions } from "@/hooks/usePermissions";
 import {
   dismissThreadNotification,
   markLatestClientMessageAsUnseen,
-  setThreadPinned,
 } from "@/services/quotationThreadService";
 
 export function MessageNotificationCenter() {
@@ -65,7 +62,6 @@ export function MessageNotificationCenter() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [markingUnseenId, setMarkingUnseenId] = useState<string | null>(null);
-  const [pinningId, setPinningId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
   const [confirmDismissOpen, setConfirmDismissOpen] = useState(false);
   const [pendingDismiss, setPendingDismiss] = useState<{
@@ -139,24 +135,6 @@ export function MessageNotificationCenter() {
       toast.error("Failed to mark message as unseen");
     } finally {
       setMarkingUnseenId(null);
-    }
-  };
-
-  const handleTogglePin = async (
-    event: React.MouseEvent,
-    inquiryId: string,
-    currentlyPinned: boolean,
-  ) => {
-    event.stopPropagation();
-    if (pinningId === inquiryId) return;
-    try {
-      setPinningId(inquiryId);
-      await setThreadPinned(inquiryId, !currentlyPinned);
-      toast.success(currentlyPinned ? "Conversation unpinned" : "Conversation pinned to top");
-    } catch {
-      toast.error("Failed to update pinned conversation");
-    } finally {
-      setPinningId(null);
     }
   };
 
@@ -248,8 +226,6 @@ export function MessageNotificationCenter() {
                     notification={n}
                     onClick={() => handleNotificationClick(n.inquiryId)}
                     canManageClientMessages={canManageClientMessages}
-                    handleTogglePin={handleTogglePin}
-                    pinningId={pinningId}
                     handleDismiss={requestDismiss}
                     handleMarkAsUnseen={handleMarkAsUnseen}
                     dismissingId={dismissingId}
@@ -303,12 +279,6 @@ interface NotificationItemProps {
   notification: any;
   onClick: () => void;
   canManageClientMessages: boolean;
-  handleTogglePin: (
-    event: React.MouseEvent,
-    inquiryId: string,
-    currentlyPinned: boolean,
-  ) => void;
-  pinningId: string | null;
   handleDismiss: (
     event: React.MouseEvent,
     inquiryId: string,
@@ -323,8 +293,6 @@ function NotificationItem({
   notification: n,
   onClick,
   canManageClientMessages,
-  handleTogglePin,
-  pinningId,
   handleDismiss,
   handleMarkAsUnseen,
   dismissingId,
@@ -387,12 +355,6 @@ function NotificationItem({
                     })}
                   </span>
                 )}
-                {n.pinnedByAdmin && (
-                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-700" title="Pinned for follow-up">
-                    <Pin className="h-3 w-3" />
-                    Pinned
-                  </span>
-                )}
               </div>
             </div>
 
@@ -416,20 +378,6 @@ function NotificationItem({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-36">
-                    <DropdownMenuItem
-                      onClick={(event) =>
-                        handleTogglePin(event, n.inquiryId, n.pinnedByAdmin)
-                      }
-                      disabled={pinningId === n.inquiryId}
-                      className="text-[11px] cursor-pointer"
-                    >
-                      {n.pinnedByAdmin ? (
-                        <PinOff className="mr-2 h-3.5 w-3.5" />
-                      ) : (
-                        <Pin className="mr-2 h-3.5 w-3.5" />
-                      )}
-                      {n.pinnedByAdmin ? "Unpin conversation" : "Pin to top"}
-                    </DropdownMenuItem>
                     {n.unreadCount > 0 ? (
                       <DropdownMenuItem
                         onClick={(event) =>

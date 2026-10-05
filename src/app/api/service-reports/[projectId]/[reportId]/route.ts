@@ -26,13 +26,23 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   }
 
+  let decodedToken;
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const email = decodedToken.email?.trim().toLowerCase();
-    if (!email || !adminDb) {
-      return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-    }
+    decodedToken = await admin.auth().verifyIdToken(idToken);
+  } catch {
+    return NextResponse.json({ error: "Your session expired. Sign in again." }, { status: 401 });
+  }
 
+  const email = decodedToken.email?.trim().toLowerCase();
+  if (!email) {
+    return NextResponse.json({ error: "Your account does not have an email address." }, { status: 401 });
+  }
+  if (!adminDb) {
+    console.error("Service report access failed: Firebase Admin Firestore is unavailable.");
+    return NextResponse.json({ error: "Service report access is not configured on the server." }, { status: 503 });
+  }
+
+  try {
     const { projectId, reportId } = await params;
     const reportSnapshot = await adminDb
       .collection("projects")

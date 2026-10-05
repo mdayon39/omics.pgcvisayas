@@ -20,11 +20,14 @@ export async function openServiceReport(
     );
 
     if (!response.ok) {
-      throw new Error(
-        response.status === 403
-          ? "You do not have access to this service report."
-          : "Unable to open the service report.",
-      );
+      const result = await response.json().catch(() => null);
+      const errorMessage =
+        typeof result?.error === "string"
+          ? result.error
+          : response.status === 403
+            ? "You do not have access to this service report."
+            : `Unable to open the service report (server returned ${response.status}).`;
+      throw new Error(errorMessage);
     }
 
     const fileUrl = URL.createObjectURL(await response.blob());

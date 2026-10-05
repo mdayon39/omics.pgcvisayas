@@ -44,6 +44,22 @@ function parseServiceAccountFromEnv() {
   return null;
 }
 
+function resolveStorageBucketName(serviceAccount?: {
+  project_id?: string;
+  storage_bucket?: string;
+}) {
+  return (
+    process.env.FIREBASE_STORAGE_BUCKET ||
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+    serviceAccount?.storage_bucket ||
+    ((serviceAccount?.project_id ||
+      process.env.FIREBASE_PROJECT_ID ||
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID)
+      ? `${serviceAccount?.project_id || process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebasestorage.app`
+      : undefined)
+  );
+}
+
 let adminInitAttempted = false;
 
 function initializeAdminApp() {
@@ -55,6 +71,7 @@ function initializeAdminApp() {
     try {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
+        storageBucket: resolveStorageBucketName(serviceAccount),
       });
       console.log("✅ Firebase Admin initialized via environment variables");
       return;
@@ -69,6 +86,7 @@ function initializeAdminApp() {
       const serviceAccountFile = JSON.parse(fs.readFileSync(keyPath, "utf-8"));
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountFile),
+        storageBucket: resolveStorageBucketName(serviceAccountFile),
       });
       console.log("✅ [Firebase Admin] Initialized via serviceAccountKey.json");
       return;
@@ -88,6 +106,7 @@ function initializeAdminApp() {
     admin.initializeApp({
       credential: admin.credential.applicationDefault(),
       ...(projectId ? { projectId } : {}),
+      storageBucket: resolveStorageBucketName({ project_id: projectId }),
     });
     console.log(
       "✅ [Firebase Admin] Initialized via application default credentials",
@@ -139,7 +158,7 @@ export function getStorageBucket() {
     configuredBucket && configuredBucket.trim()
       ? normalizeBucketName(configuredBucket)
       : admin.app().options.projectId
-        ? `${admin.app().options.projectId}.appspot.com`
+        ? `${admin.app().options.projectId}.firebasestorage.app`
         : "";
 
   if (!bucketName) return null;

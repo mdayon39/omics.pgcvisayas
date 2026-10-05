@@ -151,6 +151,7 @@ export interface QuotationThread {
 
   // Visibility
   dismissedByAdmin?: boolean;
+  pinnedByAdmin?: boolean;
 
   // Assignment
   assignedTo?: string; // Admin email/ID

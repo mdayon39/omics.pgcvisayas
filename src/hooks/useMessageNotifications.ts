@@ -27,6 +27,7 @@ export interface MessageNotification {
   lastMessageByName?: string;
   lastMessageByRole?: "admin" | "client";
   lastMessagePreview?: string;
+  pinnedByAdmin: boolean;
   /** Local-only flag — true after the admin opens this thread from the panel */
   viewed: boolean;
 }
@@ -75,6 +76,7 @@ export function useMessageNotifications() {
             lastMessagePreview:
               latestMessage?.content?.trim().substring(0, 120) ||
               data.lastMessagePreview,
+            pinnedByAdmin: data.pinnedByAdmin === true,
             viewed: viewedRef.current.has(docSnap.id),
           };
         })
@@ -86,6 +88,12 @@ export function useMessageNotifications() {
 
           return n.unreadCount > 0 || !!n.lastMessageAt;
         })
+        .sort(
+          (left, right) =>
+            Number(right.pinnedByAdmin) - Number(left.pinnedByAdmin) ||
+            (right.lastMessageAt?.getTime() ?? 0) -
+              (left.lastMessageAt?.getTime() ?? 0),
+        )
         .slice(0, 1000);
 
       const total = threads.reduce((sum, t) => sum + t.unreadCount, 0);

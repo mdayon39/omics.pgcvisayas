@@ -999,6 +999,17 @@ export async function dismissThreadNotification(
   }
 }
 
+export async function setThreadPinned(
+  inquiryId: string,
+  pinned: boolean,
+): Promise<void> {
+  const threadRef = doc(db, THREADS_COLLECTION, inquiryId);
+  await updateDoc(threadRef, {
+    pinnedByAdmin: pinned,
+    updatedAt: serverTimestamp(),
+  });
+}
+
 /**
  * Client approves quotation
  */

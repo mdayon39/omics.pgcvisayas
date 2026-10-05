@@ -5422,14 +5422,25 @@ export default function ClientPortalPage() {
                                         <div className="min-w-0">
                                           {isReceived &&
                                           item.clientAccessEnabled !== false ? (
-                                            <a
-                                              href={item.fileUrl}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                void openServiceReport(
+                                                  selectedProjectPid,
+                                                  item.id,
+                                                ).catch((error) => {
+                                                  console.error("Failed to open service report:", error);
+                                                  toast.error(
+                                                    error instanceof Error
+                                                      ? error.message
+                                                      : "Could not open service report.",
+                                                  );
+                                                });
+                                              }}
                                               className="text-sm text-blue-700 hover:underline truncate block"
                                             >
                                               {item.fileName || item.id}
-                                            </a>
+                                            </button>
                                           ) : (
                                             <span className="text-sm text-slate-600 truncate block">
                                               {item.fileName || item.id}

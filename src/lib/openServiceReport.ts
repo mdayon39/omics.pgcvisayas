@@ -21,12 +21,14 @@ export async function openServiceReport(
       `/api/service-reports/${encodeURIComponent(projectId)}/${encodeURIComponent(reportId)}`,
       { method: "POST", headers: { Authorization: `Bearer ${idToken}` } },
     );
-    const result = await response.json();
-    if (!response.ok || typeof result.url !== "string") {
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
       throw new Error(result.error || "Could not open service report.");
     }
 
-    reportWindow.location.replace(result.url);
+    const objectUrl = URL.createObjectURL(await response.blob());
+    reportWindow.location.replace(objectUrl);
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60 * 60 * 1000);
   } catch (error) {
     reportWindow.close();
     throw error;

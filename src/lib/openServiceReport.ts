@@ -26,9 +26,12 @@ export async function openServiceReport(
       throw new Error(result.error || "Could not open service report.");
     }
 
-    const objectUrl = URL.createObjectURL(await response.blob());
-    reportWindow.location.replace(objectUrl);
-    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60 * 60 * 1000);
+    const result = await response.json();
+    if (typeof result.url !== "string") {
+      throw new Error("Could not open service report.");
+    }
+
+    reportWindow.location.replace(result.url);
   } catch (error) {
     reportWindow.close();
     throw error;

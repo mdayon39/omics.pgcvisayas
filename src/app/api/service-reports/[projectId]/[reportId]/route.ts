@@ -114,19 +114,11 @@ export async function POST(
       return NextResponse.json({ error: "Report file not found." }, { status: 404 });
     }
 
-    const [[metadata], [contents]] = await Promise.all([
-      file.getMetadata(),
-      file.download(),
-    ]);
-    const fileName = storagePath.split("/").pop() || "service-report";
-    return new NextResponse(new Uint8Array(contents), {
-      headers: {
-        "Content-Type": metadata.contentType || "application/octet-stream",
-        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`,
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-      },
+    const [url] = await file.getSignedUrl({
+      action: "read",
+      expires: Date.now() + 15 * 60 * 1000,
     });
+    return NextResponse.json({ url }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Failed to authorize service report access:", error);
     return NextResponse.json({ error: "Could not open service report." }, { status: 500 });

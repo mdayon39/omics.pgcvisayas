@@ -23,7 +23,7 @@ export async function openServiceReport(
       const result = await response.json().catch(() => null);
       const errorMessage =
         typeof result?.error === "string"
-          ? result.error
+          ? `${result.error}${result.code ? ` (${result.code})` : ""}`
           : response.status === 403
             ? "You do not have access to this service report."
             : `Unable to open the service report (server returned ${response.status}).`;

@@ -116,6 +116,13 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     });
   } catch (error) {
     console.error("Service report access failed:", error);
-    return NextResponse.json({ error: "Unable to access service report." }, { status: 500 });
+    const errorCode =
+      typeof error === "object" && error !== null && "code" in error
+        ? String(error.code)
+        : undefined;
+    return NextResponse.json(
+      { error: "Unable to access service report.", ...(errorCode ? { code: errorCode } : {}) },
+      { status: 500 },
+    );
   }
 }

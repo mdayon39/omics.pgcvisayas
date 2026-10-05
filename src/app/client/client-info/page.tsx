@@ -91,6 +91,7 @@ import {
 import { Inquiry } from "@/types/Inquiry";
 import { getChargeSlipsByProjectId } from "@/services/chargeSlipService";
 import { getSampleFormsByProjectId } from "@/services/sampleFormService";
+import { openServiceReport } from "@/lib/openServiceReport";
 import {
   getServiceReportsByProjectId,
   markServiceReportReceived,
@@ -3087,8 +3088,11 @@ export default function ClientPortalPage() {
         toast.success(`"${report.fileName}" marked as received.`);
 
         // Auto-open PDF in new tab
-        if (report.fileUrl) {
-          window.open(report.fileUrl, "_blank", "noopener,noreferrer");
+        try {
+          await openServiceReport(pid, report.id);
+        } catch (openError) {
+          console.error("Service report was received but could not be opened:", openError);
+          toast.error("Report received, but could not be opened. Please try again.");
         }
       } catch (err) {
         console.error("Failed to mark service report as received:", err);
@@ -5415,14 +5419,18 @@ export default function ClientPortalPage() {
                                         <div className="min-w-0">
                                           {isReceived &&
                                           item.clientAccessEnabled !== false ? (
-                                            <a
-                                              href={item.fileUrl}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                openServiceReport(selectedProjectPid, item.id).catch((error) => {
+                                                  console.error("Failed to open service report:", error);
+                                                  toast.error(error instanceof Error ? error.message : "Unable to open service report.");
+                                                })
+                                              }
                                               className="text-sm text-blue-700 hover:underline truncate block"
                                             >
                                               {item.fileName || item.id}
-                                            </a>
+                                            </button>
                                           ) : (
                                             <span className="text-sm text-slate-600 truncate block">
                                               {item.fileName || item.id}

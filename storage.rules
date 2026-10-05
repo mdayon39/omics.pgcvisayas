@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email is string
+        && firestore.exists(
+          /databases/(default)/documents/admins/$(request.auth.token.email)
+        );
+    }
+
+    match /serviceReports/{projectId}/{filePath=**} {
+      allow read: if false;
+      allow write: if isAdmin();
+    }
+
+    match /forms/{fileName} {
+      allow read: if fileName == 'VSF-LR-SSR_Sample Submission Requirements and Form_v6.pdf';
+      allow write: if isAdmin();
+    }
+
+    match /documents/{fileName} {
+      allow read: if fileName == 'mode_of_payment.pdf';
+      allow write: if isAdmin();
+    }
+
+    match /{folder}/{filePath=**} {
+      allow read, write: if request.auth != null && folder != 'serviceReports';
+    }
+
+    match /{fileName} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

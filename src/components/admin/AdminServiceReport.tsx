@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ServiceReport } from "@/services/serviceReportService";
+import { openServiceReport } from "@/lib/openServiceReport";
 import { ChargeSlipRecord } from "@/types/ChargeSlipRecord";
 import { Inquiry } from "@/types/Inquiry";
 import { QuotationRecord } from "@/types/Quotation";
@@ -158,6 +159,19 @@ export default function AdminServiceReport({
     }
 
     setPendingFile(file);
+  };
+
+  const handleOpenReport = async (
+    event: React.MouseEvent,
+    report: ServiceReport,
+  ) => {
+    event.preventDefault();
+    try {
+      await openServiceReport(projectId, report.id);
+    } catch (error) {
+      console.error("Failed to open service report:", error);
+      toast.error(error instanceof Error ? error.message : "Could not open service report.");
+    }
   };
 
   const handleUpload = async () => {
@@ -389,15 +403,14 @@ Philippine Genome Center Visayas`.trim();
                 <div className="flex items-center gap-2 min-w-0">
                   <FileText className="h-3.5 w-3.5 text-blue-500 shrink-0" />
                   <div className="min-w-0">
-                    <a
-                      href={report.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={(event) => void handleOpenReport(event, report)}
                       className="text-xs font-medium text-blue-700 hover:underline truncate block"
                       title={report.fileName}
                     >
                       {report.fileName}
-                    </a>
+                    </button>
                     {uploadedAtDate && (
                       <span className="text-[10px] text-slate-400 block">
                         {uploadedAtDate}{" "}
@@ -453,15 +466,15 @@ Philippine Genome Center Visayas`.trim();
                       />
                     </div>
                   )}
-                  <a
-                    href={report.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={(event) => void handleOpenReport(event, report)}
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Download"
+                    aria-label={`Open ${report.fileName}`}
                   >
                     <Download className="h-3.5 w-3.5 text-slate-400 hover:text-blue-600" />
-                  </a>
+                  </button>
                   {(!isReceived ||
                     adminInfo?.role?.toLowerCase().replace(/\s+/g, "") ===
                       "superadmin") && (

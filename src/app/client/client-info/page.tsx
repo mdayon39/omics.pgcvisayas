@@ -95,6 +95,7 @@ import {
   getServiceReportsByProjectId,
   markServiceReportReceived,
 } from "@/services/serviceReportService";
+import { openServiceReport } from "@/lib/openServiceReport";
 import {
   getConfigurationSettings,
   DEFAULT_PORTAL_FEATURES,
@@ -3057,8 +3058,12 @@ export default function ClientPortalPage() {
   const handleReceiveServiceReport = useCallback(
     async (pid: string, report: any) => {
       const reportKey = `${pid}:${report.id}`;
+      const reportWindow = window.open("about:blank", "_blank");
       setReceivingReportId(reportKey);
       try {
+        if (!reportWindow) {
+          throw new Error("Allow pop-ups to open the service report.");
+        }
         await markServiceReportReceived(
           pid,
           report.id,
@@ -3086,13 +3091,15 @@ export default function ClientPortalPage() {
         });
         toast.success(`"${report.fileName}" marked as received.`);
 
-        // Auto-open PDF in new tab
-        if (report.fileUrl) {
-          window.open(report.fileUrl, "_blank", "noopener,noreferrer");
-        }
+        await openServiceReport(pid, report.id, reportWindow);
       } catch (err) {
+        reportWindow?.close();
         console.error("Failed to mark service report as received:", err);
-        toast.error("Failed to mark as received. Please try again.");
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Failed to access the service report. Please try again.",
+        );
       } finally {
         setReceivingReportId(null);
       }

@@ -161,7 +161,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Cake className="h-4 w-4" />
                 </span>
                 <p className="min-w-0 text-base leading-6 text-slate-700">
-                  Good afternoon, <span className="font-semibold text-slate-900">{birthdayTitles.join(", ")}</span>
+                  Happy Birthday, <span className="font-semibold text-slate-900">{birthdayTitles.join(", ")}</span>! Wishing you a great day 🎂 🎉.
                 </p>
               </div>
             )}

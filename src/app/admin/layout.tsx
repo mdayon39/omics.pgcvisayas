@@ -27,16 +27,14 @@ import {
 } from "@/services/officeCalendarService";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, adminInfo, isAdmin, signOut, loading } = useAuth();
+  const { user, isAdmin, signOut, loading } = useAuth();
   const router = useRouter();
   const [birthdays, setBirthdays] = useState<
     { id: string; title: string; message: string }[]
   >([]);
-  const isSuperadmin =
-    adminInfo?.role?.toLowerCase().replace(/[-_\s]/g, "") === "superadmin";
 
   useEffect(() => {
-    if (loading || !user || !isAdmin || !isSuperadmin) return;
+    if (loading || !user || !isAdmin) return;
 
     return subscribeToOfficeEvents((events) => {
       const today = new Intl.DateTimeFormat("en-CA", {
@@ -51,7 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }));
       setBirthdays(todaysBirthdays);
     });
-  }, [isAdmin, isSuperadmin, loading, user]);
+  }, [isAdmin, loading, user]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -154,7 +152,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </DropdownMenu>
               </div>
             </div>
-            {isSuperadmin && birthdays.length > 0 && (
+            {birthdays.length > 0 && (
               <div
                 role="status"
                 aria-live="polite"

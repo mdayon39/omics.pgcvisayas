@@ -11,8 +11,8 @@ import { TabProvider } from "@/contexts/TabContext";
 import { Toaster } from "@/components/ui/sonner";
 import useAuth from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { LogOut, Settings, Info, Key, Menu } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Cake, LogOut, Settings, Info, Key, Menu } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -21,10 +21,31 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import {
+  getEventsForDate,
+  subscribeToOfficeEvents,
+} from "@/services/officeCalendarService";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, signOut, loading } = useAuth();
+  const { user, adminInfo, isAdmin, signOut, loading } = useAuth();
   const router = useRouter();
+  const [birthdayTitles, setBirthdayTitles] = useState<string[]>([]);
+  const isSuperadmin =
+    adminInfo?.role?.toLowerCase().replace(/[-_\s]/g, "") === "superadmin";
+
+  useEffect(() => {
+    if (loading || !user || !isAdmin || !isSuperadmin) return;
+
+    return subscribeToOfficeEvents((events) => {
+      const today = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Manila",
+      }).format(new Date());
+      const titles = getEventsForDate(today, events)
+        .filter((event) => event.type === "birthday" && event.title.trim())
+        .map((event) => event.title.trim());
+      setBirthdayTitles(titles);
+    });
+  }, [isAdmin, isSuperadmin, loading, user]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -127,6 +148,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </DropdownMenu>
               </div>
             </div>
+            {isSuperadmin && birthdayTitles.length > 0 && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mt-2 flex min-w-0 items-center justify-center gap-2 border-t border-slate-100 px-2 pt-2 text-sm sm:justify-end sm:pr-4"
+              >
+                <span className="shrink-0 text-pink-600" aria-hidden="true">
+                  <Cake className="h-4 w-4" />
+                </span>
+                <span className="truncate font-medium text-slate-700">
+                  Good afternoon, {birthdayTitles.join(", ")}
+                </span>
+              </div>
+            )}
           </div>
         </header>
 

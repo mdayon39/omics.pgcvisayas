@@ -29,7 +29,9 @@ import {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, adminInfo, isAdmin, signOut, loading } = useAuth();
   const router = useRouter();
-  const [birthdayTitles, setBirthdayTitles] = useState<string[]>([]);
+  const [birthdays, setBirthdays] = useState<
+    { id: string; title: string; message: string }[]
+  >([]);
   const isSuperadmin =
     adminInfo?.role?.toLowerCase().replace(/[-_\s]/g, "") === "superadmin";
 
@@ -40,10 +42,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const today = new Intl.DateTimeFormat("en-CA", {
         timeZone: "Asia/Manila",
       }).format(new Date());
-      const titles = getEventsForDate(today, events)
+      const todaysBirthdays = getEventsForDate(today, events)
         .filter((event) => event.type === "birthday" && event.title.trim())
-        .map((event) => event.title.trim());
-      setBirthdayTitles(titles);
+        .map((event) => ({
+          id: event.id,
+          title: event.title.trim(),
+          message: event.description?.trim() ?? "",
+        }));
+      setBirthdays(todaysBirthdays);
     });
   }, [isAdmin, isSuperadmin, loading, user]);
 
@@ -148,7 +154,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </DropdownMenu>
               </div>
             </div>
-            {isSuperadmin && birthdayTitles.length > 0 && (
+            {isSuperadmin && birthdays.length > 0 && (
               <div
                 role="status"
                 aria-live="polite"
@@ -160,9 +166,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <Cake className="h-4 w-4" />
                 </span>
-                <p className="min-w-0 text-base leading-6 text-slate-700">
-                  Happy Birthday, <span className="font-semibold text-slate-900">{birthdayTitles.join(", ")}</span>! Wishing you a great day 🎂 🎉.
-                </p>
+                <div className="min-w-0 text-base leading-6 text-slate-700">
+                  {birthdays.map((birthday) => (
+                    <p key={birthday.id}>
+                      Happy Birthday, <span className="font-semibold text-slate-900">{birthday.title}</span>!
+                      {birthday.message ? `, ${birthday.message}` : ""} 🎉
+                    </p>
+                  ))}
+                </div>
               </div>
             )}
           </div>

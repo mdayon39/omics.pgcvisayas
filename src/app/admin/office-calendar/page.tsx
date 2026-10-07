@@ -1080,7 +1080,8 @@ function OfficeCalendarContent() {
             {/* Title */}
             <div className="space-y-1.5">
               <Label className="text-sm font-semibold text-slate-700">
-                Title <span className="text-red-500">*</span>
+                {form.type === "birthday" ? "Celebrant" : "Title"}{" "}
+                <span className="text-red-500">*</span>
               </Label>
               <Input
                 value={form.title}
@@ -1093,7 +1094,7 @@ function OfficeCalendarContent() {
                     : form.type === "activity"
                       ? "e.g. Team Building Day"
                       : form.type === "birthday"
-                        ? "e.g. Juan Dela Cruz Birthday"
+                        ? "e.g. Juan Dela Cruz"
                         : form.type === "partial_closure"
                           ? "e.g. Half Day — Morning Off"
                           : "e.g. Office Maintenance"
@@ -1106,7 +1107,7 @@ function OfficeCalendarContent() {
             {/* Description */}
             <div className="space-y-1.5">
               <Label className="text-sm font-semibold text-slate-700">
-                Description{" "}
+                {form.type === "birthday" ? "Message" : "Description"}{" "}
                 <span className="text-slate-400 font-normal">(optional)</span>
               </Label>
               <Textarea
@@ -1114,7 +1115,11 @@ function OfficeCalendarContent() {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, description: e.target.value }))
                 }
-                placeholder="Additional details visible to clients in chat..."
+                placeholder={
+                  form.type === "birthday"
+                    ? "e.g. Wishing you a wonderful day!"
+                    : "Additional details visible to clients in chat..."
+                }
                 className="resize-none text-sm"
                 rows={2}
                 maxLength={300}

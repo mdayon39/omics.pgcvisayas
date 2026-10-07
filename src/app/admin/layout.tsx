@@ -152,14 +152,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div
                 role="status"
                 aria-live="polite"
-                className="mt-2 flex min-w-0 items-center justify-center gap-2 border-t border-slate-100 px-2 pt-2 text-sm sm:justify-end sm:pr-4"
+                className="mt-2 flex min-w-0 items-center gap-3 border-t border-slate-100 px-3 pt-2"
               >
-                <span className="shrink-0 text-pink-600" aria-hidden="true">
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-50 text-pink-700 ring-1 ring-inset ring-pink-100"
+                  aria-hidden="true"
+                >
                   <Cake className="h-4 w-4" />
                 </span>
-                <span className="truncate font-medium text-slate-700">
-                  Good afternoon, {birthdayTitles.join(", ")}
-                </span>
+                <p className="min-w-0 text-base leading-6 text-slate-700">
+                  Good afternoon, <span className="font-semibold text-slate-900">{birthdayTitles.join(", ")}</span>
+                </p>
               </div>
             )}
           </div>

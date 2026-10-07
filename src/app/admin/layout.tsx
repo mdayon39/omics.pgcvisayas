@@ -170,7 +170,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {birthdays.map((birthday) => (
                     <p key={birthday.id}>
                       Happy Birthday, <span className="font-semibold text-slate-900">{birthday.title}</span>!
-                      {birthday.message ? `, ${birthday.message}` : ""} 🎉
+                      {birthday.message ? ` ${birthday.message}` : ""} 🎉
                     </p>
                   ))}
                 </div>

@@ -4,7 +4,7 @@ echo    Firestore Backup Tool
 echo ===============================================
 echo.
 
-cd /d "C:\Users\PGCV\Documents\pgc-genomebase"
+cd /d "%~dp0.."
 
 echo 🚀 Starting Firestore backup...
 echo.

@@ -18,6 +18,7 @@ import {
   serverTimestamp,
   where,
   documentId,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Inquiry } from "@/types/Inquiry";
@@ -253,7 +254,25 @@ export async function updateInquiryStatus(
 ): Promise<void> {
   try {
     const inquiryRef = doc(db, "inquiries", inquiryId);
-    await updateDoc(inquiryRef, { status });
+    await runTransaction(db, async (transaction) => {
+      const inquirySnapshot = await transaction.get(inquiryRef);
+      if (!inquirySnapshot.exists()) {
+        throw new Error(`Inquiry ${inquiryId} not found`);
+      }
+
+      const inquiry = inquirySnapshot.data();
+      if (
+        status === "Ongoing Quotation" &&
+        (inquiry.isApproved === true || inquiry.status === "Approved Client")
+      ) {
+        console.info(
+          `Preserving approved status for inquiry ${inquiryId}; not setting it to Ongoing Quotation.`,
+        );
+        return;
+      }
+
+      transaction.update(inquiryRef, { status });
+    });
     console.log(`Updated inquiry ${inquiryId} status to: ${status}`);
   } catch (error) {
     console.error(`Error updating inquiry ${inquiryId} status:`, error);

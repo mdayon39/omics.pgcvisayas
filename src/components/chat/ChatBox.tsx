@@ -52,8 +52,6 @@ import {
   unsendMessage,
 } from "@/services/quotationThreadService";
 import { uploadFile } from "@/lib/fileUpload";
-import { ref, getDownloadURL } from "firebase/storage";
-import { storage } from "@/lib/firebase";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -92,7 +90,8 @@ const ACCEPT_ATTR = [
 ].join(",");
 
 const FAQ_URL = "https://omics.pgcvisayas.upv.edu.ph/faqs";
-const MODE_OF_PAYMENT_STORAGE_PATH = "documents/mode_of_payment.pdf";
+const MODE_OF_PAYMENT_URL =
+  "https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2Fmode_of_payment.pdf?alt=media&token=279c10a9-ce74-40ef-8e7d-80a86820a8e0";
 
 type ChatResourceSuggestion = {
   id: "faqs" | "mode-of-payment";
@@ -158,13 +157,17 @@ function AttachmentBubble({
   isMe: boolean;
 }) {
   const FileIcon = getFileIcon(attachment.type);
+  const isFaqLink =
+    attachment.type === "text/html" ||
+    attachment.url === FAQ_URL ||
+    /\/faqs(?:[/?#]|$)/i.test(attachment.url);
 
-  if (attachment.type === "application/pdf" || attachment.type === "text/html") {
+  if (attachment.type === "application/pdf" || isFaqLink) {
     return (
       <a
         href={attachment.url}
-        target={attachment.type === "text/html" ? "_blank" : "_self"}
-        rel={attachment.type === "text/html" ? "noopener noreferrer" : undefined}
+        target={isFaqLink ? "_blank" : "_self"}
+        rel={isFaqLink ? "noopener noreferrer" : undefined}
         className={`flex items-center gap-2 mt-1.5 rounded-xl px-3 py-2 border transition-colors ${
           isMe
             ? "bg-white/15 border-white/20 hover:bg-white/25 text-white"
@@ -587,9 +590,7 @@ export default function ChatBox({
             }
           : {
               name: "Mode of Payment.pdf",
-              url: await getDownloadURL(
-                ref(storage, MODE_OF_PAYMENT_STORAGE_PATH),
-              ),
+              url: MODE_OF_PAYMENT_URL,
               type: "application/pdf",
             };
       setPendingLinkedAttachments((current) =>

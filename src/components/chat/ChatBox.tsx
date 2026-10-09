@@ -3,6 +3,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import useAuth from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import TextareaAutosize from "react-textarea-autosize";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -188,6 +198,7 @@ export default function ChatBox({
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [unsendingId, setUnsendingId] = useState<string | null>(null);
+  const [pendingUnsendId, setPendingUnsendId] = useState<string | null>(null);
   // ID of the client message whose viewer list is currently expanded
   const [expandedViewersId, setExpandedViewersId] = useState<string | null>(
     null,
@@ -375,6 +386,7 @@ export default function ChatBox({
   };
 
   const handleUnsend = async (messageId: string) => {
+    setPendingUnsendId(null);
     setUnsendingId(messageId);
     try {
       await unsendMessage(messageId);
@@ -478,6 +490,11 @@ export default function ChatBox({
           ) : (
             messages.map((msg, idx) => {
               const normalizedSenderId = normalizeIdentifier(msg.senderId);
+              const senderUid = (msg as ThreadMessage & { senderUid?: string })
+                .senderUid;
+              const isOwnMessage =
+                currentUserIdentifiers.has(normalizedSenderId) ||
+                currentUserIdentifiers.has(normalizeIdentifier(senderUid));
               // Layout: client messages on the left, admin messages on the right.
               // When the admin panel is open, all admin messages (regardless of sender)
               // are right-aligned to distinguish the support team from the client.
@@ -723,7 +740,7 @@ export default function ChatBox({
                   </div>
 
                   {/* Unsend button — visible on hover for own messages only, within 24 hours */}
-                  {isMe &&
+                  {isOwnMessage &&
                     !msg.unsent &&
                     (() => {
                       const sentAt = msg.createdAt?.toDate
@@ -734,7 +751,7 @@ export default function ChatBox({
                       return within24h ? (
                         <button
                           type="button"
-                          onClick={() => msg.id && handleUnsend(msg.id)}
+                          onClick={() => msg.id && setPendingUnsendId(msg.id)}
                           disabled={unsendingId === msg.id}
                           className="invisible group-hover:visible flex items-center gap-1 text-[10px] text-slate-400 hover:text-red-500 transition-colors mt-0.5 cursor-pointer disabled:opacity-50"
                           title="Unsend message"
@@ -852,6 +869,36 @@ export default function ChatBox({
           </form>
         </div>
       </CardFooter>
+      <AlertDialog
+        open={pendingUnsendId !== null}
+        onOpenChange={(open) => {
+          if (!open && !unsendingId) setPendingUnsendId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsend this message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the message and its attachments from the chat.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unsendingId !== null}>
+              Keep message
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!pendingUnsendId || unsendingId !== null}
+              onClick={(event) => {
+                event.preventDefault();
+                if (pendingUnsendId) void handleUnsend(pendingUnsendId);
+              }}
+            >
+              Unsend message
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -27,7 +27,7 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import { ref, deleteObject } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
 import {
   QuotationThread,
   QuotationVersion,
@@ -1115,6 +1115,37 @@ export async function unsendMessage(messageId: string): Promise<void> {
 
   if (snap.exists()) {
     const data = snap.data() as ThreadMessage;
+    const currentUser = auth.currentUser;
+    const currentIdentifiers = [
+      currentUser?.email,
+      currentUser?.uid,
+    ]
+      .filter((identifier): identifier is string => !!identifier)
+      .map((identifier) => identifier.trim().toLowerCase());
+    const senderIdentifiers = [
+      data.senderId,
+      (data as ThreadMessage & { senderUid?: string }).senderUid,
+    ]
+      .filter((identifier): identifier is string => !!identifier)
+      .map((identifier) => identifier.trim().toLowerCase());
+
+    if (
+      !currentUser ||
+      !currentIdentifiers.some((identifier) =>
+        senderIdentifiers.includes(identifier),
+      )
+    ) {
+      throw new Error("Only the message sender can unsend this message.");
+    }
+    if (data.unsent) {
+      throw new Error("This message has already been unsent.");
+    }
+
+    await updateDoc(msgRef, {
+      unsent: true,
+      content: "",
+      attachments: [],
+    });
 
     // Remove any actual files from storage
     if (data.attachments && data.attachments.length > 0) {
@@ -1136,13 +1167,8 @@ export async function unsendMessage(messageId: string): Promise<void> {
         }
       }
     }
-
-    // Mark as unsent and clear content and attachments array
-    await updateDoc(msgRef, {
-      unsent: true,
-      content: "",
-      attachments: [],
-    });
+  } else {
+    throw new Error(`Message ${messageId} not found.`);
   }
 }
 

@@ -314,7 +314,7 @@ export default function ChatBox({
                 },
               ]
             : []),
-          ...(/\b(?:mode|paym\w*)\b/i.test(newMessage)
+          ...(/\b(?:mode|pay\w*)\b/i.test(newMessage)
             ? [
                 {
                   id: "mode-of-payment" as const,
@@ -1187,10 +1187,10 @@ export default function ChatBox({
             <div
               role="listbox"
               aria-label="Suggested chat resources"
-              className="absolute bottom-14 left-12 z-30 w-72 rounded-lg border border-slate-200 bg-white p-2 shadow-lg"
+              className="absolute bottom-14 left-12 z-30 w-80 rounded-lg border-2 border-blue-400 bg-blue-50 p-2 shadow-lg ring-2 ring-blue-100"
             >
-              <p className="px-2 pb-1 text-xs font-medium text-slate-500">
-                Attach a helpful resource
+              <p className="px-2 pb-1 text-xs font-semibold text-blue-800">
+                Helpful link — press Enter to add to chat
               </p>
               {resourceSuggestions.map((resource) => (
                 <button
@@ -1205,7 +1205,7 @@ export default function ChatBox({
                   }
                   aria-selected={false}
                   disabled={addingResource !== null}
-                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-blue-50 disabled:opacity-50"
+                  className="flex w-full items-center gap-2 rounded-md border border-blue-200 bg-white px-3 py-2 text-left text-sm font-medium text-blue-900 hover:border-blue-500 hover:bg-blue-100 disabled:opacity-50"
                 >
                   {resource.type === "text/html" ? (
                     <ExternalLink className="h-4 w-4 text-blue-600" />
@@ -1213,6 +1213,9 @@ export default function ChatBox({
                     <FileText className="h-4 w-4 text-blue-600" />
                   )}
                   <span className="flex-1">{resource.name}</span>
+                  <span className="rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    Enter
+                  </span>
                   {addingResource === resource.id && (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   )}

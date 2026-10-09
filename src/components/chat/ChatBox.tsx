@@ -596,6 +596,17 @@ export default function ChatBox({
           ? current
           : [...current, attachment],
       );
+      const triggerPattern =
+        resourceId === "faqs"
+          ? /\b(?:frequently\s+asked\s+questions|faqs?)\b/gi
+          : /\bmode(?:\s+of)?\s+payment\b|\bpay\w*\b/gi;
+      setNewMessage((current) =>
+        current
+          .replace(triggerPattern, " ")
+          .replace(/\s{2,}/g, " ")
+          .replace(/\s+([,.!?;:])/g, "$1")
+          .trim(),
+      );
       toast.success(`${attachment.name} added to the message`);
     } catch (resourceError) {
       console.error(`Failed to add ${resourceId} to chat:`, resourceError);
@@ -1187,10 +1198,10 @@ export default function ChatBox({
             <div
               role="listbox"
               aria-label="Suggested chat resources"
-              className="absolute bottom-14 left-12 z-30 w-80 rounded-lg border-2 border-blue-400 bg-blue-50 p-2 shadow-lg ring-2 ring-blue-100"
+              className="absolute bottom-14 left-12 right-0 z-30 w-auto max-w-lg rounded-lg border-2 border-blue-400 bg-blue-50 p-2 shadow-lg ring-2 ring-blue-100"
             >
-              <p className="px-2 pb-1 text-xs font-semibold text-blue-800">
-                Helpful link — press Enter to add to chat
+              <p className="px-2 pb-2 text-xs font-semibold text-blue-800">
+                Add this resource to the conversation
               </p>
               {resourceSuggestions.map((resource) => (
                 <button
@@ -1205,17 +1216,26 @@ export default function ChatBox({
                   }
                   aria-selected={false}
                   disabled={addingResource !== null}
-                  className="flex w-full items-center gap-2 rounded-md border border-blue-200 bg-white px-3 py-2 text-left text-sm font-medium text-blue-900 hover:border-blue-500 hover:bg-blue-100 disabled:opacity-50"
+                  className="flex w-full min-w-0 items-center gap-3 rounded-md border border-blue-300 bg-white px-3 py-2.5 text-left text-blue-900 shadow-sm transition-colors hover:border-blue-500 hover:bg-blue-100 disabled:opacity-50"
                 >
-                  {resource.type === "text/html" ? (
-                    <ExternalLink className="h-4 w-4 text-blue-600" />
-                  ) : (
-                    <FileText className="h-4 w-4 text-blue-600" />
-                  )}
-                  <span className="flex-1">{resource.name}</span>
-                  <span className="rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                    Enter
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-100">
+                    {resource.type === "text/html" ? (
+                      <ExternalLink className="h-4 w-4 text-blue-700" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-blue-700" />
+                    )}
                   </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words text-sm font-semibold">
+                      {resource.name}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-slate-600">
+                      Press Enter to attach
+                    </span>
+                  </span>
+                  <kbd className="shrink-0 rounded border border-slate-300 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+                    Enter ↵
+                  </kbd>
                   {addingResource === resource.id && (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   )}

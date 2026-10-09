@@ -23,6 +23,43 @@ import {
 import { db } from "@/lib/firebase";
 import { Inquiry } from "@/types/Inquiry";
 
+interface LinkedClient {
+  id: string;
+  cid?: string;
+  inquiryId?: string;
+  email?: string;
+  isContactPerson?: boolean;
+}
+
+function attachContactClientIds(
+  inquiries: Inquiry[],
+  clients: LinkedClient[],
+): Inquiry[] {
+  const clientsByInquiry = new Map<string, LinkedClient[]>();
+  for (const client of clients) {
+    if (!client.inquiryId) continue;
+    const linked = clientsByInquiry.get(client.inquiryId) ?? [];
+    linked.push(client);
+    clientsByInquiry.set(client.inquiryId, linked);
+  }
+
+  return inquiries.map((inquiry) => {
+    const linkedClients = clientsByInquiry.get(inquiry.id) ?? [];
+    const contactClient =
+      linkedClients.find((client) => client.isContactPerson === true) ??
+      linkedClients.find(
+        (client) =>
+          !!inquiry.email &&
+          client.email?.trim().toLowerCase() === inquiry.email.trim().toLowerCase(),
+      ) ??
+      (linkedClients.length === 1 ? linkedClients[0] : undefined);
+
+    return contactClient
+      ? { ...inquiry, clientId: contactClient.cid || contactClient.id }
+      : inquiry;
+  });
+}
+
 /**
  * Helper to map Firestore document data to Inquiry object
  */
@@ -104,7 +141,13 @@ export async function getInquiries(): Promise<Inquiry[]> {
     // Sorting is done in-memory below instead.
     const inquiriesRef = collection(db, "inquiries");
     const q = query(inquiriesRef);
-    const querySnapshot = await getDocs(q);
+    const [querySnapshot, clientsSnapshot] = await Promise.all([
+      getDocs(q),
+      getDocs(query(collection(db, "clients"))).catch((error) => {
+        console.error("Error fetching clients for inquiry IDs:", error);
+        return null;
+      }),
+    ]);
 
     const inquiries: Inquiry[] = [];
 
@@ -113,12 +156,21 @@ export async function getInquiries(): Promise<Inquiry[]> {
       inquiries.push(mapDocToInquiry(doc.id, doc.data()));
     });
 
+    const clients: LinkedClient[] =
+      clientsSnapshot?.docs.map((clientDoc) => ({
+        id: clientDoc.id,
+        cid: clientDoc.data().cid,
+        inquiryId: clientDoc.data().inquiryId,
+        email: clientDoc.data().email,
+        isContactPerson: clientDoc.data().isContactPerson,
+      })) ?? [];
+
     // Additional sorting in memory as a backup (Firestore query should handle this)
     // Ensures consistent ordering even if Firestore ordering fails
     inquiries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     console.log(`Successfully processed ${inquiries.length} inquiries`);
-    return inquiries;
+    return attachContactClientIds(inquiries, clients);
   } catch (error) {
     console.error("Error fetching inquiries:", error);
     return [];
@@ -222,25 +274,52 @@ export function subscribeToInquiries(
   // that are missing the ordered field, which would hide older inquiries.
   // Sorting is done in-memory below instead.
   const q = query(inquiriesRef);
+  let inquiries: Inquiry[] | null = null;
+  let clients: LinkedClient[] | null = null;
+  const emit = () => {
+    if (inquiries === null || clients === null) return;
+    const enrichedInquiries = attachContactClientIds(inquiries, clients);
+    enrichedInquiries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    callback(enrichedInquiries);
+  };
 
-  return onSnapshot(
+  const unsubscribeInquiries = onSnapshot(
     q,
     (snapshot) => {
-      const inquiries: Inquiry[] = snapshot.docs.map((doc) =>
+      inquiries = snapshot.docs.map((doc) =>
         mapDocToInquiry(doc.id, doc.data()),
       );
-
-      // Sort in memory: newest first
-      inquiries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-      callback(inquiries);
+      emit();
     },
     (error) => {
       console.error("Error in inquiry subscription:", error);
-      // On error, call callback with empty array
-      callback([]);
+      inquiries = [];
+      emit();
     },
   );
+  const unsubscribeClients = onSnapshot(
+    collection(db, "clients"),
+    (snapshot) => {
+      clients = snapshot.docs.map((clientDoc) => ({
+        id: clientDoc.id,
+        cid: clientDoc.data().cid,
+        inquiryId: clientDoc.data().inquiryId,
+        email: clientDoc.data().email,
+        isContactPerson: clientDoc.data().isContactPerson,
+      }));
+      emit();
+    },
+    (error) => {
+      console.error("Error in client subscription for inquiry IDs:", error);
+      clients = [];
+      emit();
+    },
+  );
+
+  return () => {
+    unsubscribeInquiries();
+    unsubscribeClients();
+  };
 }
 
 /**

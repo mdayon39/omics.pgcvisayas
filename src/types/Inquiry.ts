@@ -1,5 +1,6 @@
 export interface Inquiry {
   id: string;
+  clientId?: string;
   createdAt: Date;
   name: string;
   isApproved: boolean;

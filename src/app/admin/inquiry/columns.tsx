@@ -233,7 +233,7 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
   {
     accessorKey: "name",
     header: "Name",
-    size: 110, // Reduced per request; tooltip shows full value
+    size: 110, // Tooltip shows full value
     cell: ({ getValue }) => {
       const name = getValue() as string;
 
@@ -380,6 +380,10 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
       const router = useRouter();
       const inquiry = row.original;
       const status = inquiry.status || "Pending";
+      const statusLabel =
+        status === "Approved Client" && inquiry.clientId
+          ? `${status} (${inquiry.clientId})`
+          : status;
       const hasLoggedIn = inquiry.hasLoggedIn;
       const hasOpenedQuotation = inquiry.hasOpenedQuotation;
 
@@ -389,13 +393,14 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
         <div className="flex items-center gap-2 w-full pr-1">
           <div className="w-[72%] flex-shrink-0">
             <span
-              className="block w-full px-1.5 py-0.5 rounded-full text-[9px] font-bold truncate text-center"
+              className="block w-full px-1.5 py-0.5 rounded-full text-[8px] font-bold truncate text-center"
+              title={statusLabel}
               style={{
                 backgroundColor: colors.bg,
                 color: colors.text,
               }}
             >
-              {status}
+              {statusLabel}
             </span>
           </div>
           

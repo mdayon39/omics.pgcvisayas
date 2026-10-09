@@ -90,8 +90,7 @@ const ACCEPT_ATTR = [
 ].join(",");
 
 const FAQ_URL = "https://omics.pgcvisayas.upv.edu.ph/faqs";
-const MODE_OF_PAYMENT_URL =
-  "https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2Fmode_of_payment.pdf?alt=media&token=279c10a9-ce74-40ef-8e7d-80a86820a8e0";
+const MODE_OF_PAYMENT_URL = "/api/chat/mode-of-payment";
 
 type ChatResourceSuggestion = {
   id: "faqs" | "mode-of-payment";
@@ -160,16 +159,25 @@ function AttachmentBubble({
   const isFaqLink =
     attachment.type === "text/html" ||
     attachment.url === FAQ_URL ||
-    /\/faqs(?:[/?#]|$)/i.test(attachment.url);
+    /\/faqs(?:[/?#]|$)/i.test(attachment.url) ||
+    /\bfaq\b/i.test(attachment.name);
+  const isModeOfPaymentLink =
+    attachment.url === MODE_OF_PAYMENT_URL ||
+    /mode[_%20 -]+of[_%20 -]+payment\.pdf/i.test(attachment.url) ||
+    /mode of payment/i.test(attachment.name);
   const isChatResourceLink =
     attachment.type === "text/uri-list" ||
     isFaqLink ||
+    isModeOfPaymentLink ||
     attachment.url === MODE_OF_PAYMENT_URL;
+  const attachmentUrl = isModeOfPaymentLink
+    ? MODE_OF_PAYMENT_URL
+    : attachment.url;
 
   if (attachment.type === "application/pdf" || isChatResourceLink) {
     return (
       <a
-        href={attachment.url}
+        href={attachmentUrl}
         target={isChatResourceLink ? "_blank" : "_self"}
         rel={isChatResourceLink ? "noopener noreferrer" : undefined}
         className={`flex items-center gap-2 mt-1.5 rounded-xl px-3 py-2 border transition-colors ${

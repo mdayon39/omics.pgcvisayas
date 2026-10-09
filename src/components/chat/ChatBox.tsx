@@ -596,17 +596,6 @@ export default function ChatBox({
           ? current
           : [...current, attachment],
       );
-      const triggerPattern =
-        resourceId === "faqs"
-          ? /\b(?:frequently\s+asked\s+questions|faqs?)\b/gi
-          : /\bmode(?:\s+of)?\s+payment\b|\bpay\w*\b/gi;
-      setNewMessage((current) =>
-        current
-          .replace(triggerPattern, " ")
-          .replace(/\s{2,}/g, " ")
-          .replace(/\s+([,.!?;:])/g, "$1")
-          .trim(),
-      );
       toast.success(`${attachment.name} added to the message`);
     } catch (resourceError) {
       console.error(`Failed to add ${resourceId} to chat:`, resourceError);

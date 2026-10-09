@@ -163,8 +163,7 @@ function AttachmentBubble({
     return (
       <a
         href={attachment.url}
-        target="_blank"
-        rel="noopener noreferrer"
+        target="_self"
         className={`flex items-center gap-2 mt-1.5 rounded-xl px-3 py-2 border transition-colors ${
           isMe
             ? "bg-white/15 border-white/20 hover:bg-white/25 text-white"
@@ -315,9 +314,7 @@ export default function ChatBox({
                 },
               ]
             : []),
-          ...(/\bmode of payment\b|\bpayment (?:options?|methods?)\b/i.test(
-            newMessage,
-          )
+          ...(/\b(?:mode|payment)\b/i.test(newMessage)
             ? [
                 {
                   id: "mode-of-payment" as const,

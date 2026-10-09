@@ -24,9 +24,45 @@ import {
 } from "@/components/ui/tooltip";
 import { QuoteButton } from "./QuoteButton";
 import UnreadBadge from "@/components/chat/UnreadBadge";
-import { Copy, User, Eye, Circle } from "lucide-react";
+import { Copy, User, Eye, Circle, Pin, PinOff } from "lucide-react";
 import { toast } from "sonner";
 import usePresenceStatus from "@/hooks/usePresenceStatus";
+import { setInquiryPinned } from "@/services/inquiryService";
+import { useState } from "react";
+
+const InquiryPinButton = ({ inquiry }: { inquiry: Inquiry }) => {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const isPinned = inquiry.pinnedByAdmin === true;
+  const Icon = isPinned ? PinOff : Pin;
+  const label = isPinned ? "Unpin inquiry" : "Pin inquiry";
+
+  const togglePinned = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setIsUpdating(true);
+    try {
+      await setInquiryPinned(inquiry.id, !isPinned);
+      toast.success(isPinned ? "Inquiry unpinned" : "Inquiry pinned");
+    } catch {
+      toast.error(`Failed to ${isPinned ? "unpin" : "pin"} inquiry`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-7 w-7"
+      onClick={togglePinned}
+      disabled={isUpdating}
+      title={label}
+      aria-label={label}
+    >
+      <Icon className={`h-3.5 w-3.5 ${isPinned ? "text-blue-600" : ""}`} />
+    </Button>
+  );
+};
 
 /**
  * Presence Cell Component
@@ -419,7 +455,7 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
   {
     id: "actions",
     header: () => <div className="text-center w-full">Actions</div>,
-    size: 100, // Increased from 70 to provide more breathing room for buttons
+    size: 120,
     cell: ({ row }) => {
       const inquiry = row.original;
       const router = useRouter();
@@ -428,6 +464,7 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
 
       return (
         <div className="flex items-center justify-center -space-x-1 h-9">
+          <InquiryPinButton inquiry={inquiry} />
           {canCreate("quotations") && (
             <div className="scale-90 origin-center">
               <QuoteButton inquiryId={inquiry.id} />

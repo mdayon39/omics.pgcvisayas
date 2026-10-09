@@ -324,7 +324,7 @@ export function DataTable<TData, TValue>({
     },
   });
 
-  // Sort rows: first by unread status, then by the table's internal sorting
+  // Pinned inquiries stay above unread priority, then retain the table sorting.
   const sortedAndFilteredRows = useMemo(() => {
     // 1. Get filtered & sorted rows from table model
     const tableRows = table.getRowModel().rows;
@@ -339,13 +339,19 @@ export function DataTable<TData, TValue>({
       return true;
     });
 
-    // 3. Move rows with unread messages to the top
+    // 3. Move pinned inquiries first, then unread inquiries.
     const sorted = [...filtered].sort((a, b) => {
-      const aId = (a.original as unknown as { id: string }).id;
-      const bId = (b.original as unknown as { id: string }).id;
+      const aInquiry = a.original as unknown as Inquiry;
+      const bInquiry = b.original as unknown as Inquiry;
+      const aId = aInquiry.id;
+      const bId = bInquiry.id;
+      const aPinned = aInquiry.pinnedByAdmin === true;
+      const bPinned = bInquiry.pinnedByAdmin === true;
       const aUnread = unreadInquiryIds.has(aId);
       const bUnread = unreadInquiryIds.has(bId);
 
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
       if (aUnread && !bUnread) return -1;
       if (!aUnread && bUnread) return 1;
       return 0; // keep relative order from table's internal sorting

@@ -73,6 +73,7 @@ function mapDocToInquiry(id: string, data: any): Inquiry {
     hasLoggedIn: data.hasLoggedIn || false,
     messageState: data.messageState || "none",
     unreadMessageCount: data.unreadMessageCount || 0,
+    pinnedByAdmin: data.pinnedByAdmin === true,
     cancelledAt:
       data.cancelledAt?.toDate?.() ??
       (data.cancelledAt ? new Date(data.cancelledAt) : null),
@@ -256,6 +257,23 @@ export async function updateInquiryStatus(
     console.log(`Updated inquiry ${inquiryId} status to: ${status}`);
   } catch (error) {
     console.error(`Error updating inquiry ${inquiryId} status:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Pins or unpins an inquiry in the admin inquiry table.
+ */
+export async function setInquiryPinned(
+  inquiryId: string,
+  pinned: boolean,
+): Promise<void> {
+  try {
+    await updateDoc(doc(db, "inquiries", inquiryId), {
+      pinnedByAdmin: pinned,
+    });
+  } catch (error) {
+    console.error(`Error updating inquiry ${inquiryId} pin status:`, error);
     throw error;
   }
 }

@@ -102,4 +102,5 @@ export interface Inquiry {
   // 'all_read'   : all client messages have been read by admin
   messageState?: "none" | "admin_only" | "has_unread" | "all_read";
   unreadMessageCount?: number;
+  pinnedByAdmin?: boolean;
 }

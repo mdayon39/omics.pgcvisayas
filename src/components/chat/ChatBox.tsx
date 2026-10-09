@@ -58,6 +58,8 @@ import {
   getAdminDisplayNameWithIcon,
   getClientInitials,
 } from "@/lib/chatUtils";
+import { getAllAdmins, type Admin } from "@/services/adminService";
+import { createAdminMentionNotifications } from "@/services/adminMentionService";
 import EmojiPicker from "./EmojiPicker";
 
 // Allowed attachment types for chat
@@ -99,6 +101,22 @@ function getFileIcon(type: string) {
   }
   if (type === "text/plain") return File;
   return FileText; // PDF, Word, PPT, etc.
+}
+
+function getMentionToken(admin: Admin, admins: Admin[]) {
+  const displayToken = getAdminDisplayName(admin.email)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  const nameToken = admin.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const emailToken = admin.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+  const primaryToken = displayToken || nameToken || emailToken;
+  const duplicateName = admins.filter(
+    (candidate) =>
+      getAdminDisplayName(candidate.email)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "") === displayToken,
+  ).length > 1;
+  return duplicateName ? emailToken || primaryToken : primaryToken;
 }
 
 async function downloadAttachment(url: string, name: string) {
@@ -195,6 +213,16 @@ export default function ChatBox({
   const { user, adminInfo } = useAuth();
   const [messages, setMessages] = useState<ThreadMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [admins, setAdmins] = useState<Admin[]>([]);
+  const [mentionedAdmins, setMentionedAdmins] = useState<
+    { email: string; name: string; token: string }[]
+  >([]);
+  const [mentionMenu, setMentionMenu] = useState<{
+    start: number;
+    end: number;
+    query: string;
+  } | null>(null);
+  const [activeMentionIndex, setActiveMentionIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -207,7 +235,36 @@ export default function ChatBox({
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const DEFAULT_REACTIONS = ["👍", "❤️", "😮", "😂", "😥"];
+  const mentionSuggestions =
+    role === "admin" && mentionMenu
+      ? admins
+          .filter(
+            (admin) =>
+              admin.status !== "deactivated" &&
+              admin.email.toLowerCase() !== user?.email?.toLowerCase(),
+          )
+          .filter((admin) => {
+            const query = mentionMenu.query.toLowerCase();
+            const normalize = (value: string) =>
+              value.toLowerCase().replace(/[^a-z0-9]/g, "");
+            const displayName = getAdminDisplayName(admin.email);
+            const searchableValues = [
+              displayName,
+              admin.name,
+              admin.email,
+              admin.email.split("@")[0],
+              getMentionToken(admin, admins),
+            ].map(normalize);
+            return searchableValues.some((value) => value.includes(query));
+          })
+          .sort((left, right) =>
+            getAdminDisplayName(left.email).localeCompare(
+              getAdminDisplayName(right.email),
+            ),
+          )
+      : [];
 
   const normalizeIdentifier = (value: string | null | undefined) =>
     (value || "").trim().toLowerCase();
@@ -218,6 +275,19 @@ export default function ChatBox({
     ),
   );
   const isSuperAdmin = role === "admin" && adminInfo?.role === "superadmin";
+
+  useEffect(() => {
+    if (role !== "admin") {
+      setAdmins([]);
+      return;
+    }
+    getAllAdmins()
+      .then(setAdmins)
+      .catch((adminError) => {
+        console.error("Failed to load admins for chat mentions:", adminError);
+        toast.error("Could not load admins for mentions");
+      });
+  }, [role]);
 
   // Alias of the currently logged-in admin (used for own-message labels)
   const currentAdminAlias =
@@ -326,6 +396,7 @@ export default function ChatBox({
 
     const messageContent = newMessage.trim();
     setNewMessage("");
+    setMentionMenu(null);
     const fileToSend = pendingFile;
     setPendingFile(null);
 
@@ -359,7 +430,13 @@ export default function ChatBox({
         }
       }
 
-      await addThreadMessage({
+      const selectedMentions =
+        role === "admin"
+          ? mentionedAdmins.filter((mention) =>
+              messageContent.toLowerCase().includes(`@${mention.token.toLowerCase()}`),
+            )
+          : [];
+      const messageId = await addThreadMessage({
         threadId: inquiryId,
         type: "text",
         content: messageContent || (fileToSend ? fileToSend.name : ""),
@@ -368,7 +445,36 @@ export default function ChatBox({
         senderRole: role,
         isRead: false,
         ...(attachments ? { attachments } : {}),
+        ...(selectedMentions.length > 0
+          ? {
+              mentions: selectedMentions,
+              mentionedAdminEmails: selectedMentions.map(
+                (mention) => mention.email,
+              ),
+            }
+          : {}),
       } as Omit<ThreadMessage, "id" | "createdAt">);
+      setMentionedAdmins([]);
+
+      if (selectedMentions.length > 0) {
+        try {
+          await createAdminMentionNotifications({
+            mentions: selectedMentions,
+            senderEmail: user.email || user.uid,
+            senderName: senderDisplayName,
+            clientName: clientName || "",
+            threadId: inquiryId,
+            messageId,
+            content: messageContent,
+          });
+        } catch (notificationError) {
+          console.error(
+            "Message was sent, but admin mention notifications failed:",
+            notificationError,
+          );
+          toast.error("Message sent, but mention notification could not be delivered");
+        }
+      }
 
       // Trigger availability auto-reply only for client messages
       if (role === "client") {
@@ -384,8 +490,67 @@ export default function ChatBox({
       console.error("Failed to send message:", error);
       setError("Failed to send message. Please try again.");
       setNewMessage(messageContent);
+      setMentionMenu(null);
       if (fileToSend) setPendingFile(fileToSend);
     }
+  };
+
+  const handleMessageChange = (
+    event: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    const value = event.target.value;
+    const caret = event.target.selectionStart;
+    setNewMessage(value);
+    setMentionedAdmins((current) =>
+      current.filter((mention) =>
+        value.toLowerCase().includes(`@${mention.token.toLowerCase()}`),
+      ),
+    );
+
+    if (role !== "admin") {
+      setMentionMenu(null);
+      return;
+    }
+    const beforeCaret = value.slice(0, caret);
+    const tokenStart = beforeCaret.search(/\S+$/);
+    const rawToken = tokenStart >= 0 ? beforeCaret.slice(tokenStart) : "";
+    const tokenEnd = caret + (value.slice(caret).match(/^\S*/)?.[0].length ?? 0);
+    const query = rawToken.startsWith("@")
+      ? rawToken.slice(1)
+      : rawToken;
+    if (!query || query.length < 2 || !/^[a-zA-Z0-9._-]+$/.test(query)) {
+      setMentionMenu(null);
+      return;
+    }
+    setMentionMenu({
+      start: tokenStart,
+      end: tokenEnd,
+      query,
+    });
+    setActiveMentionIndex(0);
+  };
+
+  const selectMention = (admin: Admin) => {
+    if (!mentionMenu) return;
+    const token = getMentionToken(admin, admins);
+    const insertion = `@${token} `;
+    const updatedMessage =
+      newMessage.slice(0, mentionMenu.start) +
+      insertion +
+      newMessage.slice(mentionMenu.end);
+    const nextCursor = mentionMenu.start + insertion.length;
+    setNewMessage(updatedMessage);
+    setMentionedAdmins((current) => [
+      ...current.filter(
+        (mention) => mention.email.toLowerCase() !== admin.email.toLowerCase(),
+      ),
+      { email: admin.email, name: admin.name, token },
+    ]);
+    setMentionMenu(null);
+    requestAnimationFrame(() => {
+      messageInputRef.current?.focus();
+      messageInputRef.current?.setSelectionRange(nextCursor, nextCursor);
+    });
   };
 
   const handleUnsend = async (messageId: string) => {
@@ -436,6 +601,31 @@ export default function ChatBox({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionMenu && mentionSuggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveMentionIndex((index) => (index + 1) % mentionSuggestions.length);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveMentionIndex(
+          (index) =>
+            (index - 1 + mentionSuggestions.length) % mentionSuggestions.length,
+        );
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMentionMenu(null);
+        return;
+      }
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        selectMention(mentionSuggestions[activeMentionIndex] ?? mentionSuggestions[0]);
+        return;
+      }
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       const form = (e.currentTarget as any).form;
@@ -806,7 +996,7 @@ export default function ChatBox({
       </CardContent>
 
       <CardFooter className="p-3 bg-white border-t rounded-b-lg">
-        <div className="flex flex-col gap-2 w-full">
+        <div className="relative flex w-full flex-col gap-2">
           {/* Pending file preview */}
           {pendingFile && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-100">
@@ -844,6 +1034,44 @@ export default function ChatBox({
               </Button>
             </div>
           )}
+          {mentionMenu && mentionSuggestions.length > 0 && (
+            <div
+              role="listbox"
+              aria-label="Admin suggestions"
+              className="absolute bottom-14 left-12 z-30 max-h-56 w-72 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
+            >
+              {mentionSuggestions.map((admin, index) => {
+                const token = getMentionToken(admin, admins);
+                return (
+                  <button
+                    key={admin.email}
+                    type="button"
+                    role="option"
+                    aria-selected={index === activeMentionIndex}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => selectMention(admin)}
+                    className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left ${
+                      index === activeMentionIndex
+                        ? "bg-blue-50"
+                        : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-slate-800">
+                        {getAdminDisplayName(admin.email)}
+                      </span>
+                      <span className="block truncate text-xs text-slate-500">
+                        {admin.name ? `${admin.name} · ${admin.email}` : admin.email}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs text-blue-700">
+                      @{token}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <form
             onSubmit={handleSendMessage}
             className="flex w-full gap-2 items-end"
@@ -870,12 +1098,13 @@ export default function ChatBox({
             </Button>
             <div className="flex-1 relative flex items-end">
               <TextareaAutosize
+                ref={messageInputRef}
                 placeholder={
                   role === "admin" ? "Message client..." : "Message admin..."
                 }
                 value={newMessage}
                 disabled={loading || uploading}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleMessageChange}
                 onKeyDown={handleKeyDown}
                 minRows={1}
                 maxRows={10}

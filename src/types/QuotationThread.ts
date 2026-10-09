@@ -100,6 +100,8 @@ export interface ThreadMessage {
     url: string;
     type: string;
   }[];
+  mentions?: { email: string; name: string; token: string }[];
+  mentionedAdminEmails?: string[];
 
   // Metadata
   isRead: boolean;

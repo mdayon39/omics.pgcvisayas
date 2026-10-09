@@ -5,6 +5,7 @@ import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { TabBar } from "@/components/layout/TabBar";
 import { TabContent } from "@/components/layout/TabContent";
 import { MessageNotificationCenter } from "@/components/layout/MessageNotificationCenter";
+import { AdminMentionNotificationCenter } from "@/components/layout/AdminMentionNotificationCenter";
 import GlobalChatWidget from "@/components/chat/GlobalChatWidget";
 import AdminChatWidget from "@/components/chat/AdminChatWidget";
 import { TabProvider } from "@/contexts/TabContext";
@@ -110,6 +111,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {/* Right Header Content */}
               <div className="flex items-center gap-4">
                 <MessageNotificationCenter />
+                <AdminMentionNotificationCenter />
                 
                 {/* Admin Menu */}
                 <DropdownMenu>

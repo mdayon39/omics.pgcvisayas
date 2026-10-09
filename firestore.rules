@@ -429,6 +429,28 @@ service cloud.firestore {
         || ownsByUidOrEmail(resource.data.senderUid, resource.data.senderId);
     }
 
+    match /adminMentionNotifications/{notificationId} {
+      allow create: if isAdmin()
+        && request.resource.data.senderEmail == userEmail()
+        && request.resource.data.recipientEmail is string
+        && exists(/databases/$(database)/documents/admins/$(request.resource.data.recipientEmail))
+        && exists(/databases/$(database)/documents/threadMessages/$(request.resource.data.messageId))
+        && get(/databases/$(database)/documents/threadMessages/$(request.resource.data.messageId)).data.senderId == userEmail()
+        && get(/databases/$(database)/documents/threadMessages/$(request.resource.data.messageId)).data.mentionedAdminEmails is list
+        && request.resource.data.recipientEmail in get(/databases/$(database)/documents/threadMessages/$(request.resource.data.messageId)).data.mentionedAdminEmails;
+
+      allow read: if isAdmin()
+        && resource.data.recipientEmail == userEmail();
+
+      allow update: if isAdmin()
+        && resource.data.recipientEmail == userEmail()
+        && request.resource.data.recipientEmail == resource.data.recipientEmail
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt'])
+        && request.resource.data.read is bool;
+
+      allow delete: if false;
+    }
+
     match /quotations/{quotationId} {
       allow create: if isSignedIn()
         && isClientOrAdmin()

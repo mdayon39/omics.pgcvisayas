@@ -464,7 +464,6 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
 
       return (
         <div className="flex items-center justify-center -space-x-1 h-9">
-          <InquiryPinButton inquiry={inquiry} />
           {canCreate("quotations") && (
             <div className="scale-90 origin-center">
               <QuoteButton inquiryId={inquiry.id} />
@@ -481,6 +480,7 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
               />
             </div>
           )}
+          <InquiryPinButton inquiry={inquiry} />
         </div>
       );
     },

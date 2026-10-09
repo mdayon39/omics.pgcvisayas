@@ -75,13 +75,11 @@ function attachContactClientIds(
     const contactClient =
       (contactClients.length === 1 ? contactClients[0] : undefined) ??
       (linkedByEmail.length === 1 ? linkedByEmail[0] : undefined) ??
-      (linkedClients.length === 1 ? linkedClients[0] : undefined) ??
-      (!linkedClients.length && emailContactClients.length === 1
+      (emailContactClients.length === 1
         ? emailContactClients[0]
         : undefined) ??
-      (!linkedClients.length && emailMatches.length === 1
-        ? emailMatches[0]
-        : undefined);
+      (emailMatches.length === 1 ? emailMatches[0] : undefined) ??
+      (linkedClients.length === 1 ? linkedClients[0] : undefined);
 
     return contactClient
       ? { ...inquiry, clientId: contactClient.cid || contactClient.id }

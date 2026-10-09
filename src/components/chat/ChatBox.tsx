@@ -161,13 +161,17 @@ function AttachmentBubble({
     attachment.type === "text/html" ||
     attachment.url === FAQ_URL ||
     /\/faqs(?:[/?#]|$)/i.test(attachment.url);
+  const isChatResourceLink =
+    attachment.type === "text/uri-list" ||
+    isFaqLink ||
+    attachment.url === MODE_OF_PAYMENT_URL;
 
-  if (attachment.type === "application/pdf" || isFaqLink) {
+  if (attachment.type === "application/pdf" || isChatResourceLink) {
     return (
       <a
         href={attachment.url}
-        target={isFaqLink ? "_blank" : "_self"}
-        rel={isFaqLink ? "noopener noreferrer" : undefined}
+        target={isChatResourceLink ? "_blank" : "_self"}
+        rel={isChatResourceLink ? "noopener noreferrer" : undefined}
         className={`flex items-center gap-2 mt-1.5 rounded-xl px-3 py-2 border transition-colors ${
           isMe
             ? "bg-white/15 border-white/20 hover:bg-white/25 text-white"
@@ -586,12 +590,12 @@ export default function ChatBox({
           ? {
               name: "PGC Visayas FAQs",
               url: FAQ_URL,
-              type: "text/html",
+              type: "text/uri-list",
             }
           : {
               name: "Mode of Payment.pdf",
               url: MODE_OF_PAYMENT_URL,
-              type: "application/pdf",
+              type: "text/uri-list",
             };
       setPendingLinkedAttachments((current) =>
         current.some((item) => item.name === attachment.name)
@@ -1161,7 +1165,8 @@ export default function ChatBox({
               key={attachment.name}
               className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2"
             >
-              {attachment.type === "text/html" ? (
+              {attachment.type === "text/html" ||
+              attachment.type === "text/uri-list" ? (
                 <ExternalLink className="h-5 w-5 flex-shrink-0 text-blue-600" />
               ) : (
                 <FileText className="h-5 w-5 flex-shrink-0 text-blue-600" />

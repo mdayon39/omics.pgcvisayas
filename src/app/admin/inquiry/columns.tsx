@@ -380,10 +380,9 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
       const router = useRouter();
       const inquiry = row.original;
       const status = inquiry.status || "Pending";
-      const statusLabel =
-        status === "Approved Client" && inquiry.clientId
-          ? `${status} (${inquiry.clientId})`
-          : status;
+      const statusLabel = inquiry.clientId
+        ? `${status} (${inquiry.clientId})`
+        : status;
       const hasLoggedIn = inquiry.hasLoggedIn;
       const hasOpenedQuotation = inquiry.hasOpenedQuotation;
 

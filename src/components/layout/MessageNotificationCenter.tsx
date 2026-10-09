@@ -17,6 +17,7 @@ import {
   Search,
   Trash2,
   X,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +47,7 @@ import {
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import { useChatTabAttention } from "@/hooks/useChatTabAttention";
 import { useRouter } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import usePresenceStatus from "@/hooks/usePresenceStatus";
 import useAuth from "@/hooks/useAuth";
@@ -55,6 +56,7 @@ import {
   dismissThreadNotification,
   markLatestClientMessageAsUnseen,
   setThreadPinned,
+  getThreadMessages,
 } from "@/services/quotationThreadService";
 
 export function MessageNotificationCenter() {
@@ -67,6 +69,7 @@ export function MessageNotificationCenter() {
   const [markingUnseenId, setMarkingUnseenId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
   const [pinningId, setPinningId] = useState<string | null>(null);
+  const [downloadingTranscriptId, setDownloadingTranscriptId] = useState<string | null>(null);
   const [confirmDismissOpen, setConfirmDismissOpen] = useState(false);
   const [pendingDismiss, setPendingDismiss] = useState<{
     id: string;
@@ -164,6 +167,72 @@ export function MessageNotificationCenter() {
     }
   };
 
+  const handleDownloadTranscript = async (
+    event: React.MouseEvent,
+    inquiryId: string,
+    clientName: string,
+  ) => {
+    event.stopPropagation();
+    if (downloadingTranscriptId) return;
+
+    try {
+      setDownloadingTranscriptId(inquiryId);
+      const messages = await getThreadMessages(inquiryId);
+      const sortedMessages = [...messages].sort((left, right) => {
+        const leftDate = left.createdAt?.toDate
+          ? left.createdAt.toDate()
+          : new Date(left.createdAt as unknown as string);
+        const rightDate = right.createdAt?.toDate
+          ? right.createdAt.toDate()
+          : new Date(right.createdAt as unknown as string);
+        return leftDate.getTime() - rightDate.getTime();
+      });
+      const transcript = [
+        `Conversation transcript: ${clientName}`,
+        `Inquiry ID: ${inquiryId}`,
+        `Downloaded: ${format(new Date(), "yyyy-MM-dd HH:mm:ss")}`,
+        "",
+        ...sortedMessages.flatMap((message) => {
+          const createdAt = message.createdAt?.toDate
+            ? message.createdAt.toDate()
+            : new Date(message.createdAt as unknown as string);
+          const timestamp = Number.isNaN(createdAt.getTime())
+            ? "Unknown time"
+            : format(createdAt, "yyyy-MM-dd HH:mm:ss");
+          const sender =
+            message.senderRole === "admin"
+              ? `Admin - ${message.senderName}`
+              : `Client - ${message.senderName}`;
+          const messageText = message.unsent
+            ? "[Message unsent]"
+            : message.content || "";
+          const attachments =
+            !message.unsent && message.attachments?.length
+              ? `\nAttachments: ${message.attachments.map((attachment) => attachment.name).join(", ")}`
+              : "";
+
+          return [`[${timestamp}] ${sender}:`, messageText + attachments, ""];
+        }),
+      ].join("\n");
+      const blob = new Blob([transcript], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      const safeClientName = clientName.replace(/[^a-z0-9-_]+/gi, "_");
+      anchor.href = url;
+      anchor.download = `chat-transcript-${safeClientName}-${inquiryId}.txt`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("Conversation transcript downloaded");
+    } catch (error) {
+      console.error("Failed to download conversation transcript:", error);
+      toast.error("Failed to download conversation transcript");
+    } finally {
+      setDownloadingTranscriptId(null);
+    }
+  };
+
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
@@ -258,6 +327,8 @@ export function MessageNotificationCenter() {
                     dismissingId={dismissingId}
                     markingUnseenId={markingUnseenId}
                     pinningId={pinningId}
+                    downloadingTranscriptId={downloadingTranscriptId}
+                    handleDownloadTranscript={handleDownloadTranscript}
                   />
                 ))}
               </div>
@@ -321,6 +392,12 @@ interface NotificationItemProps {
   dismissingId: string | null;
   markingUnseenId: string | null;
   pinningId: string | null;
+  downloadingTranscriptId: string | null;
+  handleDownloadTranscript: (
+    event: React.MouseEvent,
+    inquiryId: string,
+    clientName: string,
+  ) => void;
 }
 
 function NotificationItem({
@@ -333,6 +410,8 @@ function NotificationItem({
   dismissingId,
   markingUnseenId,
   pinningId,
+  downloadingTranscriptId,
+  handleDownloadTranscript,
 }: NotificationItemProps) {
   const presence = usePresenceStatus(`client_${n.inquiryId}`);
 
@@ -462,6 +541,22 @@ function NotificationItem({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={(event) =>
+                            handleDownloadTranscript(
+                              event,
+                              n.inquiryId,
+                              n.clientName,
+                            )
+                          }
+                          disabled={downloadingTranscriptId === n.inquiryId}
+                          className="text-[11px] cursor-pointer"
+                        >
+                          <Download className="mr-2 h-3.5 w-3.5" />
+                          {downloadingTranscriptId === n.inquiryId
+                            ? "Downloading..."
+                            : "Download transcript"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(event) =>
                             handleDismiss(event, n.inquiryId, n.clientName)
                           }
                           disabled={dismissingId === n.inquiryId}
@@ -470,6 +565,24 @@ function NotificationItem({
                           <Trash2 className="mr-2 h-3.5 w-3.5" /> Dismiss
                         </DropdownMenuItem>
                       </>
+                    )}
+                    {n.unreadCount > 0 && (
+                      <DropdownMenuItem
+                        onClick={(event) =>
+                          handleDownloadTranscript(
+                            event,
+                            n.inquiryId,
+                            n.clientName,
+                          )
+                        }
+                        disabled={downloadingTranscriptId === n.inquiryId}
+                        className="text-[11px] cursor-pointer"
+                      >
+                        <Download className="mr-2 h-3.5 w-3.5" />
+                        {downloadingTranscriptId === n.inquiryId
+                          ? "Downloading..."
+                          : "Download transcript"}
+                      </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>

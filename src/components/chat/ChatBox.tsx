@@ -37,6 +37,7 @@ import {
   X,
   Loader2,
   Download,
+  Copy,
   Trash2,
   Info,
 } from "lucide-react";
@@ -51,6 +52,7 @@ import {
 } from "@/services/quotationThreadService";
 import { uploadFile } from "@/lib/fileUpload";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import {
   getAdminDisplayName,
   getAdminDisplayNameWithIcon,
@@ -399,6 +401,28 @@ export default function ChatBox({
     }
   };
 
+  const handleCopyMessage = async (event: React.MouseEvent, msg: ThreadMessage) => {
+    event.stopPropagation();
+    const attachmentNames =
+      msg.attachments?.map((attachment) => attachment.name).join(", ") ?? "";
+    const content = [msg.content, attachmentNames && `Attachments: ${attachmentNames}`]
+      .filter(Boolean)
+      .join("\n");
+
+    if (!content) {
+      toast.info("This message has no text or attachment names to copy");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Message copied");
+    } catch (copyError) {
+      console.error("Failed to copy chat message:", copyError);
+      toast.error("Failed to copy message");
+    }
+  };
+
   const handleDeleteAutoReply = async (messageId: string) => {
     setUnsendingId(messageId);
     try {
@@ -644,6 +668,17 @@ export default function ChatBox({
                             {formatMessageTime(msg)}
                           </span>
                         </>
+                      )}
+                      {!msg.unsent && (
+                        <button
+                          type="button"
+                          onClick={(event) => handleCopyMessage(event, msg)}
+                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                          title="Copy message"
+                          aria-label="Copy message"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </button>
                       )}
                     </div>
 

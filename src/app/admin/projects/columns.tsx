@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { Project } from "@/types/Project";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Copy } from "lucide-react";
+import { toast } from "sonner";
 import useAuth from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { EditProjectModal } from "@/components/forms/EditProjectModal";
@@ -20,6 +21,151 @@ import {
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { ClipboardCheck, FileUp, FileCheck2 } from "lucide-react";
+
+interface ProjectMemberClient {
+  id: string;
+  cid: string;
+  name: string;
+}
+
+function CopyProjectValue({
+  value,
+  label,
+}: {
+  value: string;
+  label: string;
+}) {
+  if (!value) return null;
+
+  const handleCopy = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied to clipboard`);
+    } catch (error) {
+      console.error(`Failed to copy ${label.toLowerCase()}:`, error);
+      toast.error(`Failed to copy ${label.toLowerCase()}`);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="shrink-0 rounded p-1 text-slate-400 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-700 group-hover:opacity-100"
+      title={`Copy ${label}`}
+      aria-label={`Copy ${label}`}
+    >
+      <Copy className="h-3 w-3" />
+    </button>
+  );
+}
+
+function ProjectMembersCell({ project }: { project: Project }) {
+  const [clients, setClients] = useState<ProjectMemberClient[]>([]);
+  const projectId = project.pid ?? "";
+  const names = project.clientNames ?? [];
+  const displayText = names.length > 0 ? names.join(", ") : "—";
+  const count = names.length;
+
+  useEffect(() => {
+    if (!projectId) {
+      setClients([]);
+      return;
+    }
+
+    const clientsQuery = query(
+      collection(db, "clients"),
+      where("pid", "array-contains", projectId),
+    );
+
+    return onSnapshot(
+      clientsQuery,
+      (snapshot) => {
+        setClients(
+          snapshot.docs.map((clientDoc) => {
+            const data = clientDoc.data();
+            return {
+              id: clientDoc.id,
+              cid: typeof data.cid === "string" ? data.cid : clientDoc.id,
+              name: typeof data.name === "string" ? data.name : "",
+            };
+          }),
+        );
+      },
+      (error) => {
+        console.error(`Failed to load clients for project ${projectId}:`, error);
+      },
+    );
+  }, [projectId]);
+
+  const clientsByName = new Map(
+    clients.map((client) => [client.name.trim().toLowerCase(), client]),
+  );
+  const members =
+    names.length > 0
+      ? names.map((name) => ({
+          name,
+          client: clientsByName.get(name.trim().toLowerCase()),
+        }))
+      : clients.map((client) => ({ name: client.name, client }));
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-0.5 max-w-[110px] cursor-help px-1 truncate">
+            <span className="truncate text-[10px] text-slate-600">
+              {displayText}
+            </span>
+            {count > 0 && (
+              <span className="shrink-0 text-[11px] font-normal text-blue-600">
+                ({count})
+              </span>
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent
+          side="right"
+          className="p-3 bg-white border shadow-xl max-w-xs"
+        >
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1 text-[11px] font-normal text-gray-400 uppercase tracking-wider mb-2 border-b pb-1">
+              Project Members ({count})
+              {projectId && (
+                <span className="group inline-flex items-center gap-0.5 font-mono normal-case text-slate-600">
+                  {projectId}
+                  <CopyProjectValue value={projectId} label="Project ID" />
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col gap-y-1">
+              {members.map(({ name, client }, idx) => (
+                <div
+                  key={`${client?.id ?? name}-${idx}`}
+                  className={`flex items-center gap-1 text-[12px] font-normal ${CLIENT_COLORS[idx % CLIENT_COLORS.length]}`}
+                >
+                  {client && (
+                    <span className="group inline-flex items-center gap-0.5 font-mono text-[10px] text-slate-500">
+                      {client.cid}
+                      <CopyProjectValue value={client.cid} label="Client ID" />
+                    </span>
+                  )}
+                  <span>{name}</span>
+                </div>
+              ))}
+              {members.length === 0 && (
+                <span className="text-[12px] text-gray-500 italic">
+                  No clients assigned
+                </span>
+              )}
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 // Professional colors for client names in tooltip
 const CLIENT_COLORS = [
@@ -266,12 +412,18 @@ export const columns: ColumnDef<Project>[] = [
         </Button>
       );
     },
-    size: 70,
-    cell: ({ getValue }) => (
-      <div className="font-mono text-[10px] text-muted-foreground px-1 truncate">
-        {getValue() as string}
-      </div>
-    ),
+    size: 90,
+    cell: ({ row }) => {
+      const projectId = row.original.pid ?? "";
+      return (
+        <div className="group flex items-center gap-1 px-1">
+          <span className="truncate font-mono text-[10px] text-muted-foreground">
+            {projectId}
+          </span>
+          <CopyProjectValue value={projectId} label="Project ID" />
+        </div>
+      );
+    },
   },
   {
     accessorKey: "createdAt",
@@ -357,57 +509,7 @@ export const columns: ColumnDef<Project>[] = [
     accessorKey: "clientNames",
     header: () => <div className="px-1 text-[12px] font-semibold">Clients</div>,
     size: 130,
-    cell: ({ row }) => {
-      // Render client names as comma-separated string with truncation and count
-      const names = row.original.clientNames || [];
-      const displayText = names.length > 0 ? names.join(", ") : "—";
-      const count = names.length;
-
-      return (
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-0.5 max-w-[110px] cursor-help px-1 truncate">
-                <span className="truncate text-[10px] text-slate-600">
-                  {displayText}
-                </span>
-                {count > 0 && (
-                  <span className="shrink-0 text-[11px] font-normal text-blue-600">
-                    ({count})
-                  </span>
-                )}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side="right"
-              className="p-3 bg-white border shadow-xl max-w-xs"
-            >
-              <div className="space-y-1.5">
-                <div className="text-[11px] font-normal text-gray-400 uppercase tracking-wider mb-2 border-b pb-1">
-                  Project Members ({count})
-                </div>
-                <div className="flex flex-wrap gap-x-2 gap-y-1">
-                  {names.map((name, idx) => (
-                    <span
-                      key={idx}
-                      className={`text-[12px] font-normal ${CLIENT_COLORS[idx % CLIENT_COLORS.length]}`}
-                    >
-                      {name}
-                      {idx < names.length - 1 ? "," : ""}
-                    </span>
-                  ))}
-                  {names.length === 0 && (
-                    <span className="text-[12px] text-gray-500 italic">
-                      No clients assigned
-                    </span>
-                  )}
-                </div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    },
+    cell: ({ row }) => <ProjectMembersCell project={row.original} />,
     // Enables global filtering by converting the array to a string
     filterFn: (row, columnId, filterValue) => {
       const value: string[] = row.getValue(columnId) || [];

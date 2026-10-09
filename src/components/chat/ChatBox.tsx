@@ -968,7 +968,8 @@ export default function ChatBox({
                             )}
                             <span className="text-xs font-semibold text-gray-600">
                               {msg.senderRole === "admin"
-                                ? getAdminDisplayNameWithIcon(msg.senderId)
+                                ? msg.senderName ||
+                                  getAdminDisplayNameWithIcon(msg.senderId)
                                 : msg.senderName}
                             </span>
                           </div>

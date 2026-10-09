@@ -25,6 +25,11 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { saveAdmin, deleteAdmin } from "@/services/adminService";
+import {
+  ADMIN_CHAT_ICON_OPTIONS,
+  getAdminDisplayName,
+  getAdminDisplayNameWithIcon,
+} from "@/lib/chatUtils";
 import { Shield, User, Mail, Briefcase, Save, Trash2, AlertCircle } from "lucide-react";
 
 interface AdminModalProps {
@@ -46,6 +51,11 @@ export default function AdminModal({ admin, onClose, onSuccess }: AdminModalProp
     position: admin?.position || "",
     photoURL: admin?.photoURL || "",
     role: admin?.role || "admin" as AdminRole,
+    chatAlias:
+      admin?.chatAlias || (admin ? getAdminDisplayName(admin.email) : ""),
+    chatIcon:
+      admin?.chatIcon ||
+      (admin ? getAdminDisplayNameWithIcon(admin.email).split(" ")[0] : "👋"),
   });
 
   const handleChange = (field: string, value: string) => {
@@ -74,6 +84,8 @@ export default function AdminModal({ admin, onClose, onSuccess }: AdminModalProp
         name: formData.name,
         position: formData.position,
         role: formData.role,
+        chatAlias: formData.chatAlias.trim(),
+        chatIcon: formData.chatIcon,
         photoURL: formData.photoURL || undefined,
         createdAt: admin?.createdAt || new Date(),
         lastLogin: admin?.lastLogin || null,
@@ -205,6 +217,47 @@ export default function AdminModal({ admin, onClose, onSuccess }: AdminModalProp
                     disabled={isEdit && !canEditPerm("usersPermissions")}
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="chatAlias">Chat Alias</Label>
+                <Input
+                  id="chatAlias"
+                  placeholder="e.g., Merl, Albert, Carms"
+                  value={formData.chatAlias}
+                  onChange={(e) => handleChange("chatAlias", e.target.value)}
+                  disabled={isEdit && !canEditPerm("usersPermissions")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used as this admin&apos;s display name in chat. Leave blank to use the default.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="chatIcon">Chat Icon</Label>
+                <Select
+                  value={formData.chatIcon}
+                  onValueChange={(value) => handleChange("chatIcon", value)}
+                  disabled={isEdit && !canEditPerm("usersPermissions")}
+                >
+                  <SelectTrigger id="chatIcon" className="w-full">
+                    <SelectValue placeholder="Select a chat icon" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ADMIN_CHAT_ICON_OPTIONS.map((icon) => (
+                      <SelectItem key={icon.value} value={icon.value}>
+                        <span className="flex items-center gap-2">
+                          <span className="text-lg">{icon.value}</span>
+                          <span>{icon.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Select a person/scientist icon to show next to the chat alias.
+                </p>
               </div>
             </div>
 

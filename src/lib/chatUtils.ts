@@ -28,6 +28,37 @@ const ADMIN_ICON_MAP: Record<string, string> = {
   jcvelo: "👩‍🎨",    // Jaz
 };
 
+export const ADMIN_CHAT_ICON_OPTIONS = [
+  { value: "👨‍🔬", label: "Man scientist" },
+  { value: "👩‍🔬", label: "Woman scientist" },
+  { value: "🧑‍🔬", label: "Scientist" },
+  { value: "👨‍🎨", label: "Man artist" },
+  { value: "👩‍🎨", label: "Woman artist" },
+  { value: "👨‍💻", label: "Man technologist" },
+  { value: "👩‍💻", label: "Woman technologist" },
+  { value: "🧑‍💻", label: "Technologist" },
+  { value: "👨‍🏫", label: "Man teacher" },
+  { value: "👩‍🏫", label: "Woman teacher" },
+  { value: "🧑‍🏫", label: "Teacher" },
+  { value: "👋", label: "Waving hand" },
+] as const;
+
+const ADMIN_CHAT_PROFILE_MAP = new Map<
+  string,
+  { alias?: string; icon?: string }
+>();
+
+export function registerAdminChatProfiles(
+  admins: { email: string; chatAlias?: string; chatIcon?: string }[],
+) {
+  for (const admin of admins) {
+    ADMIN_CHAT_PROFILE_MAP.set(admin.email.toLowerCase(), {
+      alias: admin.chatAlias?.trim() || undefined,
+      icon: admin.chatIcon || undefined,
+    });
+  }
+}
+
 /**
  * Returns a formal or informal name for an admin based on their email or username.
  * If the username is found in the map, it returns the mapped name.
@@ -36,11 +67,13 @@ const ADMIN_ICON_MAP: Record<string, string> = {
 export function getAdminDisplayName(identifier: string | null | undefined): string {
   if (!identifier) return "Admin";
 
-  // Extract username if it's an email
-  const username = identifier.includes("@") 
-    ? identifier.split("@")[0].toLowerCase() 
-    : identifier.toLowerCase();
+  const normalizedIdentifier = identifier.toLowerCase();
+  const profile = ADMIN_CHAT_PROFILE_MAP.get(normalizedIdentifier);
+  if (profile?.alias) return profile.alias;
 
+  const username = identifier.includes("@")
+    ? identifier.split("@")[0].toLowerCase()
+    : identifier.toLowerCase();
   const displayName = ADMIN_NAME_MAP[username] || (username.charAt(0).toUpperCase() + username.slice(1));
   return displayName;
 }
@@ -51,12 +84,14 @@ export function getAdminDisplayName(identifier: string | null | undefined): stri
 export function getAdminDisplayNameWithIcon(identifier: string | null | undefined): string {
   if (!identifier) return "👋 Admin";
 
-  const username = identifier.includes("@") 
-    ? identifier.split("@")[0].toLowerCase() 
+  const normalizedIdentifier = identifier.toLowerCase();
+  const profile = ADMIN_CHAT_PROFILE_MAP.get(normalizedIdentifier);
+  const username = identifier.includes("@")
+    ? identifier.split("@")[0].toLowerCase()
     : identifier.toLowerCase();
 
-  const displayName = getAdminDisplayName(username);
-  const icon = ADMIN_ICON_MAP[username] || "👋";
+  const displayName = getAdminDisplayName(identifier);
+  const icon = profile?.icon || ADMIN_ICON_MAP[username] || "👋";
 
   return `${icon} ${displayName}`;
 }

@@ -1,6 +1,7 @@
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { UserRole, ROLE_LABELS, ROLE_DESCRIPTIONS } from "@/types/Permissions";
+import { registerAdminChatProfiles } from "@/lib/chatUtils";
 
 // Use UserRole from Permissions for consistency
 export type AdminRole = UserRole;
@@ -11,6 +12,8 @@ export interface Admin {
   name: string;
   position: string;
   role: AdminRole;
+  chatAlias?: string;
+  chatIcon?: string;
   photoURL?: string;
   createdAt?: Date | any;
   lastLogin?: Date | any;
@@ -60,13 +63,15 @@ export async function getAllAdmins(): Promise<Admin[]> {
       name: data.name || "",
       position: data.position || "",
       role: normalizeRole(data.role),
+      chatAlias: data.chatAlias || undefined,
+      chatIcon: data.chatIcon || undefined,
       photoURL: data.photoURL || undefined,
       createdAt: data.createdAt,
       lastLogin: data.lastLogin,
       status: data.status || "active",
     } as Admin;
   });
-  
+  registerAdminChatProfiles(admins);
   return admins;
 }
 
@@ -78,17 +83,21 @@ export async function getAdminByEmail(email: string): Promise<Admin | null> {
   
   const data = snapshot.data();
   
-  return {
+  const admin: Admin = {
     uid: snapshot.id,
     email: snapshot.id,
     name: data.name || "",
     position: data.position || "",
     role: normalizeRole(data.role),
+    chatAlias: data.chatAlias || undefined,
+    chatIcon: data.chatIcon || undefined,
     photoURL: data.photoURL,
     createdAt: data.createdAt,
     lastLogin: data.lastLogin,
     status: data.status || "active",
   };
+  registerAdminChatProfiles([admin]);
+  return admin;
 }
 
 export async function saveAdmin(admin: Admin): Promise<void> {
@@ -97,11 +106,14 @@ export async function saveAdmin(admin: Admin): Promise<void> {
     name: admin.name,
     position: admin.position,
     role: admin.role,
+    chatAlias: admin.chatAlias?.trim() || null,
+    chatIcon: admin.chatIcon || null,
     photoURL: admin.photoURL || null,
     createdAt: admin.createdAt || new Date(),
     lastLogin: admin.lastLogin || null,
     status: admin.status || "active",
   }, { merge: true });
+  registerAdminChatProfiles([admin]);
 }
 
 export async function toggleAdminStatus(email: string, currentStatus: "active" | "deactivated"): Promise<void> {

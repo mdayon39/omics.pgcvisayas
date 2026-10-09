@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Pencil, Search, Shield, UserX, UserCheck, Loader2 } from "lucide-react";
 import AdminModal from "./AdminModal";
 import { Admin } from "@/services/adminService";
+import { getAdminDisplayName, getAdminDisplayNameWithIcon } from "@/lib/chatUtils";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { toast } from "sonner";
 import {
@@ -93,6 +94,7 @@ function AdminsManagementContent() {
     const matchesSearch =
       !searchQuery ||
       admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      admin.chatAlias?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       admin.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       admin.position.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -155,7 +157,7 @@ function AdminsManagementContent() {
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, email, or position..."
+            placeholder="Search by name, alias, email, or position..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -171,6 +173,7 @@ function AdminsManagementContent() {
               <TableRow>
                 <TableHead className="w-[60px]"></TableHead>
                 <TableHead className="w-[200px]">Name</TableHead>
+                <TableHead className="w-[140px]">Chat Alias</TableHead>
                 <TableHead className="w-[250px]">Email</TableHead>
                 <TableHead className="w-[180px]">Position</TableHead>
                 <TableHead className="w-[100px]">Role</TableHead>
@@ -182,13 +185,13 @@ function AdminsManagementContent() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center h-32">
+                  <TableCell colSpan={9} className="text-center h-32">
                     Loading admins...
                   </TableCell>
                 </TableRow>
               ) : filteredAdmins.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center h-32 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center h-32 text-muted-foreground">
                     No admins found. Try adjusting your search or add a new admin.
                   </TableCell>
                 </TableRow>
@@ -212,6 +215,15 @@ function AdminsManagementContent() {
                           </Badge>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-1.5 text-sm">
+                        <span aria-hidden="true" className="text-base">
+                          {admin.chatIcon ||
+                            getAdminDisplayNameWithIcon(admin.email).split(" ")[0]}
+                        </span>
+                        {admin.chatAlias || getAdminDisplayName(admin.email)}
+                      </span>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{admin.email}</TableCell>
                     <TableCell className="text-sm">{admin.position}</TableCell>

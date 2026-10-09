@@ -8,7 +8,7 @@ import { Client } from "@/types/Client"
 import { clientSchema } from "@/schemas/clientSchema"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner";
-import { ArrowUpDown } from "lucide-react"
+import { ArrowUpDown, Copy } from "lucide-react"
 import useAuth from "@/hooks/useAuth"
 import { usePermissions } from "@/hooks/usePermissions"
 import { ChargeSlipButton } from "./ChargeSlipButton"
@@ -22,6 +22,39 @@ const validateClient = (data: any) => {
     data: result.success ? result.data : null,
     error: result.success ? null : result.error
   }
+}
+
+function CopyCellValue({
+  value,
+  label,
+}: {
+  value: string;
+  label: string;
+}) {
+  if (!value) return null;
+
+  const handleCopy = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied to clipboard`);
+    } catch (error) {
+      console.error(`Failed to copy client ${label.toLowerCase()}:`, error);
+      toast.error(`Failed to copy ${label.toLowerCase()}`);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="shrink-0 rounded p-1 text-slate-400 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-700 group-hover:opacity-100"
+      title={`Copy ${label}`}
+      aria-label={`Copy ${label}`}
+    >
+      <Copy className="h-3 w-3" />
+    </button>
+  );
 }
 
 // Table columns definition for admin/clients
@@ -42,11 +75,17 @@ export const columns: ColumnDef<Client>[] = [
       )
     },
     size: 70,
-    cell: ({ getValue }) => (
-      <div className="font-mono text-[10px] text-muted-foreground px-1">
-        {getValue() as string}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const clientId = row.original.cid || "";
+      return (
+        <div className="group flex items-center gap-1 px-1">
+          <span className="truncate font-mono text-[10px] text-muted-foreground">
+            {clientId}
+          </span>
+          <CopyCellValue value={clientId} label="Client ID" />
+        </div>
+      );
+    },
   },
   {
     accessorKey: "createdAt",
@@ -100,21 +139,33 @@ export const columns: ColumnDef<Client>[] = [
       )
     },
     size: 160,
-    cell: ({ getValue }) => (
-      <div className="max-w-[160px] text-[11px] font-medium whitespace-normal break-words leading-tight px-1 text-slate-900">
-        {getValue() as string}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const name = row.original.name || "";
+      return (
+        <div className="group flex items-start gap-1 px-1">
+          <div className="max-w-[160px] flex-1 text-[11px] font-medium whitespace-normal break-words leading-tight text-slate-900">
+            {name}
+          </div>
+          <CopyCellValue value={name} label="Client name" />
+        </div>
+      );
+    },
   },
   {
     accessorKey: "email",
     header: () => <div className="px-1 text-[11px] font-semibold">Email</div>,
     size: 140,
-    cell: ({ getValue }) => (
-      <div className="max-w-[140px] truncate text-[10px] text-slate-500 px-1" title={getValue() as string}>
-        {getValue() as string}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const email = row.original.email || "";
+      return (
+        <div className="group flex items-center gap-1 px-1">
+          <div className="max-w-[140px] flex-1 truncate text-[10px] text-slate-500" title={email}>
+            {email}
+          </div>
+          <CopyCellValue value={email} label="Email" />
+        </div>
+      );
+    },
   },
   {
     accessorKey: "pid",
@@ -136,13 +187,17 @@ export const columns: ColumnDef<Client>[] = [
       const projects = Array.isArray(row.original.pid) 
         ? row.original.pid 
         : (row.original.pid ? [row.original.pid] : []);
+      const projectIds = projects.join(", ");
       
       if (projects.length === 0) return <span className="text-gray-400 text-[10px] px-1">-</span>;
       
       if (projects.length === 1) {
         return (
-          <div className="px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded text-[9px] font-mono font-bold text-[#166FB5] w-fit ml-1">
-            {projects[0]}
+          <div className="group flex items-center gap-1">
+            <div className="px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded text-[9px] font-mono font-bold text-[#166FB5] w-fit ml-1">
+              {projects[0]}
+            </div>
+            <CopyCellValue value={projectIds} label="Projects" />
           </div>
         );
       }
@@ -151,7 +206,7 @@ export const columns: ColumnDef<Client>[] = [
       const otherPids = projects.slice(1).join(", ");
       
       return (
-        <div className="flex items-center gap-1 ml-1">
+        <div className="group flex items-center gap-1 ml-1">
           <div className="px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded text-[9px] font-mono font-bold text-[#166FB5]">
             {firstPid}
           </div>
@@ -161,6 +216,7 @@ export const columns: ColumnDef<Client>[] = [
           >
             +{projects.length - 1}
           </div>
+          <CopyCellValue value={projectIds} label="Projects" />
         </div>
       );
     },

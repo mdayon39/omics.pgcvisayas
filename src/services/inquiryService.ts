@@ -36,23 +36,52 @@ function attachContactClientIds(
   clients: LinkedClient[],
 ): Inquiry[] {
   const clientsByInquiry = new Map<string, LinkedClient[]>();
+  const clientsByEmail = new Map<string, LinkedClient[]>();
   for (const client of clients) {
-    if (!client.inquiryId) continue;
-    const linked = clientsByInquiry.get(client.inquiryId) ?? [];
-    linked.push(client);
-    clientsByInquiry.set(client.inquiryId, linked);
+    if (client.inquiryId) {
+      const linked = clientsByInquiry.get(client.inquiryId) ?? [];
+      linked.push(client);
+      clientsByInquiry.set(client.inquiryId, linked);
+    }
+
+    const email = client.email?.trim().toLowerCase();
+    if (email) {
+      const matchingEmail = clientsByEmail.get(email) ?? [];
+      matchingEmail.push(client);
+      clientsByEmail.set(email, matchingEmail);
+    }
   }
 
   return inquiries.map((inquiry) => {
     const linkedClients = clientsByInquiry.get(inquiry.id) ?? [];
+    const inquiryEmail = inquiry.email?.trim().toLowerCase();
+    const emailMatches = inquiryEmail
+      ? clientsByEmail.get(inquiryEmail) ?? []
+      : [];
+
+    const contactClients = linkedClients.filter(
+      (client) => client.isContactPerson === true,
+    );
+    const linkedByEmail = inquiryEmail
+      ? linkedClients.filter(
+          (client) =>
+            client.email?.trim().toLowerCase() === inquiryEmail,
+        )
+      : [];
+    const emailContactClients = emailMatches.filter(
+      (client) => client.isContactPerson === true,
+    );
+
     const contactClient =
-      linkedClients.find((client) => client.isContactPerson === true) ??
-      linkedClients.find(
-        (client) =>
-          !!inquiry.email &&
-          client.email?.trim().toLowerCase() === inquiry.email.trim().toLowerCase(),
-      ) ??
-      (linkedClients.length === 1 ? linkedClients[0] : undefined);
+      (contactClients.length === 1 ? contactClients[0] : undefined) ??
+      (linkedByEmail.length === 1 ? linkedByEmail[0] : undefined) ??
+      (linkedClients.length === 1 ? linkedClients[0] : undefined) ??
+      (!linkedClients.length && emailContactClients.length === 1
+        ? emailContactClients[0]
+        : undefined) ??
+      (!linkedClients.length && emailMatches.length === 1
+        ? emailMatches[0]
+        : undefined);
 
     return contactClient
       ? { ...inquiry, clientId: contactClient.cid || contactClient.id }

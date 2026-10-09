@@ -12,6 +12,9 @@ import { collection, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { resolveClientUuid } from "@/services/clientUuidService";
 
+const MODE_OF_PAYMENT_URL =
+  "https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2FMode%20of%20Payment_PGCV-MP-v005.pdf?alt=media&token=bb3d7fdf-77db-430c-9b3a-6b56724bca84";
+
 export async function saveChargeSlipAction(
   slip: ChargeSlipRecord,
   userInfo?: { name: string; email: string },
@@ -32,11 +35,11 @@ export async function saveChargeSlipAction(
             <div style="background-color: #f1f5f9; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
               <h2 style="color: #1e3a8a; margin-top: 0;">Billing/Invoice: PGC Visayas</h2>
               <p>Dear ${clientName},</p>
-              <p>Good day. Your billing is now available in your client portal. Kindly review the details and proceed with payment at your convenience. For payment instructions, please refer to our <a href="https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2Fmode_of_payment.pdf?alt=media&token=279c10a9-ce74-40ef-8e7d-80a86820a8e0" style="color: #1e3a8a; font-weight: 600; text-decoration: underline;">Mode of Payment</a>.</p>
+              <p>Good day. Your billing is now available in your client portal. Kindly review the details and proceed with payment at your convenience. For payment instructions, please refer to our <a href="${MODE_OF_PAYMENT_URL}" style="color: #1e3a8a; font-weight: 600; text-decoration: underline;">Mode of Payment</a>.</p>
               
               <div style="background-color: #ffffff; padding: 15px; border-radius: 6px; border-left: 4px solid #1e3a8a; margin: 15px 0;">
                 <h3 style="margin-top: 0; color: #1e3a8a; font-size: 14px; margin-bottom: 8px;">Next Steps</h3>
-                <p style="margin-bottom: 12px; font-size: 14px;">View your billing details and complete payment by following the instructions detailed on the <a href="https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2Fmode_of_payment.pdf?alt=media&token=279c10a9-ce74-40ef-8e7d-80a86820a8e0" style="color: #1e3a8a; font-weight: 600; text-decoration: underline;">Mode of Payment</a>.</p>
+                <p style="margin-bottom: 12px; font-size: 14px;">View your billing details and complete payment by following the instructions detailed on the <a href="${MODE_OF_PAYMENT_URL}" style="color: #1e3a8a; font-weight: 600; text-decoration: underline;">Mode of Payment</a>.</p>
                 <p style="margin: 0;"><a href="https://omics.pgcvisayas.upv.edu.ph/portal" style="background-color: #1e3a8a; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: 600; font-size: 13px;">Access Client Portal</a></p>
               </div>
 
@@ -55,9 +58,9 @@ Billing/Invoice: PGC Visayas
 
 Dear ${clientName},
 
-Good day. Your billing is now available in your client portal. Kindly review the details and proceed with payment at your convenience. For payment instructions, please refer to our Mode of Payment: https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2Fmode_of_payment.pdf?alt=media&token=279c10a9-ce74-40ef-8e7d-80a86820a8e0
+Good day. Your billing is now available in your client portal. Kindly review the details and proceed with payment at your convenience. For payment instructions, please refer to our Mode of Payment: ${MODE_OF_PAYMENT_URL}
 
-To view your billing details and complete payment by following the instructions detailed on the Mode of Payment (https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2Fmode_of_payment.pdf?alt=media&token=279c10a9-ce74-40ef-8e7d-80a86820a8e0), please access your Client Portal: https://omics.pgcvisayas.upv.edu.ph/portal
+To view your billing details and complete payment by following the instructions detailed on the Mode of Payment (${MODE_OF_PAYMENT_URL}), please access your Client Portal: https://omics.pgcvisayas.upv.edu.ph/portal
 
 Once payment has been completed, please upload the official receipt requested from the UPV Cash Office through the portal for verification. Kindly note that results will be released upon confirmation of payment.
 

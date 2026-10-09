@@ -141,7 +141,7 @@ export default function FAQPage() {
   const ssrStoragePath = "forms/VSF-LR-SSR_Sample Submission Requirements and Form_v6.pdf";
 
   const mopText = "Mode of Payment";
-  const mopStoragePath = "documents/mode_of_payment.pdf";
+  const mopStoragePath = "documents/Mode of Payment_PGCV-MP-v005.pdf";
 
   const turnaroundImgTrigger = "Sample quality: Samples needing extra preparation or troubleshooting can extend the timeline.";
   const turnaroundImgSrc = "/assets/sample-processing-turnaround.png";

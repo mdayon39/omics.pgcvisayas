@@ -77,7 +77,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               <span className="hidden sm:inline">FAQs</span>
             </Link>
             <a
-              href="https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2Fmode_of_payment.pdf?alt=media&token=279c10a9-ce74-40ef-8e7d-80a86820a8e0"
+              href="/api/chat/mode-of-payment"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#166FB5] hover:bg-slate-100 rounded-lg transition-colors border border-slate-100"

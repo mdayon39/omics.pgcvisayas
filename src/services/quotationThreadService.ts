@@ -1128,14 +1128,29 @@ export async function unsendMessage(messageId: string): Promise<void> {
     ]
       .filter((identifier): identifier is string => !!identifier)
       .map((identifier) => identifier.trim().toLowerCase());
+    const isMessageSender = currentIdentifiers.some((identifier) =>
+      senderIdentifiers.includes(identifier),
+    );
+    let isSuperAdmin = false;
+
+    if (
+      !isMessageSender &&
+      data.senderRole === "admin" &&
+      currentUser?.email
+    ) {
+      const adminSnapshot = await getDoc(
+        doc(db, "admins", currentUser.email),
+      );
+      isSuperAdmin = adminSnapshot.data()?.role === "superadmin";
+    }
 
     if (
       !currentUser ||
-      !currentIdentifiers.some((identifier) =>
-        senderIdentifiers.includes(identifier),
-      )
+      (!isMessageSender && !(isSuperAdmin && data.senderRole === "admin"))
     ) {
-      throw new Error("Only the message sender can unsend this message.");
+      throw new Error(
+        "Only the message sender or a superadmin can unsend this message.",
+      );
     }
     if (data.unsent) {
       throw new Error("This message has already been unsent.");

@@ -31,6 +31,17 @@ service cloud.firestore {
       return isAdminRole() || adminByEmail() || adminByUid();
     }
 
+    function isSuperAdmin() {
+      return isSignedIn()
+        && (
+          userRole() == 'superadmin'
+          || (
+            adminByEmail()
+            && get(/databases/$(database)/documents/admins/$(userEmail())).data.role == 'superadmin'
+          )
+        );
+    }
+
     function userProfileExists() {
       return isSignedIn() && exists(/databases/$(database)/documents/users/$(userUid()));
     }
@@ -114,10 +125,7 @@ service cloud.firestore {
 
     function isAuthorizedMessageUnsend() {
       return ownsByUidOrEmail(resource.data.senderUid, resource.data.senderId)
-        && (
-          resource.data.senderRole != 'admin'
-          || isAdmin()
-        );
+        || (isSuperAdmin() && resource.data.senderRole == 'admin');
     }
 
     // ----- Admin and account collections -----
@@ -405,6 +413,16 @@ service cloud.firestore {
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unsent', 'content', 'attachments'])
             )
           )
+        )
+        || (
+          isSuperAdmin()
+          && resource.data.senderRole == 'admin'
+          && resource.data.unsent != true
+          && request.resource.data.unsent == true
+          && request.resource.data.content == ''
+          && request.resource.data.attachments is list
+          && request.resource.data.attachments.size() == 0
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unsent', 'content', 'attachments'])
         );
 
       allow delete: if isAdmin()

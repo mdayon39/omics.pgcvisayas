@@ -190,7 +190,7 @@ export default function ChatBox({
   variant = "default",
   clientName,
 }: ChatBoxProps) {
-  const { user } = useAuth();
+  const { user, adminInfo } = useAuth();
   const [messages, setMessages] = useState<ThreadMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -215,6 +215,7 @@ export default function ChatBox({
       Boolean,
     ),
   );
+  const isSuperAdmin = role === "admin" && adminInfo?.role === "superadmin";
 
   // Alias of the currently logged-in admin (used for own-message labels)
   const currentAdminAlias =
@@ -740,7 +741,8 @@ export default function ChatBox({
                   </div>
 
                   {/* Unsend button — visible on hover for own messages only, within 24 hours */}
-                  {isOwnMessage &&
+                  {(isOwnMessage ||
+                    (isSuperAdmin && msg.senderRole === "admin")) &&
                     !msg.unsent &&
                     (() => {
                       const sentAt = msg.createdAt?.toDate
@@ -877,10 +879,13 @@ export default function ChatBox({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unsend this message?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {role === "client" ? "Delete your message?" : "Unsend this message?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the message and its attachments from the chat.
-              This action cannot be undone.
+              {role === "client"
+                ? "This will delete your message and any attached files from the chat. This action cannot be undone."
+                : "This will remove the message and its attachments from the chat. This action cannot be undone."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

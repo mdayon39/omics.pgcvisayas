@@ -40,6 +40,7 @@ import {
   Copy,
   Trash2,
   Info,
+  ExternalLink,
 } from "lucide-react";
 import { ThreadMessage, MessageSenderRole } from "@/types/QuotationThread";
 import {
@@ -51,6 +52,8 @@ import {
   unsendMessage,
 } from "@/services/quotationThreadService";
 import { uploadFile } from "@/lib/fileUpload";
+import { ref, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -87,6 +90,15 @@ const ACCEPT_ATTR = [
   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   "text/plain",
 ].join(",");
+
+const FAQ_URL = "https://omics.pgcvisayas.upv.edu.ph/faqs";
+const MODE_OF_PAYMENT_STORAGE_PATH = "documents/mode_of_payment.pdf";
+
+type ChatResourceSuggestion = {
+  id: "faqs" | "mode-of-payment";
+  name: string;
+  type: string;
+};
 
 function isImageType(type: string) {
   return type.startsWith("image/");
@@ -146,6 +158,28 @@ function AttachmentBubble({
   isMe: boolean;
 }) {
   const FileIcon = getFileIcon(attachment.type);
+
+  if (attachment.type === "application/pdf" || attachment.type === "text/html") {
+    return (
+      <a
+        href={attachment.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`flex items-center gap-2 mt-1.5 rounded-xl px-3 py-2 border transition-colors ${
+          isMe
+            ? "bg-white/15 border-white/20 hover:bg-white/25 text-white"
+            : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
+        }`}
+        title={`Open ${attachment.name}`}
+      >
+        <FileIcon className="h-5 w-5 flex-shrink-0" />
+        <span className="text-xs font-medium truncate max-w-[180px]">
+          {attachment.name}
+        </span>
+        <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 ml-auto opacity-70" />
+      </a>
+    );
+  }
 
   if (isImageType(attachment.type)) {
     return (
@@ -213,6 +247,10 @@ export default function ChatBox({
   const { user, adminInfo } = useAuth();
   const [messages, setMessages] = useState<ThreadMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [pendingLinkedAttachments, setPendingLinkedAttachments] = useState<
+    { name: string; url: string; type: string }[]
+  >([]);
+  const [addingResource, setAddingResource] = useState<string | null>(null);
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [mentionedAdmins, setMentionedAdmins] = useState<
     { email: string; name: string; token: string }[]
@@ -264,6 +302,36 @@ export default function ChatBox({
               getAdminDisplayName(right.email),
             ),
           )
+      : [];
+  const resourceSuggestions: ChatResourceSuggestion[] =
+    role === "admin"
+      ? [
+          ...(/\b(?:faq|faqs|frequently asked questions)\b/i.test(newMessage)
+            ? [
+                {
+                  id: "faqs" as const,
+                  name: "PGC Visayas FAQs",
+                  type: "text/html",
+                },
+              ]
+            : []),
+          ...(/\bmode of payment\b|\bpayment (?:options?|methods?)\b/i.test(
+            newMessage,
+          )
+            ? [
+                {
+                  id: "mode-of-payment" as const,
+                  name: "Mode of Payment.pdf",
+                  type: "application/pdf",
+                },
+              ]
+            : []),
+        ].filter(
+          (resource) =>
+            !pendingLinkedAttachments.some(
+              (attachment) => attachment.name === resource.name,
+            ),
+        )
       : [];
 
   const normalizeIdentifier = (value: string | null | undefined) =>
@@ -391,14 +459,20 @@ export default function ChatBox({
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     const hasText = newMessage.trim().length > 0;
-    const hasFile = !!pendingFile;
+    const hasFile = !!pendingFile || pendingLinkedAttachments.length > 0;
     if ((!hasText && !hasFile) || !user) return;
 
-    const messageContent = newMessage.trim();
+    const messageContent =
+      newMessage.trim() ||
+      pendingFile?.name ||
+      pendingLinkedAttachments[0]?.name ||
+      "";
     setNewMessage("");
     setMentionMenu(null);
     const fileToSend = pendingFile;
+    const linkedAttachmentsToSend = pendingLinkedAttachments;
     setPendingFile(null);
+    setPendingLinkedAttachments([]);
 
     try {
       if (!user.email && !user.uid) {
@@ -417,6 +491,7 @@ export default function ChatBox({
       let attachments:
         | { name: string; url: string; type: string }[]
         | undefined;
+      attachments = linkedAttachmentsToSend;
       if (fileToSend) {
         setUploading(true);
         try {
@@ -424,7 +499,10 @@ export default function ChatBox({
             fileToSend,
             `chat-attachments/${inquiryId}`,
           );
-          attachments = [{ name: fileToSend.name, url, type: fileToSend.type }];
+          attachments = [
+            ...linkedAttachmentsToSend,
+            { name: fileToSend.name, url, type: fileToSend.type },
+          ];
         } finally {
           setUploading(false);
         }
@@ -492,6 +570,41 @@ export default function ChatBox({
       setNewMessage(messageContent);
       setMentionMenu(null);
       if (fileToSend) setPendingFile(fileToSend);
+      setPendingLinkedAttachments(linkedAttachmentsToSend);
+    }
+  };
+
+  const addChatResource = async (
+    resourceId: "faqs" | "mode-of-payment",
+  ) => {
+    if (addingResource) return;
+    setAddingResource(resourceId);
+    try {
+      const attachment =
+        resourceId === "faqs"
+          ? {
+              name: "PGC Visayas FAQs",
+              url: FAQ_URL,
+              type: "text/html",
+            }
+          : {
+              name: "Mode of Payment.pdf",
+              url: await getDownloadURL(
+                ref(storage, MODE_OF_PAYMENT_STORAGE_PATH),
+              ),
+              type: "application/pdf",
+            };
+      setPendingLinkedAttachments((current) =>
+        current.some((item) => item.name === attachment.name)
+          ? current
+          : [...current, attachment],
+      );
+      toast.success(`${attachment.name} added to the message`);
+    } catch (resourceError) {
+      console.error(`Failed to add ${resourceId} to chat:`, resourceError);
+      toast.error("Could not attach this resource");
+    } finally {
+      setAddingResource(null);
     }
   };
 
@@ -1034,6 +1147,72 @@ export default function ChatBox({
               </Button>
             </div>
           )}
+          {pendingLinkedAttachments.map((attachment) => (
+            <div
+              key={attachment.name}
+              className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2"
+            >
+              {attachment.type === "text/html" ? (
+                <ExternalLink className="h-5 w-5 flex-shrink-0 text-blue-600" />
+              ) : (
+                <FileText className="h-5 w-5 flex-shrink-0 text-blue-600" />
+              )}
+              <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700">
+                {attachment.name}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 flex-shrink-0 text-slate-400 hover:text-slate-600"
+                onClick={() =>
+                  setPendingLinkedAttachments((current) =>
+                    current.filter((item) => item.name !== attachment.name),
+                  )
+                }
+                aria-label={`Remove ${attachment.name}`}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+          {resourceSuggestions.length > 0 && (
+            <div
+              role="listbox"
+              aria-label="Suggested chat resources"
+              className="absolute bottom-14 left-12 z-30 w-72 rounded-lg border border-slate-200 bg-white p-2 shadow-lg"
+            >
+              <p className="px-2 pb-1 text-xs font-medium text-slate-500">
+                Attach a helpful resource
+              </p>
+              {resourceSuggestions.map((resource) => (
+                <button
+                  key={resource.id}
+                  type="button"
+                  role="option"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() =>
+                    void addChatResource(
+                      resource.id,
+                    )
+                  }
+                  aria-selected={false}
+                  disabled={addingResource !== null}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-blue-50 disabled:opacity-50"
+                >
+                  {resource.type === "text/html" ? (
+                    <ExternalLink className="h-4 w-4 text-blue-600" />
+                  ) : (
+                    <FileText className="h-4 w-4 text-blue-600" />
+                  )}
+                  <span className="flex-1">{resource.name}</span>
+                  {addingResource === resource.id && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
           {mentionMenu && mentionSuggestions.length > 0 && (
             <div
               role="listbox"
@@ -1122,7 +1301,11 @@ export default function ChatBox({
               type="submit"
               size="icon"
               disabled={
-                (!newMessage.trim() && !pendingFile) || loading || uploading
+                (!newMessage.trim() &&
+                  !pendingFile &&
+                  pendingLinkedAttachments.length === 0) ||
+                loading ||
+                uploading
               }
               className="rounded-full bg-blue-600 hover:bg-blue-700 transition-colors h-10 w-10 flex-shrink-0 mb-1"
             >

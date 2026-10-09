@@ -314,7 +314,7 @@ export default function ChatBox({
                 },
               ]
             : []),
-          ...(/\b(?:mode|payment)\b/i.test(newMessage)
+          ...(/\b(?:mode|paym\w*)\b/i.test(newMessage)
             ? [
                 {
                   id: "mode-of-payment" as const,
@@ -735,6 +735,15 @@ export default function ChatBox({
         selectMention(mentionSuggestions[activeMentionIndex] ?? mentionSuggestions[0]);
         return;
       }
+    }
+    if (
+      e.key === "Enter" &&
+      !e.shiftKey &&
+      resourceSuggestions.length > 0
+    ) {
+      e.preventDefault();
+      void addChatResource(resourceSuggestions[0].id);
+      return;
     }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();

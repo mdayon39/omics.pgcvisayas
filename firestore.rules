@@ -134,11 +134,13 @@ service cloud.firestore {
         && data.serviceReportId is string
         && data.createdAt is timestamp
         && data.message is map
-        && data.message.keys().hasOnly(['subject', 'text'])
+        && data.message.keys().hasOnly(['subject', 'text', 'html'])
         && data.message.subject is string
         && data.message.subject == 'Client confirmed service report receipt: ' + data.projectId
         && data.message.text is string
         && data.message.text.size() <= 2000
+        && data.message.html is string
+        && data.message.html.size() <= 10000
         && exists(projectPath)
         && exists(reportPath)
         && canAccessLinkedInquiryDoc(

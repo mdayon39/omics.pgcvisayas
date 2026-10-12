@@ -37,6 +37,18 @@ export interface ServiceReport {
 const subCollection = (pid: string) =>
   collection(db, "projects", pid, "serviceReports");
 
+const escapeHtml = (value: string) =>
+  value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character];
+  });
+
 export async function getServiceReportsByProjectId(
   pid: string,
 ): Promise<ServiceReport[]> {
@@ -110,6 +122,7 @@ export async function markServiceReportReceived(
       recipient,
       recipientName: report.uploadedByFirstName || "Admin",
       reportName: report.fileName || "Service report",
+      reportUrl: report.fileUrl,
       projectTitle: report.projectTitle || pid,
       effectiveReceivedAt:
         report.status === "received" && report.receivedAt
@@ -147,6 +160,8 @@ export async function markServiceReportReceived(
 
       const recipientName =
         report.uploadedByFirstName || receiptResult.recipientName;
+      const safeReportUrl = escapeHtml(receiptResult.reportUrl);
+      const safeReportName = escapeHtml(receiptResult.reportName);
       const mailRef = doc(collection(db, "mail"));
       transaction.set(mailRef, {
         to: [receiptResult.recipient],
@@ -161,7 +176,7 @@ export async function markServiceReportReceived(
 
 This is to inform you that ${clientName} has confirmed receipt of the service report.
 
-Project: ${receiptResult.projectTitle} (${pid})
+Project: ${receiptResult.projectTitle}
 Service report: ${receiptResult.reportName}
 Received by: ${clientName}${clientEmail ? ` (${clientEmail})` : ""}
 Date and time: ${receivedTime} (Philippine time)
@@ -172,6 +187,16 @@ Regards,
 Philippine Genome Center Visayas
 
 This is an automated notification.`,
+          html: `<p>Dear ${escapeHtml(recipientName)},</p>
+<p>This is to inform you that ${escapeHtml(clientName)} has confirmed receipt of the service report.</p>
+<p>Project: ${escapeHtml(receiptResult.projectTitle)}<br>
+Service report: <a href="${safeReportUrl}" target="_blank" rel="noopener noreferrer">${safeReportName}</a><br>
+Received by: ${escapeHtml(clientName)}${clientEmail ? ` (${escapeHtml(clientEmail)})` : ""}<br>
+Date and time: ${escapeHtml(receivedTime)} (Philippine time)</p>
+<p>No further action is required unless follow-up is needed.</p>
+<p>Regards,<br>
+Philippine Genome Center Visayas</p>
+<p>This is an automated notification.</p>`,
         },
       });
 

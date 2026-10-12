@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   Timestamp,
   runTransaction,
+  where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
@@ -88,7 +89,26 @@ export async function markServiceReportReceived(
   const reportRef = doc(db, "projects", pid, "serviceReports", reportId);
   const projectRef = doc(db, "projects", pid);
   const clientEmail = currentUser.email?.trim().toLowerCase() || "";
-  const clientName = currentUser.displayName?.trim() || clientEmail || "Client";
+  let clientName = currentUser.displayName?.trim() || clientEmail || "Client";
+  if (clientEmail) {
+    try {
+      const clientSnapshot = await getDocs(
+        query(
+          collection(db, "clients"),
+          where("email", "==", clientEmail),
+        ),
+      );
+      const profileName = clientSnapshot.docs
+        .map((clientDoc) => clientDoc.data().name)
+        .find((name): name is string => typeof name === "string" && !!name.trim());
+      if (profileName) clientName = profileName.trim();
+    } catch (error) {
+      console.error(
+        `Could not load the full client name for service report ${reportId}:`,
+        error,
+      );
+    }
+  }
   const receivedAt = Timestamp.now();
 
   const receiptResult = await runTransaction(db, async (transaction) => {
@@ -118,6 +138,7 @@ export async function markServiceReportReceived(
       });
     }
 
+    const projectData = projectSnapshot.data();
     return {
       shouldNotify:
         (report.receivedBy === (clientEmail || currentUser.uid) ||
@@ -128,9 +149,8 @@ export async function markServiceReportReceived(
       reportName: report.fileName || "Service report",
       reportUrl: report.fileUrl,
       projectName:
-        (typeof projectSnapshot.data()?.title === "string" &&
-        projectSnapshot.data()?.title.trim()
-          ? projectSnapshot.data()?.title.trim()
+        (typeof projectData?.title === "string" && projectData.title.trim()
+          ? projectData.title.trim()
           : "") ||
         (report.projectTitle && report.projectTitle !== pid
           ? report.projectTitle

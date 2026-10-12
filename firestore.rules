@@ -123,12 +123,13 @@ service cloud.firestore {
       let adminPath = /databases/$(database)/documents/admins/$(recipient);
       return isSignedIn()
         && data.keys().hasOnly([
-          'to', 'clientName', 'recipientType', 'projectId',
+          'to', 'clientName', 'recipientName', 'recipientType', 'projectId',
           'serviceReportId', 'createdAt', 'message'
         ])
         && data.to is list
         && data.to.size() == 1
         && data.clientName is string
+        && data.recipientName is string
         && data.recipientType == 'admin'
         && data.projectId is string
         && data.serviceReportId is string
@@ -161,7 +162,7 @@ service cloud.firestore {
         && exists(adminPath)
         && get(adminPath).data.status != 'deactivated'
         && get(adminPath).data.role in ['admin', 'superadmin']
-        && data.clientName ==
+        && data.recipientName ==
           (get(reportPath).data.uploadedByFirstName is string
             ? get(reportPath).data.uploadedByFirstName
             : 'Admin');

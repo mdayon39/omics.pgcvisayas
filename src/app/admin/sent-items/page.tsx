@@ -49,6 +49,7 @@ type EmailCategory =
   | "Charge slip received"
   | "Quotation available"
   | "Service report available"
+  | "Service Report Received"
   | "Password recovery"
   | "Other client email";
 
@@ -90,6 +91,9 @@ function categorizeEmail(subject: string): EmailCategory {
     return "Charge slip received";
   }
   if (normalized.includes("quotation")) return "Quotation available";
+  if (normalized.includes("confirmed service report receipt")) {
+    return "Service Report Received";
+  }
   if (normalized.includes("service report")) {
     return "Service report available";
   }
@@ -571,6 +575,9 @@ function SentItemsContent() {
               <SelectItem value="Service report available">
                 Service report available
               </SelectItem>
+              <SelectItem value="Service Report Received">
+                Service Report Received
+              </SelectItem>
               <SelectItem value="Password recovery">
                 Password recovery
               </SelectItem>
@@ -801,7 +808,7 @@ function SentItemsContent() {
             <iframe
               title="Email message preview"
               srcDoc={viewingEmail.messageHtml}
-              sandbox=""
+              sandbox="allow-popups allow-popups-to-escape-sandbox"
               className="h-[60vh] w-full rounded-md border bg-white"
             />
           ) : (

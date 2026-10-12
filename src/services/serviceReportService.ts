@@ -86,12 +86,16 @@ export async function markServiceReportReceived(
   }
 
   const reportRef = doc(db, "projects", pid, "serviceReports", reportId);
+  const projectRef = doc(db, "projects", pid);
   const clientEmail = currentUser.email?.trim().toLowerCase() || "";
   const clientName = currentUser.displayName?.trim() || clientEmail || "Client";
   const receivedAt = Timestamp.now();
 
   const receiptResult = await runTransaction(db, async (transaction) => {
-    const reportSnapshot = await transaction.get(reportRef);
+    const [reportSnapshot, projectSnapshot] = await Promise.all([
+      transaction.get(reportRef),
+      transaction.get(projectRef),
+    ]);
     if (!reportSnapshot.exists()) {
       throw new Error("This service report could not be found.");
     }
@@ -123,7 +127,14 @@ export async function markServiceReportReceived(
       recipientName: report.uploadedByFirstName || "Admin",
       reportName: report.fileName || "Service report",
       reportUrl: report.fileUrl,
-      projectTitle: report.projectTitle || pid,
+      projectName:
+        (typeof projectSnapshot.data()?.title === "string" &&
+        projectSnapshot.data()?.title.trim()
+          ? projectSnapshot.data()?.title.trim()
+          : "") ||
+        (report.projectTitle && report.projectTitle !== pid
+          ? report.projectTitle
+          : "Project name unavailable"),
       effectiveReceivedAt:
         report.status === "received" && report.receivedAt
           ? report.receivedAt
@@ -165,7 +176,8 @@ export async function markServiceReportReceived(
       const mailRef = doc(collection(db, "mail"));
       transaction.set(mailRef, {
         to: [receiptResult.recipient],
-        clientName: recipientName,
+        clientName,
+        recipientName,
         recipientType: "admin",
         projectId: pid,
         serviceReportId: reportId,
@@ -176,7 +188,8 @@ export async function markServiceReportReceived(
 
 This is to inform you that ${clientName} has confirmed receipt of the service report.
 
-Project: ${receiptResult.projectTitle}
+Project ID: ${pid}
+Project name: ${receiptResult.projectName}
 Service report: ${receiptResult.reportName}
 Received by: ${clientName}${clientEmail ? ` (${clientEmail})` : ""}
 Date and time: ${receivedTime} (Philippine time)
@@ -189,7 +202,8 @@ Philippine Genome Center Visayas
 This is an automated notification.`,
           html: `<p>Dear ${escapeHtml(recipientName)},</p>
 <p>This is to inform you that ${escapeHtml(clientName)} has confirmed receipt of the service report.</p>
-<p>Project: ${escapeHtml(receiptResult.projectTitle)}<br>
+<p>Project ID: ${escapeHtml(pid)}<br>
+Project name: ${escapeHtml(receiptResult.projectName)}<br>
 Service report: <a href="${safeReportUrl}" target="_blank" rel="noopener noreferrer">${safeReportName}</a><br>
 Received by: ${escapeHtml(clientName)}${clientEmail ? ` (${escapeHtml(clientEmail)})` : ""}<br>
 Date and time: ${escapeHtml(receivedTime)} (Philippine time)</p>

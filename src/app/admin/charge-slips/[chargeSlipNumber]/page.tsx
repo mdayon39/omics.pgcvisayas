@@ -746,21 +746,18 @@ function ChargeSlipDetailContent() {
                 {record.statusChangedTo?.toLowerCase() === status.toLowerCase() &&
                 record.statusChangedAt ? (
                   <p className="mt-2 text-xs text-slate-500">
-                    Current status set by{" "}
                     <span className="font-medium text-slate-700">
                       {record.statusChangedByName || record.statusChangedByEmail || "Unknown"}
                     </span>
-                    {record.statusChangedByName && record.statusChangedByEmail && (
-                      <span> ({record.statusChangedByEmail})</span>
-                    )}
                     {" · "}
-                    {record.statusChangedAt instanceof Timestamp
-                      ? record.statusChangedAt.toDate().toLocaleString()
-                      : new Date(record.statusChangedAt).toLocaleString()}
+                    {(record.statusChangedAt instanceof Timestamp
+                      ? record.statusChangedAt.toDate()
+                      : new Date(record.statusChangedAt)
+                    ).toLocaleString()}
                   </p>
                 ) : (
                   <p className="mt-2 text-xs text-slate-500">
-                    Current status change details are not available.
+                    —
                   </p>
                 )}
               </div>

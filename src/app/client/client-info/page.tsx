@@ -3081,16 +3081,13 @@ export default function ClientPortalPage() {
           return next;
         });
         if (receiptResult.adminEmailNotificationSent) {
-          toast.success(`"${report.fileName}" marked as received.`);
+          toast.success(
+            `"${report.fileName}" is available. Select Open Report to view or download it.`,
+          );
         } else {
           toast.warning(
-            `"${report.fileName}" is available, but the admin email notification could not be sent.`,
+            `"${report.fileName}" is available. Select Open Report to view or download it. The admin email notification could not be sent.`,
           );
-        }
-
-        // Auto-open PDF in new tab
-        if (report.fileUrl) {
-          window.open(report.fileUrl, "_blank", "noopener,noreferrer");
         }
       } catch (err) {
         console.error("Failed to mark service report as received:", err);
@@ -5395,6 +5392,12 @@ export default function ClientPortalPage() {
                               ) : (
                                 panelDocs?.serviceReports.map((item: any) => {
                                   const isReceived = item.status === "received";
+                                  const reportUrl =
+                                    typeof item.fileUrl === "string"
+                                      ? item.fileUrl
+                                      : typeof item.downloadURL === "string"
+                                        ? item.downloadURL
+                                        : "";
                                   const receivedDate = item.receivedAt?.toDate
                                     ? format(
                                         item.receivedAt.toDate(),
@@ -5420,12 +5423,14 @@ export default function ClientPortalPage() {
                                         <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
                                         <div className="min-w-0">
                                           {isReceived &&
-                                          item.clientAccessEnabled !== false ? (
+                                          item.clientAccessEnabled !== false &&
+                                          reportUrl ? (
                                             <a
-                                              href={item.fileUrl}
+                                              href={reportUrl}
                                               target="_blank"
                                               rel="noopener noreferrer"
                                               className="text-sm text-blue-700 hover:underline truncate block"
+                                              title="Open service report"
                                             >
                                               {item.fileName || item.id}
                                             </a>
@@ -5445,18 +5450,32 @@ export default function ClientPortalPage() {
                                       {/* Action row */}
                                       <div className="flex items-center justify-end">
                                         {isReceived ? (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-xs text-green-700 border-green-200 bg-green-50 gap-1 h-6 shrink-0"
-                                          >
-                                            <CheckCircle2 className="h-3 w-3" />
-                                            Received
-                                            {receivedDate && (
-                                              <span className="font-normal text-green-600 opacity-80">
-                                                · {receivedDate}
-                                              </span>
-                                            )}
-                                          </Badge>
+                                          <div className="flex items-center gap-2">
+                                            <Badge
+                                              variant="outline"
+                                              className="text-xs text-green-700 border-green-200 bg-green-50 gap-1 h-6 shrink-0"
+                                            >
+                                              <CheckCircle2 className="h-3 w-3" />
+                                              Received
+                                              {receivedDate && (
+                                                <span className="font-normal text-green-600 opacity-80">
+                                                  · {receivedDate}
+                                                </span>
+                                              )}
+                                            </Badge>
+                                            {item.clientAccessEnabled !== false &&
+                                              reportUrl && (
+                                                <a
+                                                  href={reportUrl}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="inline-flex h-8 items-center gap-1 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700"
+                                                >
+                                                  <Download className="h-3 w-3" />
+                                                  Open Report
+                                                </a>
+                                              )}
+                                          </div>
                                         ) : !(
                                             canReceiveServiceReport ||
                                             Boolean(

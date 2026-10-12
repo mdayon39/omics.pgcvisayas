@@ -63,7 +63,7 @@ export async function deleteServiceReport(
 export async function markServiceReportReceived(
   pid: string,
   reportId: string,
-): Promise<void> {
+): Promise<{ adminEmailNotificationSent: boolean }> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
     throw new Error("Please sign in again to confirm receipt.");
@@ -83,4 +83,8 @@ export async function markServiceReportReceived(
   if (!response.ok) {
     throw new Error(responseData.error || "Failed to confirm receipt.");
   }
+  return {
+    adminEmailNotificationSent:
+      responseData.adminEmailNotificationSent === true,
+  };
 }

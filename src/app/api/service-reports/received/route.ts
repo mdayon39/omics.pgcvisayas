@@ -110,36 +110,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    failureStage = "loading active admin email recipients";
-    const adminsSnapshot = await firestore.collection("admins").get();
-    const recipients = new Map<string, string>();
-    adminsSnapshot.docs.forEach((adminDoc) => {
-      const adminData = adminDoc.data();
-      const role = String(adminData.role || "")
-        .toLowerCase()
-        .replace(/[\s-]/g, "");
-      const recipient = adminData.email || adminDoc.id;
-      if (
-        adminData.status !== "deactivated" &&
-        (role === "admin" || role === "superadmin") &&
-        isEmail(recipient)
-      ) {
-        const normalizedEmail = normalizeEmail(recipient);
-        const fullName =
-          typeof adminData.name === "string" ? adminData.name.trim() : "";
-        const firstName = fullName.split(/\s+/)[0] || "Admin";
-        recipients.set(normalizedEmail, firstName);
-      }
-    });
-
-    if (recipients.size === 0) {
-      console.error(`No admin email recipient found for service report ${reportId}.`);
-      return NextResponse.json(
-        { error: "No active admin email address is available for this service report." },
-        { status: 409 },
-      );
-    }
-
     const receivedAt = admin.firestore.Timestamp.now();
     const clientName =
       typeof decodedToken.name === "string" && decodedToken.name.trim()
@@ -173,7 +143,7 @@ Philippine Genome Center Visayas
 
 This is an automated notification.`;
 
-    failureStage = "saving receipt confirmation and admin email";
+    failureStage = "saving receipt confirmation";
     const result = await firestore.runTransaction(async (transaction) => {
       const currentReportSnapshot = await transaction.get(reportRef);
       if (!currentReportSnapshot.exists) {
@@ -190,23 +160,64 @@ This is an automated notification.`;
         receivedByName: clientName,
       });
 
-      recipients.forEach((firstName, recipient) => {
-        const mailRef = firestore.collection("mail").doc();
-        transaction.create(mailRef, {
-          to: [recipient],
-          clientName: firstName,
-          recipientType: "admin",
-          createdAt: receivedAt,
-          message: { subject, text: emailText(firstName) },
-        });
-      });
-
       return { alreadyReceived: false };
     });
+
+    let adminEmailNotificationSent = false;
+    if (!result.alreadyReceived) {
+      try {
+        const adminsSnapshot = await firestore.collection("admins").get();
+        const recipients = new Map<string, string>();
+        adminsSnapshot.docs.forEach((adminDoc) => {
+          const adminData = adminDoc.data();
+          const role = String(adminData.role || "")
+            .toLowerCase()
+            .replace(/[\s-]/g, "");
+          const recipient = adminData.email || adminDoc.id;
+          if (
+            adminData.status !== "deactivated" &&
+            (role === "admin" || role === "superadmin") &&
+            isEmail(recipient)
+          ) {
+            const normalizedEmail = normalizeEmail(recipient);
+            const fullName =
+              typeof adminData.name === "string" ? adminData.name.trim() : "";
+            const firstName = fullName.split(/\s+/)[0] || "Admin";
+            recipients.set(normalizedEmail, firstName);
+          }
+        });
+
+        if (recipients.size === 0) {
+          console.error(
+            `Receipt was recorded, but no active admin email recipient was found for service report ${reportId}.`,
+          );
+        } else {
+          const mailBatch = firestore.batch();
+          recipients.forEach((firstName, recipient) => {
+            const mailRef = firestore.collection("mail").doc();
+            mailBatch.create(mailRef, {
+              to: [recipient],
+              clientName: firstName,
+              recipientType: "admin",
+              createdAt: receivedAt,
+              message: { subject, text: emailText(firstName) },
+            });
+          });
+          await mailBatch.commit();
+          adminEmailNotificationSent = true;
+        }
+      } catch (notificationError) {
+        console.error(
+          `Receipt was recorded, but admin email notification failed for service report ${reportId}:`,
+          notificationError,
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,
       alreadyReceived: result.alreadyReceived,
+      adminEmailNotificationSent,
     });
   } catch (error) {
     console.error(

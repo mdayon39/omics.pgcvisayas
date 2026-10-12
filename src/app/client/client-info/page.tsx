@@ -3059,7 +3059,7 @@ export default function ClientPortalPage() {
       const reportKey = `${pid}:${report.id}`;
       setReceivingReportId(reportKey);
       try {
-        await markServiceReportReceived(pid, report.id);
+        const receiptResult = await markServiceReportReceived(pid, report.id);
 
         setProjectDocuments((prev) => {
           const next = new Map(prev);
@@ -3080,7 +3080,13 @@ export default function ClientPortalPage() {
           }
           return next;
         });
-        toast.success(`"${report.fileName}" marked as received.`);
+        if (receiptResult.adminEmailNotificationSent) {
+          toast.success(`"${report.fileName}" marked as received.`);
+        } else {
+          toast.warning(
+            `"${report.fileName}" is available, but the admin email notification could not be sent.`,
+          );
+        }
 
         // Auto-open PDF in new tab
         if (report.fileUrl) {

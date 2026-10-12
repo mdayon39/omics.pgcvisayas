@@ -7,10 +7,9 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
-  updateDoc,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 
 export interface ServiceReport {
   id: string;
@@ -64,13 +63,24 @@ export async function deleteServiceReport(
 export async function markServiceReportReceived(
   pid: string,
   reportId: string,
-  receivedBy: string,
-  receivedByName: string,
 ): Promise<void> {
-  await updateDoc(doc(db, "projects", pid, "serviceReports", reportId), {
-    status: "received",
-    receivedAt: serverTimestamp(),
-    receivedBy,
-    receivedByName,
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("Please sign in again to confirm receipt.");
+  }
+
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch("/api/service-reports/received", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ projectId: pid, reportId }),
   });
+
+  const responseData = await response.json();
+  if (!response.ok) {
+    throw new Error(responseData.error || "Failed to confirm receipt.");
+  }
 }

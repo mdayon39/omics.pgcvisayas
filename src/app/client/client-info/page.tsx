@@ -3059,12 +3059,8 @@ export default function ClientPortalPage() {
       const reportKey = `${pid}:${report.id}`;
       setReceivingReportId(reportKey);
       try {
-        await markServiceReportReceived(
-          pid,
-          report.id,
-          user?.email || "",
-          user?.displayName || user?.email || "Client",
-        );
+        await markServiceReportReceived(pid, report.id);
+
         setProjectDocuments((prev) => {
           const next = new Map(prev);
           const existing = next.get(pid);
@@ -3092,12 +3088,16 @@ export default function ClientPortalPage() {
         }
       } catch (err) {
         console.error("Failed to mark service report as received:", err);
-        toast.error("Failed to mark as received. Please try again.");
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Failed to mark as received. Please try again.",
+        );
       } finally {
         setReceivingReportId(null);
       }
     },
-    [user],
+    [],
   );
 
   const toggleProjectDocs = async (project: ProjectDetails) => {

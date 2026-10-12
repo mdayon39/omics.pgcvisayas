@@ -303,7 +303,9 @@ Philippine Genome Center Visayas`.trim();
       setPendingFile(null);
     } catch (err) {
       console.error("Service report upload error:", err);
-      toast.error("Upload failed. Please try again.");
+      toast.error(
+        err instanceof Error ? err.message : "Upload failed. Please try again.",
+      );
     } finally {
       setUploading(false);
       setUploadProgress(0);

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { db, storage } from "@/lib/firebase";
 import {
   collection,
-  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -168,25 +167,6 @@ export default function AdminServiceReport({
     setUploading(true);
     setUploadProgress(0);
     try {
-      const adminsSnapshot = await getDocs(collection(db, "admins"));
-      const adminNotificationNames: Record<string, string> = {};
-      adminsSnapshot.docs.forEach((adminDoc) => {
-        const adminData = adminDoc.data();
-        const role = String(adminData.role || "")
-          .toLowerCase()
-          .replace(/[\s-]/g, "");
-        const recipient = adminDoc.id.trim();
-        if (
-          adminData.status !== "deactivated" &&
-          (role === "admin" || role === "superadmin") &&
-          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)
-        ) {
-          adminNotificationNames[recipient] =
-            String(adminData.name || "").trim().split(/\s+/)[0] || "Admin";
-        }
-      });
-
-      const ext = file.name.split(".").pop();
       const uniqueName = `${Date.now()}-${file.name}`;
       const path = `serviceReports/${projectId}/${uniqueName}`;
       const sRef = storageRef(storage, path);
@@ -235,8 +215,8 @@ export default function AdminServiceReport({
         clientAccessEnabled: true,
         projectId,
         projectTitle: projectId,
-        adminNotificationRecipients: Object.keys(adminNotificationNames),
-        adminNotificationNames,
+        uploadedByFirstName:
+          String(adminInfo?.name || "").trim().split(/\s+/)[0] || "Admin",
         adminNotificationQueued: false,
       });
 

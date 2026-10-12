@@ -150,11 +150,8 @@ service cloud.firestore {
         && get(reportPath).data.status == 'received'
         && get(reportPath).data.adminNotificationQueued != true
         && (
-          (
-            get(reportPath).data.adminNotificationRecipients is list
-            && recipient in get(reportPath).data.adminNotificationRecipients
-          )
-          || recipient == get(reportPath).data.uploadedByEmail
+          recipient == get(reportPath).data.uploadedByEmail
+          || recipient == get(reportPath).data.uploadedBy
         )
         && getAfter(reportPath).data.status == 'received'
         && getAfter(reportPath).data.receivedBy == userEmail()
@@ -162,16 +159,10 @@ service cloud.firestore {
         && exists(adminPath)
         && get(adminPath).data.status != 'deactivated'
         && get(adminPath).data.role in ['admin', 'superadmin']
-        && (
-          (
-            'adminNotificationNames' in get(reportPath).data
-            && data.clientName == get(reportPath).data.adminNotificationNames[recipient]
-          )
-          || (
-            !('adminNotificationNames' in get(reportPath).data)
-            && data.clientName == 'Admin'
-          )
-        );
+        && data.clientName ==
+          (get(reportPath).data.uploadedByFirstName is string
+            ? get(reportPath).data.uploadedByFirstName
+            : 'Admin');
     }
 
     // Ownership helper during migration (uid-first, email fallback).
@@ -593,11 +584,8 @@ service cloud.firestore {
                 && resource.data.adminNotificationQueued != true
                 && request.resource.data.adminNotificationQueued == true
                 && (
-                  (
-                    resource.data.adminNotificationRecipients is list
-                    && resource.data.adminNotificationRecipients.size() > 0
-                  )
-                  || resource.data.uploadedByEmail is string
+                  resource.data.uploadedByEmail is string
+                  || resource.data.uploadedBy is string
                 )
                 && request.resource.data.diff(resource.data).affectedKeys()
                   .hasOnly(['adminNotificationQueued'])

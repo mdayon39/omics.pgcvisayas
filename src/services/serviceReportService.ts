@@ -30,8 +30,7 @@ export interface ServiceReport {
   receivedBy?: string;
   receivedByName?: string;
   projectTitle?: string;
-  adminNotificationRecipients?: string[];
-  adminNotificationNames?: Record<string, string>;
+  uploadedByFirstName?: string;
   adminNotificationQueued?: boolean;
 }
 
@@ -85,14 +84,14 @@ export async function markServiceReportReceived(
       throw new Error("This service report could not be found.");
     }
 
-    const report = reportSnapshot.data() as ServiceReport & {
-      adminNotificationRecipients?: string[];
-      adminNotificationNames?: Record<string, string>;
-      projectTitle?: string;
-    };
+    const report = reportSnapshot.data() as ServiceReport;
     if (report.clientAccessEnabled === false) {
       throw new Error("This service report is not available to the client.");
     }
+    const uploader = report.uploadedByEmail || report.uploadedBy || "";
+    const recipient = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(uploader)
+      ? uploader
+      : "";
     if (report.status !== "received") {
       transaction.update(reportRef, {
         status: "received",
@@ -108,13 +107,8 @@ export async function markServiceReportReceived(
         (report.receivedBy === (clientEmail || currentUser.uid) ||
           report.status !== "received") &&
         report.adminNotificationQueued !== true,
-      recipients:
-        Array.isArray(report.adminNotificationRecipients) &&
-        report.adminNotificationRecipients.length > 0
-        ? [...new Set(report.adminNotificationRecipients.filter(Boolean))]
-        : report.uploadedByEmail
-          ? [report.uploadedByEmail]
-          : [],
+      recipient,
+      recipientName: report.uploadedByFirstName || "Admin",
       reportName: report.fileName || "Service report",
       projectTitle: report.projectTitle || pid,
       effectiveReceivedAt:
@@ -124,7 +118,7 @@ export async function markServiceReportReceived(
     };
   });
 
-  if (!receiptResult.shouldNotify || receiptResult.recipients.length === 0) {
+  if (!receiptResult.shouldNotify || !receiptResult.recipient) {
     return { adminEmailNotificationSent: false };
   }
 
@@ -135,17 +129,12 @@ export async function markServiceReportReceived(
         throw new Error("This service report could not be found.");
       }
 
-      const report = reportSnapshot.data() as ServiceReport & {
-        adminNotificationRecipients?: string[];
-        adminNotificationNames?: Record<string, string>;
-        adminNotificationQueued?: boolean;
-        receivedBy?: string;
-        uploadedByEmail?: string | null;
-      };
+      const report = reportSnapshot.data() as ServiceReport;
       if (
         report.status !== "received" ||
         report.receivedBy !== (clientEmail || currentUser.uid) ||
-        report.adminNotificationQueued === true
+        report.adminNotificationQueued === true ||
+        (report.uploadedByEmail || report.uploadedBy || "") !== receiptResult.recipient
       ) {
         return { adminEmailNotificationSent: false };
       }
@@ -156,28 +145,19 @@ export async function markServiceReportReceived(
       const subject = `Client confirmed service report receipt: ${pid}`;
       transaction.update(reportRef, { adminNotificationQueued: true });
 
-      const recipients =
-        Array.isArray(report.adminNotificationRecipients) &&
-        report.adminNotificationRecipients.length > 0
-        ? [...new Set(report.adminNotificationRecipients.filter(Boolean))]
-        : report.uploadedByEmail
-          ? [report.uploadedByEmail]
-          : [];
-
-      for (const recipient of recipients) {
-        const recipientName =
-          report.adminNotificationNames?.[recipient] || "Admin";
-        const mailRef = doc(collection(db, "mail"));
-        transaction.set(mailRef, {
-          to: [recipient],
-          clientName: recipientName,
-          recipientType: "admin",
-          projectId: pid,
-          serviceReportId: reportId,
-          createdAt: receiptResult.effectiveReceivedAt,
-          message: {
-            subject,
-            text: `Dear ${recipientName},
+      const recipientName =
+        report.uploadedByFirstName || receiptResult.recipientName;
+      const mailRef = doc(collection(db, "mail"));
+      transaction.set(mailRef, {
+        to: [receiptResult.recipient],
+        clientName: recipientName,
+        recipientType: "admin",
+        projectId: pid,
+        serviceReportId: reportId,
+        createdAt: receiptResult.effectiveReceivedAt,
+        message: {
+          subject,
+          text: `Dear ${recipientName},
 
 This is to inform you that ${clientName} has confirmed receipt of the service report.
 
@@ -192,11 +172,10 @@ Regards,
 Philippine Genome Center Visayas
 
 This is an automated notification.`,
-          },
-        });
-      }
+        },
+      });
 
-      return { adminEmailNotificationSent: recipients.length > 0 };
+      return { adminEmailNotificationSent: true };
     });
   } catch (error) {
     console.error(

@@ -947,7 +947,10 @@ function ChargeSlipDetailContent() {
         </div>
 
         {adminInfo?.role === "superadmin" && (
-          <ChargeSlipStatusHistory chargeSlipNumber={record.chargeSlipNumber} />
+          <ChargeSlipStatusHistory
+            chargeSlipNumber={record.chargeSlipNumber}
+            currentStatus={status}
+          />
         )}
 
         {/* Save Changes Card */}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   collection,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -14,7 +15,6 @@ import { History } from "lucide-react";
 
 interface StatusChange {
   id: string;
-  fromStatus: string;
   toStatus: string;
   changedByEmail: string;
   changedByName: string;
@@ -42,10 +42,12 @@ function toDate(value: Timestamp | Date) {
 
 export function ChargeSlipStatusHistory({
   chargeSlipNumber,
+  currentStatus,
 }: {
   chargeSlipNumber: string;
+  currentStatus: string;
 }) {
-  const [changes, setChanges] = useState<StatusChange[]>([]);
+  const [latestChange, setLatestChange] = useState<StatusChange | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,16 +55,19 @@ export function ChargeSlipStatusHistory({
     const historyQuery = query(
       collection(db, "chargeSlips", chargeSlipNumber, "statusHistory"),
       orderBy("changedAt", "desc"),
+      limit(1),
     );
 
     return onSnapshot(
       historyQuery,
       (snapshot) => {
-        setChanges(
-          snapshot.docs.map((historyDoc) => ({
-            id: historyDoc.id,
-            ...historyDoc.data(),
-          })) as StatusChange[],
+        setLatestChange(
+          snapshot.docs[0]
+            ? {
+                id: snapshot.docs[0].id,
+                ...snapshot.docs[0].data(),
+              } as StatusChange
+            : null,
         );
         setError(null);
         setLoading(false);
@@ -75,22 +80,8 @@ export function ChargeSlipStatusHistory({
     );
   }, [chargeSlipNumber]);
 
-  const changesByAdmin = changes.reduce<
-    Map<string, { name: string; email: string; count: number }>
-  >((counts, change) => {
-    const email = change.changedByEmail || "Unknown admin";
-    const current = counts.get(email);
-    if (current) {
-      current.count += 1;
-    } else {
-      counts.set(email, {
-        name: change.changedByName || email,
-        email,
-        count: 1,
-      });
-    }
-    return counts;
-  }, new Map());
+  const changeMatchesCurrentStatus =
+    latestChange?.toStatus.toLowerCase() === currentStatus.toLowerCase();
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -98,66 +89,42 @@ export function ChargeSlipStatusHistory({
         <div className="flex items-center gap-2">
           <History className="h-5 w-5 text-[#166FB5]" />
           <h2 className="text-lg font-semibold text-slate-800">
-            Status Change History
+            Current Status Details
           </h2>
         </div>
-        <Badge variant="outline">
-          {changes.length} {changes.length === 1 ? "change" : "changes"}
+        <Badge className={`capitalize shadow-none ${statusColor(currentStatus)}`}>
+          {currentStatus}
         </Badge>
       </div>
 
-      {changesByAdmin.size > 0 && (
-        <div className="mb-5 flex flex-wrap gap-2">
-          {[...changesByAdmin.values()].map((admin) => (
-            <div
-              key={admin.email}
-              className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600"
-            >
-              <span className="font-medium text-slate-800">{admin.name}</span>
-              <span className="ml-2">{admin.count} status change{admin.count === 1 ? "" : "s"}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {loading ? (
-        <p className="text-sm text-slate-500">Loading status history…</p>
+        <p className="text-sm text-slate-500">Loading current status details…</p>
       ) : error ? (
         <p role="alert" className="text-sm text-red-600">{error}</p>
-      ) : changes.length === 0 ? (
+      ) : !latestChange || !changeMatchesCurrentStatus ? (
         <p className="text-sm text-slate-500">
-          No status changes have been recorded for this charge slip.
+          No change details are recorded for the current status.
         </p>
       ) : (
-        <ol className="space-y-3">
-          {changes.map((change, index) => (
-            <li
-              key={change.id}
-              className="flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <Badge className={`capitalize shadow-none ${statusColor(change.fromStatus)}`}>
-                  {change.fromStatus}
-                </Badge>
-                <span aria-hidden="true" className="text-slate-400">→</span>
-                <Badge className={`capitalize shadow-none ${statusColor(change.toStatus)}`}>
-                  {change.toStatus}
-                </Badge>
-                <span className="text-slate-600">
-                  by <span className="font-medium text-slate-800">{change.changedByName || change.changedByEmail}</span>
-                </span>
-                <span className="text-xs text-slate-500">{change.changedByEmail}</span>
-              </div>
-              <time
-                className="shrink-0 text-xs text-slate-500"
-                dateTime={toDate(change.changedAt).toISOString()}
-              >
-                {toDate(change.changedAt).toLocaleString()}
-              </time>
-              <span className="sr-only">Change {changes.length - index}</span>
-            </li>
-          ))}
-        </ol>
+        <div className="flex flex-col gap-1 text-sm">
+          <p className="text-slate-600">
+            Changed by{" "}
+            <span className="font-medium text-slate-800">
+              {latestChange.changedByName || latestChange.changedByEmail}
+            </span>
+            {latestChange.changedByName && latestChange.changedByEmail && (
+              <span className="ml-2 text-xs text-slate-500">
+                {latestChange.changedByEmail}
+              </span>
+            )}
+          </p>
+          <time
+            className="text-xs text-slate-500"
+            dateTime={toDate(latestChange.changedAt).toISOString()}
+          >
+            {toDate(latestChange.changedAt).toLocaleString()}
+          </time>
+        </div>
       )}
     </section>
   );

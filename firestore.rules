@@ -115,6 +115,65 @@ service cloud.firestore {
         );
     }
 
+    function isServiceReportReceiptEmail() {
+      let data = request.resource.data;
+      let projectPath = /databases/$(database)/documents/projects/$(data.projectId);
+      let reportPath = /databases/$(database)/documents/projects/$(data.projectId)/serviceReports/$(data.serviceReportId);
+      let recipient = data.to[0];
+      let adminPath = /databases/$(database)/documents/admins/$(recipient);
+      return isSignedIn()
+        && data.keys().hasOnly([
+          'to', 'clientName', 'recipientType', 'projectId',
+          'serviceReportId', 'createdAt', 'message'
+        ])
+        && data.to is list
+        && data.to.size() == 1
+        && data.clientName is string
+        && data.recipientType == 'admin'
+        && data.projectId is string
+        && data.serviceReportId is string
+        && data.createdAt is timestamp
+        && data.message is map
+        && data.message.keys().hasOnly(['subject', 'text'])
+        && data.message.subject is string
+        && data.message.subject == 'Client confirmed service report receipt: ' + data.projectId
+        && data.message.text is string
+        && data.message.text.size() <= 2000
+        && exists(projectPath)
+        && exists(reportPath)
+        && canAccessLinkedInquiryDoc(
+          get(projectPath).data.iid,
+          get(projectPath).data.uuid,
+          get(projectPath).data.email
+        )
+        && get(reportPath).data.clientAccessEnabled != false
+        && get(reportPath).data.status == 'received'
+        && get(reportPath).data.adminNotificationQueued != true
+        && (
+          (
+            get(reportPath).data.adminNotificationRecipients is list
+            && recipient in get(reportPath).data.adminNotificationRecipients
+          )
+          || recipient == get(reportPath).data.uploadedByEmail
+        )
+        && getAfter(reportPath).data.status == 'received'
+        && getAfter(reportPath).data.receivedBy == userEmail()
+        && getAfter(reportPath).data.adminNotificationQueued == true
+        && exists(adminPath)
+        && get(adminPath).data.status != 'deactivated'
+        && get(adminPath).data.role in ['admin', 'superadmin']
+        && (
+          (
+            'adminNotificationNames' in get(reportPath).data
+            && data.clientName == get(reportPath).data.adminNotificationNames[recipient]
+          )
+          || (
+            !('adminNotificationNames' in get(reportPath).data)
+            && data.clientName == 'Admin'
+          )
+        );
+    }
+
     // Ownership helper during migration (uid-first, email fallback).
     function ownsByUidOrEmail(uidValue, emailValue) {
       return isSignedIn() && (
@@ -171,6 +230,7 @@ service cloud.firestore {
     match /mail/{mailId} {
       allow read, update, delete: if isAdmin();
       allow create: if isAdmin()
+        || isServiceReportReceiptEmail()
         || (
           isSignedIn()
           && request.resource.data.keys().hasOnly(['to', 'message', 'inquiryId'])
@@ -504,7 +564,46 @@ service cloud.firestore {
 
       match /serviceReports/{reportId} {
         allow read: if isSignedIn();
-        allow create, update, delete: if isAdmin();
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin()
+          || (
+            isSignedIn()
+            && canAccessLinkedInquiryDoc(
+              get(/databases/$(database)/documents/projects/$(projectId)).data.iid,
+              get(/databases/$(database)/documents/projects/$(projectId)).data.uuid,
+              get(/databases/$(database)/documents/projects/$(projectId)).data.email
+            )
+            && resource.data.clientAccessEnabled != false
+            && (
+              (
+                resource.data.status != 'received'
+                && request.resource.data.status == 'received'
+                && request.resource.data.receivedBy == userEmail()
+                && request.resource.data.receivedByName is string
+                && request.resource.data.receivedAt is timestamp
+                && request.resource.data.adminNotificationQueued == false
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                  'status', 'receivedBy', 'receivedByName', 'receivedAt',
+                  'adminNotificationQueued'
+                ])
+              )
+              || (
+                resource.data.status == 'received'
+                && resource.data.receivedBy == userEmail()
+                && resource.data.adminNotificationQueued != true
+                && request.resource.data.adminNotificationQueued == true
+                && (
+                  (
+                    resource.data.adminNotificationRecipients is list
+                    && resource.data.adminNotificationRecipients.size() > 0
+                  )
+                  || resource.data.uploadedByEmail is string
+                )
+                && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['adminNotificationQueued'])
+              )
+            )
+          );
       }
     }
 

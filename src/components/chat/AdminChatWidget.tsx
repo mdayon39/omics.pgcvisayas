@@ -507,7 +507,7 @@ export default function AdminChatWidget() {
   // ------------------------------------------------------------------
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start">
+    <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start md:left-[17rem]">
       <AnimatePresence>
         {isOpen && (
           <motion.div

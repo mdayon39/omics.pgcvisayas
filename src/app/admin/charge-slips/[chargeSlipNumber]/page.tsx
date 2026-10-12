@@ -743,6 +743,26 @@ function ChargeSlipDetailContent() {
                     </Badge>
                   </div>
                 )}
+                {record.statusChangedTo?.toLowerCase() === status.toLowerCase() &&
+                record.statusChangedAt ? (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Current status set by{" "}
+                    <span className="font-medium text-slate-700">
+                      {record.statusChangedByName || record.statusChangedByEmail || "Unknown"}
+                    </span>
+                    {record.statusChangedByName && record.statusChangedByEmail && (
+                      <span> ({record.statusChangedByEmail})</span>
+                    )}
+                    {" · "}
+                    {record.statusChangedAt instanceof Timestamp
+                      ? record.statusChangedAt.toDate().toLocaleString()
+                      : new Date(record.statusChangedAt).toLocaleString()}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Current status change details are not available.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -947,10 +967,7 @@ function ChargeSlipDetailContent() {
         </div>
 
         {adminInfo?.role === "superadmin" && (
-          <ChargeSlipStatusHistory
-            chargeSlipNumber={record.chargeSlipNumber}
-            currentStatus={status}
-          />
+          <ChargeSlipStatusHistory chargeSlipNumber={record.chargeSlipNumber} />
         )}
 
         {/* Save Changes Card */}

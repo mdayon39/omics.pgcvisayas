@@ -360,6 +360,9 @@ export async function updateChargeSlip(
         if (!changedByEmail) {
           throw new Error("Unable to identify the admin changing charge slip status");
         }
+        const changedAt = Timestamp.now();
+        const changedByName =
+          changedBy?.name || currentUser?.displayName || changedByEmail;
 
         const historyRef = doc(
           collection(db, CHARGE_SLIPS_COLLECTION, id, "statusHistory"),
@@ -368,11 +371,14 @@ export async function updateChargeSlip(
           fromStatus: currentStatus,
           toStatus: nextStatus,
           changedByEmail,
-          changedByName:
-            changedBy?.name || currentUser?.displayName || changedByEmail,
+          changedByName,
           changedByRole: changedBy?.role || null,
-          changedAt: Timestamp.now(),
+          changedAt,
         });
+        updatedData.statusChangedTo = nextStatus;
+        updatedData.statusChangedByEmail = changedByEmail;
+        updatedData.statusChangedByName = changedByName;
+        updatedData.statusChangedAt = changedAt;
       }
 
       transaction.update(docRef, updatedData);

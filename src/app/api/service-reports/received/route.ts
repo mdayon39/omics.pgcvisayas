@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
   let failureStage = "loading project and service report";
 
   try {
-    const [projectSnapshot, reportSnapshot] = await Promise.all([
-      projectRef.get(),
-      reportRef.get(),
-    ]);
+    failureStage = "loading project";
+    const projectSnapshot = await projectRef.get();
+    failureStage = "loading service report";
+    const reportSnapshot = await reportRef.get();
     if (!projectSnapshot.exists || !reportSnapshot.exists) {
       return NextResponse.json(
         { error: "The project or service report could not be found." },
@@ -220,13 +220,17 @@ This is an automated notification.`;
       adminEmailNotificationSent,
     });
   } catch (error) {
+    const firestoreError =
+      error instanceof Error
+        ? error.message.slice(0, 300)
+        : "Unknown Firestore error";
     console.error(
       `Failed to confirm service report receipt during ${failureStage}:`,
       error,
     );
     return NextResponse.json(
       {
-        error: `Failed while ${failureStage}. Please try again or contact an administrator.`,
+        error: `Failed while ${failureStage}. ${firestoreError}`,
       },
       { status: 500 },
     );

@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
 
   const projectRef = firestore.collection("projects").doc(projectId);
   const reportRef = projectRef.collection("serviceReports").doc(reportId);
+  let failureStage = "loading project and service report";
 
   try {
     const [projectSnapshot, reportSnapshot] = await Promise.all([
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    failureStage = "checking service report client access";
     if (report.clientAccessEnabled === false) {
       return NextResponse.json(
         { error: "This service report is not available to the client." },
@@ -108,6 +110,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    failureStage = "loading active admin email recipients";
     const adminsSnapshot = await firestore.collection("admins").get();
     const recipients = new Map<string, string>();
     adminsSnapshot.docs.forEach((adminDoc) => {
@@ -170,6 +173,7 @@ Philippine Genome Center Visayas
 
 This is an automated notification.`;
 
+    failureStage = "saving receipt confirmation and admin email";
     const result = await firestore.runTransaction(async (transaction) => {
       const currentReportSnapshot = await transaction.get(reportRef);
       if (!currentReportSnapshot.exists) {
@@ -205,9 +209,14 @@ This is an automated notification.`;
       alreadyReceived: result.alreadyReceived,
     });
   } catch (error) {
-    console.error("Failed to confirm service report receipt:", error);
+    console.error(
+      `Failed to confirm service report receipt during ${failureStage}:`,
+      error,
+    );
     return NextResponse.json(
-      { error: "Failed to confirm receipt of the service report." },
+      {
+        error: `Failed while ${failureStage}. Please try again or contact an administrator.`,
+      },
       { status: 500 },
     );
   }

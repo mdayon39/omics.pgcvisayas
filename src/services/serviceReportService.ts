@@ -79,7 +79,7 @@ export async function markServiceReportReceived(
     body: JSON.stringify({ projectId: pid, reportId }),
   });
 
-  const responseData = await response.json();
+  const responseData = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(responseData.error || "Failed to confirm receipt.");
   }

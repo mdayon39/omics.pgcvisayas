@@ -8,6 +8,7 @@ import {
   orderBy,
   query,
   addDoc,
+  writeBatch,
   deleteDoc,
   doc,
   serverTimestamp,
@@ -71,6 +72,15 @@ interface Props {
 
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
 
+interface ChargeSlipBypassEvent {
+  id: string;
+  serviceReportId: string;
+  fileName: string;
+  skippedByName: string;
+  skippedByEmail: string;
+  createdAt: { toDate: () => Date } | null;
+}
+
 function formatFileSize(bytes?: number) {
   if (!bytes) return "";
   if (bytes < 1024) return `${bytes} B`;
@@ -91,6 +101,9 @@ export default function AdminServiceReport({
 }: Props) {
   const { adminInfo } = useAuth();
   const [reports, setReports] = useState<ServiceReport[]>([]);
+  const [chargeSlipBypassHistory, setChargeSlipBypassHistory] = useState<
+    ChargeSlipBypassEvent[]
+  >([]);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -148,6 +161,32 @@ export default function AdminServiceReport({
     return unsub;
   }, [projectId]);
 
+  useEffect(() => {
+    if (!projectId || !isSuperAdmin) {
+      setChargeSlipBypassHistory([]);
+      return;
+    }
+    const historyQuery = query(
+      collection(db, "projects", projectId, "serviceReportRequirementHistory"),
+      orderBy("createdAt", "desc"),
+    );
+    return onSnapshot(
+      historyQuery,
+      (snapshot) => {
+        setChargeSlipBypassHistory(
+          snapshot.docs.map((historyDoc) => ({
+            id: historyDoc.id,
+            ...historyDoc.data(),
+          })) as ChargeSlipBypassEvent[],
+        );
+      },
+      (error) => {
+        console.error("Failed to load service-report bypass history:", error);
+        toast.error("Could not load charge-slip requirement history.");
+      },
+    );
+  }, [projectId, isSuperAdmin]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -200,7 +239,11 @@ export default function AdminServiceReport({
         await updateDoc(doc(db, "projects", projectId), projectUpdate);
       }
 
-      await addDoc(collection(db, "projects", projectId, "serviceReports"), {
+      const reportRef = doc(
+        collection(db, "projects", projectId, "serviceReports"),
+      );
+      const batch = writeBatch(db);
+      batch.set(reportRef, {
         fileName: file.name,
         fileUrl,
         storagePath: path,
@@ -219,6 +262,24 @@ export default function AdminServiceReport({
           String(adminInfo?.name || "").trim().split(/\s+/)[0] || "Admin",
         adminNotificationQueued: false,
       });
+      if (allowWithoutChargeSlip) {
+        const historyRef = doc(
+          collection(
+            db,
+            "projects",
+            projectId,
+            "serviceReportRequirementHistory",
+          ),
+        );
+        batch.set(historyRef, {
+          serviceReportId: reportRef.id,
+          fileName: file.name,
+          skippedByName: adminInfo?.name || "Admin",
+          skippedByEmail: adminInfo?.email || "",
+          createdAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
 
       await logActivity({
         userId: adminInfo?.email || "system",
@@ -368,6 +429,71 @@ Philippine Genome Center Visayas`.trim();
 
   return (
     <div className="space-y-2">
+      {isSuperAdmin &&
+        (chargeSlipBypassHistory.length > 0 ||
+          reports.some(
+            (report) =>
+              report.skipChargeSlipRequirement &&
+              !chargeSlipBypassHistory.some(
+                (event) => event.serviceReportId === report.id,
+              ),
+          )) && (
+          <section className="ml-5 rounded-md border border-amber-200 bg-amber-50/70 p-3">
+            <h4 className="mb-2 text-xs font-semibold text-amber-900">
+              Charge-slip requirement bypass history
+            </h4>
+            <ul className="space-y-2">
+              {[
+                ...chargeSlipBypassHistory.map((event) => ({
+                  id: event.id,
+                  serviceReportId: event.serviceReportId,
+                  fileName: event.fileName,
+                  skippedBy: event.skippedByName || event.skippedByEmail,
+                  skippedAt: event.createdAt,
+                })),
+                ...reports
+                  .filter(
+                    (report) =>
+                      report.skipChargeSlipRequirement &&
+                      !chargeSlipBypassHistory.some(
+                        (event) => event.serviceReportId === report.id,
+                      ),
+                  )
+                  .map((report) => ({
+                    id: report.id,
+                    serviceReportId: report.id,
+                    fileName: report.fileName,
+                    skippedBy:
+                      report.uploadedByName ||
+                      report.uploadedByEmail ||
+                      report.uploadedBy,
+                    skippedAt: report.uploadedAt,
+                  })),
+              ].map((event) => {
+                const timestamp = event.skippedAt?.toDate
+                  ? format(event.skippedAt.toDate(), "MMM d, yyyy h:mm a")
+                  : "";
+                const skippedBy = event.skippedBy || "Unknown admin";
+                return (
+                  <li
+                    key={event.id}
+                    className="text-[11px] leading-4 text-amber-950"
+                  >
+                    <span className="font-medium">{skippedBy}</span>
+                    {" skipped the charge-slip requirement to upload "}
+                    <span className="font-medium">{event.fileName}</span>
+                    {timestamp && (
+                      <span className="text-amber-800">
+                        {" · "}
+                        {timestamp}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
       {/* Existing reports */}
       {reports.length === 0 ? (
         <p className="text-xs text-slate-400 ml-5">

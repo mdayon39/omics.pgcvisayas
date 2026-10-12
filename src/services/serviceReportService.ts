@@ -22,6 +22,7 @@ export interface ServiceReport {
   uploadedBy: string;
   uploadedByName: string;
   uploadedByEmail?: string | null;
+  skipChargeSlipRequirement?: boolean;
   documentationRemark?: string | null;
   exceptionEnabled?: boolean;
   clientAccessEnabled?: boolean;

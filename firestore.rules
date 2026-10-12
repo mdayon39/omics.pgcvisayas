@@ -596,6 +596,31 @@ service cloud.firestore {
             )
           );
       }
+
+      match /serviceReportRequirementHistory/{historyId} {
+        function createsValidBypassHistory() {
+          let reportPath = /databases/$(database)/documents/projects/$(projectId)/serviceReports/$(request.resource.data.serviceReportId);
+          return request.resource.data.keys().hasOnly([
+              'serviceReportId', 'fileName', 'skippedByName',
+              'skippedByEmail', 'createdAt'
+            ])
+            && request.resource.data.serviceReportId is string
+            && request.resource.data.fileName is string
+            && request.resource.data.skippedByName is string
+            && request.resource.data.skippedByEmail == userEmail()
+            && request.resource.data.createdAt is timestamp
+            && existsAfter(reportPath)
+            && getAfter(reportPath).data.skipChargeSlipRequirement == true
+            && getAfter(reportPath).data.uploadedByEmail == userEmail()
+            && getAfter(reportPath).data.uploadedByName
+              == request.resource.data.skippedByName
+            && getAfter(reportPath).data.fileName == request.resource.data.fileName;
+        }
+
+        allow read: if isSuperAdmin();
+        allow create: if isAdmin() && createsValidBypassHistory();
+        allow update, delete: if false;
+      }
     }
 
     match /sampleForms/{formId} {

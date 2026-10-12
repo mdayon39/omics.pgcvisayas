@@ -232,7 +232,7 @@ Automated notification — please do not reply to this email.`;
     <tr>
       <td style="padding:28px;">
         <p style="margin:0 0 14px;font-size:16px;line-height:1.5;">Dear ${escapeHtml(recipientName)},</p>
-        <p style="margin:0 0 22px;color:#475569;font-size:14px;line-height:1.6;">${safeClientName} has confirmed receipt of the service report. The confirmation details are below.</p>
+        <p style="margin:0 0 22px;color:#475569;font-size:14px;line-height:1.6;"><strong>${safeClientName}</strong> has confirmed receipt of the service report. The confirmation details are below.</p>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;background-color:#f8fafc;border:1px solid #e2e8f0;">
           <tr>
             <td colspan="2" style="padding:13px 16px;border-bottom:1px solid #e2e8f0;color:#166fb5;font-size:12px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;">Project</td>
@@ -250,7 +250,7 @@ Automated notification — please do not reply to this email.`;
           </tr>
           <tr>
             <td width="135" style="padding:11px 16px;color:#64748b;font-size:13px;vertical-align:top;">Received by</td>
-            <td style="padding:11px 16px;color:#1e293b;font-size:14px;vertical-align:top;">${safeClientName}${clientEmail ? `<br><span style="color:#64748b;font-size:12px;">${safeClientEmail}</span>` : ""}</td>
+            <td style="padding:11px 16px;color:#1e293b;font-size:14px;vertical-align:top;"><strong>${safeClientName}</strong>${clientEmail ? `<br><span style="color:#64748b;font-size:12px;">${safeClientEmail}</span>` : ""}</td>
           </tr>
           <tr>
             <td width="135" style="padding:11px 16px;border-top:1px solid #e2e8f0;color:#64748b;font-size:13px;vertical-align:top;">Date and time</td>

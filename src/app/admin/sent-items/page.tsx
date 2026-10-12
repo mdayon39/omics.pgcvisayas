@@ -50,6 +50,7 @@ type EmailCategory =
   | "Quotation available"
   | "Service report available"
   | "Service Report Received"
+  | "Project Approval and Next Steps"
   | "Password recovery"
   | "Other client email";
 
@@ -96,6 +97,9 @@ function categorizeEmail(subject: string): EmailCategory {
   }
   if (normalized.includes("service report")) {
     return "Service report available";
+  }
+  if (normalized.includes("project approval and next steps")) {
+    return "Project Approval and Next Steps";
   }
   if (normalized.includes("password") || normalized.includes("recovery")) {
     return "Password recovery";
@@ -577,6 +581,9 @@ function SentItemsContent() {
               </SelectItem>
               <SelectItem value="Service Report Received">
                 Service Report Received
+              </SelectItem>
+              <SelectItem value="Project Approval and Next Steps">
+                Project Approval and Next Steps
               </SelectItem>
               <SelectItem value="Password recovery">
                 Password recovery

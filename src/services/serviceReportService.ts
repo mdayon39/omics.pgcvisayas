@@ -193,6 +193,83 @@ export async function markServiceReportReceived(
         report.uploadedByFirstName || receiptResult.recipientName;
       const safeReportUrl = escapeHtml(receiptResult.reportUrl);
       const safeReportName = escapeHtml(receiptResult.reportName);
+      const safeProjectId = escapeHtml(pid);
+      const safeProjectName = escapeHtml(receiptResult.projectName);
+      const safeClientName = escapeHtml(clientName);
+      const safeClientEmail = escapeHtml(clientEmail);
+      const safeReceivedTime = escapeHtml(receivedTime);
+      const textMessage = `Dear ${recipientName},
+
+The client has confirmed receipt of the service report.
+
+PROJECT
+Project ID: ${pid}
+Project name: ${receiptResult.projectName}
+
+SERVICE REPORT
+File: ${receiptResult.reportName}
+Open report: ${receiptResult.reportUrl}
+
+RECEIPT
+Received by: ${clientName}${clientEmail ? ` (${clientEmail})` : ""}
+Date and time: ${receivedTime} (Philippine time)
+
+No further action is required unless follow-up is needed.
+
+Regards,
+Philippine Genome Center Visayas
+
+Automated notification — please do not reply to this email.`;
+      const htmlMessage = `<div style="margin:0;padding:24px 12px;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#1e293b;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;margin:0 auto;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:8px;border-collapse:separate;">
+    <tr>
+      <td style="padding:24px 28px;background-color:#166fb5;border-radius:8px 8px 0 0;">
+        <p style="margin:0 0 6px;color:#dbeafe;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Service report update</p>
+        <h1 style="margin:0;color:#ffffff;font-size:22px;line-height:1.3;font-weight:600;">Receipt confirmed</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:28px;">
+        <p style="margin:0 0 14px;font-size:16px;line-height:1.5;">Dear ${escapeHtml(recipientName)},</p>
+        <p style="margin:0 0 22px;color:#475569;font-size:14px;line-height:1.6;">${safeClientName} has confirmed receipt of the service report. The confirmation details are below.</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;background-color:#f8fafc;border:1px solid #e2e8f0;">
+          <tr>
+            <td colspan="2" style="padding:13px 16px;border-bottom:1px solid #e2e8f0;color:#166fb5;font-size:12px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;">Project</td>
+          </tr>
+          <tr>
+            <td width="135" style="padding:11px 16px;color:#64748b;font-size:13px;vertical-align:top;">Project ID</td>
+            <td style="padding:11px 16px;color:#1e293b;font-size:14px;font-weight:600;vertical-align:top;">${safeProjectId}</td>
+          </tr>
+          <tr>
+            <td width="135" style="padding:11px 16px;border-top:1px solid #e2e8f0;color:#64748b;font-size:13px;vertical-align:top;">Project name</td>
+            <td style="padding:11px 16px;border-top:1px solid #e2e8f0;color:#1e293b;font-size:14px;vertical-align:top;">${safeProjectName}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding:13px 16px;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;color:#166fb5;font-size:12px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;">Receipt</td>
+          </tr>
+          <tr>
+            <td width="135" style="padding:11px 16px;color:#64748b;font-size:13px;vertical-align:top;">Received by</td>
+            <td style="padding:11px 16px;color:#1e293b;font-size:14px;vertical-align:top;">${safeClientName}${clientEmail ? `<br><span style="color:#64748b;font-size:12px;">${safeClientEmail}</span>` : ""}</td>
+          </tr>
+          <tr>
+            <td width="135" style="padding:11px 16px;border-top:1px solid #e2e8f0;color:#64748b;font-size:13px;vertical-align:top;">Date and time</td>
+            <td style="padding:11px 16px;border-top:1px solid #e2e8f0;color:#1e293b;font-size:14px;vertical-align:top;">${safeReceivedTime}<br><span style="color:#64748b;font-size:12px;">Philippine time</span></td>
+          </tr>
+        </table>
+        <div style="margin:22px 0;padding:16px;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+          <p style="margin:0 0 12px;color:#64748b;font-size:12px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;">Service report</p>
+          <p style="margin:0 0 16px;color:#1e293b;font-size:14px;line-height:1.5;word-break:break-word;">${safeReportName}</p>
+          <a href="${safeReportUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:11px 18px;background-color:#166fb5;border-radius:4px;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;">Open service report</a>
+        </div>
+        <p style="margin:0;color:#475569;font-size:14px;line-height:1.6;">No further action is required unless follow-up is needed.</p>
+        <p style="margin:22px 0 0;color:#1e293b;font-size:14px;line-height:1.6;">Regards,<br><strong>Philippine Genome Center Visayas</strong></p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:16px 28px;background-color:#f8fafc;border-top:1px solid #e2e8f0;border-radius:0 0 8px 8px;color:#64748b;font-size:12px;line-height:1.5;">This is an automated notification. Please do not reply to this email.</td>
+    </tr>
+  </table>
+</div>`;
       const mailRef = doc(collection(db, "mail"));
       transaction.set(mailRef, {
         to: [receiptResult.recipient],
@@ -204,33 +281,8 @@ export async function markServiceReportReceived(
         createdAt: receiptResult.effectiveReceivedAt,
         message: {
           subject,
-          text: `Dear ${recipientName},
-
-This is to inform you that ${clientName} has confirmed receipt of the service report.
-
-Project ID: ${pid}
-Project name: ${receiptResult.projectName}
-Service report: ${receiptResult.reportName}
-Received by: ${clientName}${clientEmail ? ` (${clientEmail})` : ""}
-Date and time: ${receivedTime} (Philippine time)
-
-No further action is required unless follow-up is needed.
-
-Regards,
-Philippine Genome Center Visayas
-
-This is an automated notification.`,
-          html: `<p>Dear ${escapeHtml(recipientName)},</p>
-<p>This is to inform you that ${escapeHtml(clientName)} has confirmed receipt of the service report.</p>
-<p>Project ID: ${escapeHtml(pid)}<br>
-Project name: ${escapeHtml(receiptResult.projectName)}<br>
-Service report: <a href="${safeReportUrl}" target="_blank" rel="noopener noreferrer">${safeReportName}</a><br>
-Received by: ${escapeHtml(clientName)}${clientEmail ? ` (${escapeHtml(clientEmail)})` : ""}<br>
-Date and time: ${escapeHtml(receivedTime)} (Philippine time)</p>
-<p>No further action is required unless follow-up is needed.</p>
-<p>Regards,<br>
-Philippine Genome Center Visayas</p>
-<p>This is an automated notification.</p>`,
+          text: textMessage,
+          html: htmlMessage,
         },
       });
 

@@ -45,6 +45,7 @@ import {
 
 type EmailCategory =
   | "Inquiry received"
+  | "Update Regarding Your Inquiry (Service Not Offered)"
   | "Chat received"
   | "Charge slip received"
   | "Quotation available"
@@ -80,6 +81,9 @@ function toDate(value: any): Date {
 
 function categorizeEmail(subject: string): EmailCategory {
   const normalized = subject.toLowerCase();
+  if (normalized.includes("update regarding your inquiry")) {
+    return "Update Regarding Your Inquiry (Service Not Offered)";
+  }
   if (normalized.includes("inquiry")) return "Inquiry received";
   if (normalized.includes("chat") || normalized.includes("message")) {
     return "Chat received";
@@ -569,6 +573,9 @@ function SentItemsContent() {
             <SelectContent>
               <SelectItem value="all">All categories</SelectItem>
               <SelectItem value="Inquiry received">Inquiry received</SelectItem>
+              <SelectItem value="Update Regarding Your Inquiry (Service Not Offered)">
+                Update Regarding Your Inquiry (Service Not Offered)
+              </SelectItem>
               <SelectItem value="Chat received">Chat received</SelectItem>
               <SelectItem value="Charge slip received">
                 Charge slip received

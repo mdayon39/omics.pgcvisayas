@@ -130,10 +130,10 @@ Philippine Genome Center Visayas
 export async function updateChargeSlipAction(
   id: string,
   updates: Partial<ChargeSlipRecord>,
-  userInfo?: { name: string; email: string },
+  userInfo?: { name: string; email: string; role?: string },
 ) {
   try {
-    await updateChargeSlip(id, updates);
+    await updateChargeSlip(id, updates, userInfo);
 
     // Log the activity
     await logActivity({

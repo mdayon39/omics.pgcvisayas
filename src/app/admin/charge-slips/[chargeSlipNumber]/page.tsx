@@ -50,6 +50,7 @@ import useAuth from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import ChargeSlipPreviewButton from "@/components/charge-slip/ChargeSlipPreviewButton";
+import { ChargeSlipStatusHistory } from "@/components/charge-slip/ChargeSlipStatusHistory";
 import {
   CheckCircle2,
   Loader2 as ReceiptLoader,
@@ -381,6 +382,10 @@ function ChargeSlipDetailContent() {
       await updateChargeSlip(record.id, {
         orNumber: orVal,
         dateOfOR: orDateVal,
+      }, {
+        email: adminInfo?.email || "",
+        name: adminInfo?.name,
+        role: adminInfo?.role,
       });
       // Append to orEntries history (arrayUnion prevents duplicates)
       await updateDoc(doc(db, "chargeSlips", record.id), {
@@ -444,6 +449,10 @@ function ChargeSlipDetailContent() {
           status: "processing",
           orNumber: "",
           dateOfOR: null,
+        }, {
+          email: adminInfo?.email || "",
+          name: adminInfo?.name,
+          role: adminInfo?.role,
         });
         // Clear orStatus since no receipt remains
         await updateDoc(doc(db, "chargeSlips", record.chargeSlipNumber), {
@@ -505,7 +514,11 @@ function ChargeSlipDetailContent() {
         dateOfOR,
       };
 
-      await updateChargeSlip(record.id, updates);
+      await updateChargeSlip(record.id, updates, {
+        email: adminInfo?.email || "",
+        name: adminInfo?.name,
+        role: adminInfo?.role,
+      });
 
       // Log UPDATE activity
       await logActivity({
@@ -694,40 +707,42 @@ function ChargeSlipDetailContent() {
                 <label className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-2">
                   Status
                 </label>
-                <Select
-                  value={status}
-                  onValueChange={(value) => {
-                    if (canEdit("chargeSlips")) setStatus(value);
-                  }}
-                  disabled={!canEdit("chargeSlips")}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableStatuses.length > 0 ? (
-                      availableStatuses.map((s) => (
-                        <SelectItem key={s.id} value={s.value.toLowerCase()}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: s.color || "#94a3b8" }}
-                            />
-                            <span className="capitalize">{s.value}</span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                        <SelectItem value="waived">Waived</SelectItem>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
+                {canEdit("chargeSlips") ? (
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableStatuses.length > 0 ? (
+                        availableStatuses.map((s) => (
+                          <SelectItem key={s.id} value={s.value.toLowerCase()}>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: s.color || "#94a3b8" }}
+                              />
+                              <span className="capitalize">{s.value}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="waived">Waived</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="flex min-h-10 items-center">
+                    <Badge className="capitalize bg-slate-100 text-slate-800 shadow-none">
+                      {status || "processing"}
+                    </Badge>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -930,6 +945,10 @@ function ChargeSlipDetailContent() {
             </div>
           )}
         </div>
+
+        {adminInfo?.role === "superadmin" && (
+          <ChargeSlipStatusHistory chargeSlipNumber={record.chargeSlipNumber} />
+        )}
 
         {/* Save Changes Card */}
         <div className="bg-gradient-to-r from-[#F69122]/5 via-[#B9273A]/5 to-[#912ABD]/5 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">

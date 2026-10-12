@@ -598,6 +598,13 @@ service cloud.firestore {
         );
     }
 
+    match /chargeSlips/{chargeSlipId}/statusHistory/{historyId} {
+      allow read: if isSuperAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.changedByEmail == userEmail();
+      allow update, delete: if false;
+    }
+
     match /receipts/{receiptId} {
       allow create: if isSignedIn()
         && request.resource.data.uploadedBy == userEmail();

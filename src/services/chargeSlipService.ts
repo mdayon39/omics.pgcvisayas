@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import {
   collection,
   getDocs,
@@ -12,6 +12,7 @@ import {
   Timestamp,
   limit,
   deleteDoc,
+  runTransaction,
 } from "firebase/firestore";
 import { ChargeSlipRecord } from "@/types/ChargeSlipRecord";
 import { convertToDate, convertToTimestamp } from "@/lib/convert";
@@ -274,6 +275,7 @@ export async function getChargeSlipsByClientId(
 export async function updateChargeSlip(
   id: string,
   updates: Partial<ChargeSlipRecord>,
+  changedBy?: { email: string; name?: string; role?: string },
 ) {
   const docRef = doc(db, CHARGE_SLIPS_COLLECTION, id);
 
@@ -334,6 +336,48 @@ export async function updateChargeSlip(
         createdAt: safeTimestamp(updates.project.createdAt),
       }),
     };
+  }
+
+  if ("status" in updates) {
+    await runTransaction(db, async (transaction) => {
+      const chargeSlipSnapshot = await transaction.get(docRef);
+      if (!chargeSlipSnapshot.exists()) {
+        throw new Error(`Charge slip ${id} does not exist`);
+      }
+
+      const currentStatus = String(
+        chargeSlipSnapshot.data().status || "processing",
+      )
+        .trim()
+        .toLowerCase();
+      const nextStatus = String(updates.status || "processing")
+        .trim()
+        .toLowerCase();
+
+      if (currentStatus !== nextStatus) {
+        const currentUser = auth.currentUser;
+        const changedByEmail = changedBy?.email || currentUser?.email;
+        if (!changedByEmail) {
+          throw new Error("Unable to identify the admin changing charge slip status");
+        }
+
+        const historyRef = doc(
+          collection(db, CHARGE_SLIPS_COLLECTION, id, "statusHistory"),
+        );
+        transaction.set(historyRef, {
+          fromStatus: currentStatus,
+          toStatus: nextStatus,
+          changedByEmail,
+          changedByName:
+            changedBy?.name || currentUser?.displayName || changedByEmail,
+          changedByRole: changedBy?.role || null,
+          changedAt: Timestamp.now(),
+        });
+      }
+
+      transaction.update(docRef, updatedData);
+    });
+    return;
   }
 
   await updateDoc(docRef, updatedData);

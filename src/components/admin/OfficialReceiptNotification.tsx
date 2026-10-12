@@ -147,6 +147,10 @@ export function OfficialReceiptNotification() {
             status: "paid",
             orNumber: cs.orNumber || receipt.orNumber,
             dateOfOR: orDateVal,
+          }, {
+            email: adminInfo?.email || "",
+            name: adminInfo?.name,
+            role: adminInfo?.role,
           });
         }
       }

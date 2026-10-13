@@ -137,6 +137,7 @@ import {
   Settings,
   Key,
   Info,
+  ChevronLeft,
   Mail,
   Smartphone,
   MapPin,
@@ -153,9 +154,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
-  CLIENT_ANNOUNCEMENT_ID,
   CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
-  DEFAULT_CLIENT_ANNOUNCEMENT,
 } from "@/constants/clientAnnouncement";
 import ClientConformeModal from "@/components/forms/ClientConformeModal";
 import UploadReceipt from "@/components/client/UploadReceipt";
@@ -350,10 +349,12 @@ export default function ClientPortalPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [clientAnnouncement, setClientAnnouncement] = useState<{
+  const [clientAnnouncements, setClientAnnouncements] = useState<{
+    id: string;
     title: string;
     body: string;
-  } | null>(null);
+  }[]>([]);
+  const [announcementIndex, setAnnouncementIndex] = useState(0);
 
   const emailParam = searchParams.get("email");
   const inquiryIdParam = searchParams.get("inquiryId");
@@ -364,31 +365,38 @@ export default function ClientPortalPage() {
     if (
       user?.email?.trim().toLowerCase() !== CLIENT_ANNOUNCEMENT_TARGET_EMAIL
     ) {
-      setClientAnnouncement(null);
+      setClientAnnouncements([]);
       return;
     }
 
     return onSnapshot(
-      doc(db, "clientAnnouncements", CLIENT_ANNOUNCEMENT_ID),
+      query(
+        collection(db, "clientAnnouncements"),
+        where("targetEmail", "==", CLIENT_ANNOUNCEMENT_TARGET_EMAIL),
+        where("isActive", "==", true),
+      ),
       (snapshot) => {
-        const announcement = snapshot.data();
-        if (!snapshot.exists()) {
-          setClientAnnouncement(DEFAULT_CLIENT_ANNOUNCEMENT);
-        } else if (
-          announcement?.isActive === true &&
-          typeof announcement.title === "string" &&
-          typeof announcement.body === "string"
-        ) {
-          setClientAnnouncement({
-            title: announcement.title,
-            body: announcement.body,
-          });
-        } else {
-          setClientAnnouncement(null);
-        }
+        const announcements = snapshot.docs
+          .map((announcementDoc) => {
+            const data = announcementDoc.data();
+            return {
+              id: announcementDoc.id,
+              title: data.title,
+              body: data.body,
+            };
+          })
+          .filter(
+            (announcement) =>
+              typeof announcement.title === "string" &&
+              typeof announcement.body === "string",
+          )
+          .sort((left, right) => left.title.localeCompare(right.title));
+        setClientAnnouncements(announcements);
+        setAnnouncementIndex(0);
       },
       (error) => {
         console.error("Failed to load client portal announcement:", error);
+        setClientAnnouncements([]);
       },
     );
   }, [user?.email]);
@@ -4499,29 +4507,8 @@ export default function ClientPortalPage() {
 
         {/* ═════ RIGHT CONTENT ═════ */}
         <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50/50 to-blue-50/30">
-          {clientAnnouncement && (
-            <section
-              aria-labelledby="client-announcement-title"
-              className="mx-3 mt-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 shadow-sm lg:mx-4"
-            >
-              <div className="flex items-start gap-3">
-                <div className="rounded-full bg-blue-100 p-2 text-[#166FB5]">
-                  <Info className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <h2
-                    id="client-announcement-title"
-                    className="text-sm font-bold tracking-wide text-blue-950"
-                  >
-                    {clientAnnouncement.title}
-                  </h2>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                    {clientAnnouncement.body}
-                  </p>
-                </div>
-              </div>
-            </section>
-          )}
+          <div className="flex min-h-full flex-col lg:flex-row">
+            <div className="order-2 min-w-0 flex-1 lg:order-1">
           {projectDetails ? (
             <div className="p-3 lg:p-4 max-w-5xl mx-auto space-y-3">
               {/* Draft/Pending/Approved status banner */}
@@ -7655,6 +7642,82 @@ export default function ClientPortalPage() {
               </div>
             </div>
           )}
+            </div>
+            {clientAnnouncements.length > 0 && (
+              <aside
+                aria-label="Client announcements"
+                className="order-1 w-full shrink-0 border-b border-slate-200 p-3 sm:p-4 lg:order-2 lg:w-1/4 lg:min-w-[260px] lg:max-w-[380px] lg:border-b-0 lg:border-l"
+              >
+                <section
+                  aria-roledescription="carousel"
+                  aria-label="Announcements"
+                  className="sticky top-3 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-sm"
+                >
+                  <div className="mb-3 flex items-center gap-2 text-[#166FB5]">
+                    <Info className="h-5 w-5 shrink-0" aria-hidden="true" />
+                    <span className="text-xs font-semibold uppercase tracking-wider">
+                      Announcement
+                    </span>
+                  </div>
+                  {clientAnnouncements.map((announcement, index) =>
+                    index === announcementIndex ? (
+                      <div
+                        key={announcement.id}
+                        aria-live="polite"
+                        aria-atomic="true"
+                      >
+                        <h2 className="break-words text-sm font-bold leading-snug text-blue-950">
+                          {announcement.title}
+                        </h2>
+                        <p className="mt-3 max-h-[50vh] overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                          {announcement.body}
+                        </p>
+                      </div>
+                    ) : null,
+                  )}
+                  {clientAnnouncements.length > 1 && (
+                    <div className="mt-4 flex items-center justify-between border-t border-blue-200 pt-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 border-blue-200 bg-white/70"
+                        onClick={() =>
+                          setAnnouncementIndex(
+                            (announcementIndex - 1 + clientAnnouncements.length) %
+                              clientAnnouncements.length,
+                          )
+                        }
+                        aria-label="Previous announcement"
+                      >
+                        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                      </Button>
+                      <span
+                        className="text-xs tabular-nums text-slate-600"
+                        aria-label={`Announcement ${announcementIndex + 1} of ${clientAnnouncements.length}`}
+                      >
+                        {announcementIndex + 1} / {clientAnnouncements.length}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 border-blue-200 bg-white/70"
+                        onClick={() =>
+                          setAnnouncementIndex(
+                            (announcementIndex + 1) % clientAnnouncements.length,
+                          )
+                        }
+                        aria-label="Next announcement"
+                      >
+                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  )}
+                </section>
+              </aside>
+            )}
+          </div>
         </main>
       </div>
 

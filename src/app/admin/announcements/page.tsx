@@ -11,6 +11,7 @@ import {
   onSnapshot,
   serverTimestamp,
   setDoc,
+  Timestamp,
   updateDoc,
 } from "firebase/firestore";
 import { Info, Megaphone, Pencil, Plus, Save, Trash2, X } from "lucide-react";
@@ -54,9 +55,20 @@ interface ClientAnnouncement {
   body: string;
   isActive: boolean;
   targetEmail: string;
+  startAt: Timestamp | undefined;
+  endAt: Timestamp | undefined;
 }
 
 const ANNOUNCEMENTS_REF = collection(db, "clientAnnouncements");
+
+function toDateTimeLocal(timestamp?: Timestamp): string {
+  if (!timestamp) return "";
+  const date = timestamp.toDate();
+  const localDate = new Date(
+    date.getTime() - date.getTimezoneOffset() * 60_000,
+  );
+  return localDate.toISOString().slice(0, 16);
+}
 
 export default function ClientAnnouncementPage() {
   const { adminInfo } = useAuth();
@@ -81,6 +93,8 @@ function ClientAnnouncementContent() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [startAt, setStartAt] = useState("");
+  const [endAt, setEndAt] = useState("");
   const [isActive, setIsActive] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -147,6 +161,10 @@ function ClientAnnouncementContent() {
                   body: data.body,
                   isActive: data.isActive === true,
                   targetEmail: data.targetEmail,
+                  startAt:
+                    data.startAt instanceof Timestamp ? data.startAt : undefined,
+                  endAt:
+                    data.endAt instanceof Timestamp ? data.endAt : undefined,
                 };
               })
               .filter(
@@ -182,6 +200,8 @@ function ClientAnnouncementContent() {
     setEditingId(null);
     setTitle("");
     setBody("");
+    setStartAt("");
+    setEndAt("");
     setIsActive(false);
     setEditorOpen(true);
   };
@@ -190,6 +210,8 @@ function ClientAnnouncementContent() {
     setEditingId(announcement.id);
     setTitle(announcement.title);
     setBody(announcement.body);
+    setStartAt(toDateTimeLocal(announcement.startAt));
+    setEndAt(toDateTimeLocal(announcement.endAt));
     setIsActive(announcement.isActive);
     setEditorOpen(true);
   };
@@ -198,6 +220,8 @@ function ClientAnnouncementContent() {
     setEditingId(null);
     setTitle("");
     setBody("");
+    setStartAt("");
+    setEndAt("");
     setIsActive(false);
     setEditorOpen(false);
   };
@@ -207,6 +231,18 @@ function ClientAnnouncementContent() {
     const cleanBody = body.trim();
     if (!cleanTitle || !cleanBody) {
       toast.error("Enter both an announcement title and message.");
+      return;
+    }
+    const startDate = new Date(startAt);
+    const endDate = new Date(endAt);
+    if (
+      !startAt ||
+      !endAt ||
+      Number.isNaN(startDate.getTime()) ||
+      Number.isNaN(endDate.getTime()) ||
+      endDate <= startDate
+    ) {
+      toast.error("Enter a valid start and end date; the end must be later.");
       return;
     }
     if (!adminInfo?.email) {
@@ -221,6 +257,8 @@ function ClientAnnouncementContent() {
         body: cleanBody,
         isActive,
         targetEmail: CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
+        startAt: Timestamp.fromDate(startDate),
+        endAt: Timestamp.fromDate(endDate),
         updatedAt: serverTimestamp(),
         updatedBy: adminInfo.email,
       };
@@ -337,6 +375,12 @@ function ClientAnnouncementContent() {
                       <p className="line-clamp-4 whitespace-pre-wrap text-xs leading-relaxed text-slate-600">
                         {announcement.body}
                       </p>
+                      {announcement.startAt && announcement.endAt && (
+                        <p className="mt-2 text-[11px] text-slate-500">
+                          {announcement.startAt.toDate().toLocaleString()} –{" "}
+                          {announcement.endAt.toDate().toLocaleString()}
+                        </p>
+                      )}
                     </div>
                     <div className="flex shrink-0 gap-1">
                       <Button
@@ -407,6 +451,35 @@ function ClientAnnouncementContent() {
                   Line breaks are preserved in the client carousel.
                 </p>
               </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="announcement-start">Start date and time</Label>
+                  <Input
+                    id="announcement-start"
+                    type="datetime-local"
+                    value={startAt}
+                    onChange={(event) => setStartAt(event.target.value)}
+                    disabled={loading || saving}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="announcement-end">End date and time</Label>
+                  <Input
+                    id="announcement-end"
+                    type="datetime-local"
+                    value={endAt}
+                    onChange={(event) => setEndAt(event.target.value)}
+                    disabled={loading || saving}
+                    required
+                  />
+                </div>
+              </div>
+              <p className="-mt-3 text-xs text-slate-500">
+                The announcement will appear only during this period. Times use
+                your local timezone.
+              </p>
 
               <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
                 <div className="space-y-1">

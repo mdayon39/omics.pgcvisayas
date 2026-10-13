@@ -357,11 +357,22 @@ export default function ClientPortalPage() {
     id: string;
     title: string;
     body: string;
+    startAt?: number;
+    endAt?: number;
   }[]>([]);
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [isAnnouncementPlaying, setIsAnnouncementPlaying] = useState(true);
   const [announcementProgress, setAnnouncementProgress] = useState(0);
   const announcementElapsedRef = useRef(0);
+  const [announcementNow, setAnnouncementNow] = useState(0);
+  const visibleAnnouncements = clientAnnouncements.filter(
+    (announcement) =>
+      (!announcement.startAt || announcement.startAt <= announcementNow) &&
+      (!announcement.endAt || announcement.endAt >= announcementNow),
+  );
+  const visibleAnnouncementKey = visibleAnnouncements
+    .map((announcement) => announcement.id)
+    .join("|");
 
   const emailParam = searchParams.get("email");
   const inquiryIdParam = searchParams.get("inquiryId");
@@ -394,6 +405,14 @@ export default function ClientPortalPage() {
               id: announcementDoc.id,
               title: data.title,
               body: data.body,
+              startAt:
+                data.startAt instanceof Timestamp
+                  ? data.startAt.toMillis()
+                  : undefined,
+              endAt:
+                data.endAt instanceof Timestamp
+                  ? data.endAt.toMillis()
+                  : undefined,
             };
           })
           .filter(
@@ -403,6 +422,7 @@ export default function ClientPortalPage() {
           )
           .sort((left, right) => left.title.localeCompare(right.title));
         setClientAnnouncements(announcements);
+        setAnnouncementNow(Date.now());
         setAnnouncementIndex(0);
         setAnnouncementProgress(0);
         announcementElapsedRef.current = 0;
@@ -415,7 +435,22 @@ export default function ClientPortalPage() {
   }, [user?.email]);
 
   useEffect(() => {
-    if (!isAnnouncementPlaying || clientAnnouncements.length < 2) return;
+    if (clientAnnouncements.length === 0) return;
+    const intervalId = window.setInterval(
+      () => setAnnouncementNow(Date.now()),
+      1000,
+    );
+    return () => window.clearInterval(intervalId);
+  }, [clientAnnouncements.length]);
+
+  useEffect(() => {
+    setAnnouncementIndex(0);
+    setAnnouncementProgress(0);
+    announcementElapsedRef.current = 0;
+  }, [visibleAnnouncementKey]);
+
+  useEffect(() => {
+    if (!isAnnouncementPlaying || visibleAnnouncements.length < 2) return;
     let lastTick = Date.now();
     const intervalId = window.setInterval(() => {
       const now = Date.now();
@@ -428,7 +463,7 @@ export default function ClientPortalPage() {
       if (transitions > 0) {
         announcementElapsedRef.current %= ANNOUNCEMENT_DURATION_MS;
         setAnnouncementIndex(
-          (current) => (current + transitions) % clientAnnouncements.length,
+          (current) => (current + transitions) % visibleAnnouncements.length,
         );
       }
       setAnnouncementProgress(
@@ -436,7 +471,7 @@ export default function ClientPortalPage() {
       );
     }, 1000);
     return () => window.clearInterval(intervalId);
-  }, [clientAnnouncements.length, isAnnouncementPlaying]);
+  }, [isAnnouncementPlaying, visibleAnnouncements.length]);
 
   // ── UI state ──────────────────────────────────────────────────
   const [showProjectsList, setShowProjectsList] = useState(true);
@@ -7680,7 +7715,7 @@ export default function ClientPortalPage() {
             </div>
           )}
             </div>
-            {clientAnnouncements.length > 0 && (
+            {visibleAnnouncements.length > 0 && (
               <aside
                 aria-label="Client announcements"
                 className="order-1 w-full shrink-0 border-b border-slate-200 p-3 sm:p-4 lg:order-2 lg:w-1/4 lg:min-w-[260px] lg:max-w-[380px] lg:border-b-0 lg:border-l"
@@ -7691,14 +7726,14 @@ export default function ClientPortalPage() {
                   className="sticky top-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60"
                 >
                   <div className="h-1 bg-gradient-to-r from-[#166FB5] via-blue-500 to-indigo-400" />
-                  {clientAnnouncements.length > 1 && (
+                  {visibleAnnouncements.length > 1 && (
                     <div className="px-4 pt-3">
                       <div
                         role="group"
-                        aria-label={`${clientAnnouncements.length} announcements`}
+                        aria-label={`${visibleAnnouncements.length} announcements`}
                         className="flex gap-1.5"
                       >
-                        {clientAnnouncements.map((announcement, index) => (
+                        {visibleAnnouncements.map((announcement, index) => (
                           <div
                             key={announcement.id}
                             className="h-1 flex-1 overflow-hidden rounded-full bg-slate-100"
@@ -7733,7 +7768,7 @@ export default function ClientPortalPage() {
                       </span>
                     </div>
                   </div>
-                  {clientAnnouncements.map((announcement, index) =>
+                  {visibleAnnouncements.map((announcement, index) =>
                     index === announcementIndex ? (
                       <div
                         key={announcement.id}
@@ -7750,7 +7785,7 @@ export default function ClientPortalPage() {
                       </div>
                     ) : null,
                   )}
-                  {clientAnnouncements.length > 1 && (
+                  {visibleAnnouncements.length > 1 && (
                     <div className="flex justify-end border-t border-slate-100 px-5 py-3">
                       <Button
                         type="button"

@@ -347,6 +347,8 @@ const SENDING_INSTITUTIONS = [
   "N/A",
 ] as const;
 
+const ANNOUNCEMENT_DURATION_MS = 15 * 60 * 1000;
+
 export default function ClientPortalPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -358,6 +360,8 @@ export default function ClientPortalPage() {
   }[]>([]);
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [isAnnouncementPlaying, setIsAnnouncementPlaying] = useState(true);
+  const [announcementProgress, setAnnouncementProgress] = useState(0);
+  const announcementElapsedRef = useRef(0);
 
   const emailParam = searchParams.get("email");
   const inquiryIdParam = searchParams.get("inquiryId");
@@ -400,6 +404,8 @@ export default function ClientPortalPage() {
           .sort((left, right) => left.title.localeCompare(right.title));
         setClientAnnouncements(announcements);
         setAnnouncementIndex(0);
+        setAnnouncementProgress(0);
+        announcementElapsedRef.current = 0;
       },
       (error) => {
         console.error("Failed to load client portal announcement:", error);
@@ -410,9 +416,25 @@ export default function ClientPortalPage() {
 
   useEffect(() => {
     if (!isAnnouncementPlaying || clientAnnouncements.length < 2) return;
+    let lastTick = Date.now();
     const intervalId = window.setInterval(() => {
-      setAnnouncementIndex((current) => (current + 1) % clientAnnouncements.length);
-    }, 15 * 60 * 1000);
+      const now = Date.now();
+      announcementElapsedRef.current += now - lastTick;
+      lastTick = now;
+
+      const transitions = Math.floor(
+        announcementElapsedRef.current / ANNOUNCEMENT_DURATION_MS,
+      );
+      if (transitions > 0) {
+        announcementElapsedRef.current %= ANNOUNCEMENT_DURATION_MS;
+        setAnnouncementIndex(
+          (current) => (current + transitions) % clientAnnouncements.length,
+        );
+      }
+      setAnnouncementProgress(
+        (announcementElapsedRef.current / ANNOUNCEMENT_DURATION_MS) * 100,
+      );
+    }, 1000);
     return () => window.clearInterval(intervalId);
   }, [clientAnnouncements.length, isAnnouncementPlaying]);
 
@@ -7669,6 +7691,41 @@ export default function ClientPortalPage() {
                   className="sticky top-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60"
                 >
                   <div className="h-1 bg-gradient-to-r from-[#166FB5] via-blue-500 to-indigo-400" />
+                  {clientAnnouncements.length > 1 && (
+                    <div className="px-4 pt-3">
+                      <div
+                        role="group"
+                        aria-label={`${clientAnnouncements.length} announcements; each displays for 15 minutes`}
+                        className="flex gap-1.5"
+                      >
+                        {clientAnnouncements.map((announcement, index) => (
+                          <div
+                            key={announcement.id}
+                            className="h-1 flex-1 overflow-hidden rounded-full bg-slate-100"
+                            aria-hidden="true"
+                          >
+                            <div
+                              className={`h-full rounded-full ${
+                                index < announcementIndex
+                                  ? "w-full bg-blue-500"
+                                  : index === announcementIndex
+                                    ? "bg-gradient-to-r from-[#166FB5] to-indigo-500 transition-[width] duration-1000 ease-linear"
+                                    : "w-0"
+                              }`}
+                              style={
+                                index === announcementIndex
+                                  ? { width: `${announcementProgress}%` }
+                                  : undefined
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-1.5 text-right text-[10px] font-medium text-slate-400">
+                        {clientAnnouncements.length} announcements · 15 min each
+                      </p>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
                     <div className="flex min-w-0 items-center gap-2.5">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#166FB5]">

@@ -255,6 +255,33 @@ service cloud.firestore {
         );
     }
 
+    match /clientAnnouncements/{announcementId} {
+      allow get: if isAdmin()
+        || (
+          announcementId == 'sequencingServiceDeadlines2026'
+          && isSignedIn()
+          && userEmail() == 'dayonmerlitojr@gmail.com'
+        );
+      allow list: if isAdmin();
+      allow create, update: if isAdmin()
+        && announcementId == 'sequencingServiceDeadlines2026'
+        && request.resource.data.keys().hasOnly([
+          'title', 'body', 'isActive', 'targetEmail', 'updatedAt', 'updatedBy'
+        ])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 160
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 4000
+        && request.resource.data.isActive is bool
+        && request.resource.data.targetEmail == 'dayonmerlitojr@gmail.com'
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedBy == userEmail();
+      allow delete: if isAdmin()
+        && announcementId == 'sequencingServiceDeadlines2026';
+    }
+
     match /officeCalendar/{eventId} {
       allow read: if isSignedIn();
       allow create: if isAdmin()

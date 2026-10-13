@@ -152,6 +152,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import {
+  CLIENT_ANNOUNCEMENT_ID,
+  CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
+  DEFAULT_CLIENT_ANNOUNCEMENT,
+} from "@/constants/clientAnnouncement";
 import ClientConformeModal from "@/components/forms/ClientConformeModal";
 import UploadReceipt from "@/components/client/UploadReceipt";
 import DownloadForms from "@/components/client/DownloadForms";
@@ -345,11 +350,48 @@ export default function ClientPortalPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const [clientAnnouncement, setClientAnnouncement] = useState<{
+    title: string;
+    body: string;
+  } | null>(null);
 
   const emailParam = searchParams.get("email");
   const inquiryIdParam = searchParams.get("inquiryId");
   const pidParam = searchParams.get("pid");
   const projectRequestIdParam = searchParams.get("projectRequestId");
+
+  useEffect(() => {
+    if (
+      user?.email?.trim().toLowerCase() !== CLIENT_ANNOUNCEMENT_TARGET_EMAIL
+    ) {
+      setClientAnnouncement(null);
+      return;
+    }
+
+    return onSnapshot(
+      doc(db, "clientAnnouncements", CLIENT_ANNOUNCEMENT_ID),
+      (snapshot) => {
+        const announcement = snapshot.data();
+        if (!snapshot.exists()) {
+          setClientAnnouncement(DEFAULT_CLIENT_ANNOUNCEMENT);
+        } else if (
+          announcement?.isActive === true &&
+          typeof announcement.title === "string" &&
+          typeof announcement.body === "string"
+        ) {
+          setClientAnnouncement({
+            title: announcement.title,
+            body: announcement.body,
+          });
+        } else {
+          setClientAnnouncement(null);
+        }
+      },
+      (error) => {
+        console.error("Failed to load client portal announcement:", error);
+      },
+    );
+  }, [user?.email]);
 
   // ── UI state ──────────────────────────────────────────────────
   const [showProjectsList, setShowProjectsList] = useState(true);
@@ -4457,6 +4499,29 @@ export default function ClientPortalPage() {
 
         {/* ═════ RIGHT CONTENT ═════ */}
         <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50/50 to-blue-50/30">
+          {clientAnnouncement && (
+            <section
+              aria-labelledby="client-announcement-title"
+              className="mx-3 mt-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 shadow-sm lg:mx-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-blue-100 p-2 text-[#166FB5]">
+                  <Info className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <h2
+                    id="client-announcement-title"
+                    className="text-sm font-bold tracking-wide text-blue-950"
+                  >
+                    {clientAnnouncement.title}
+                  </h2>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                    {clientAnnouncement.body}
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
           {projectDetails ? (
             <div className="p-3 lg:p-4 max-w-5xl mx-auto space-y-3">
               {/* Draft/Pending/Approved status banner */}

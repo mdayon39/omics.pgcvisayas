@@ -50,6 +50,7 @@ const ROUTE_MODULE_MAP: Record<string, keyof RolePermissions> = {
   "/admin/services": "serviceCatalog",
   "/admin/catalog-settings": "catalogSettings",
   "/admin/configurations": "configurations",
+  "/admin/announcements": "configurations",
   "/admin/office-calendar": "officeCalendar",
   "/admin/member-approvals": "memberApprovals",
   "/admin/roles": "roleManagement",
@@ -63,7 +64,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut, adminInfo } = useAuth();
-  const { canView, loading: permissionsLoading } = usePermissions(
+  const { canView, canEdit, loading: permissionsLoading } = usePermissions(
     adminInfo?.role,
   );
   const { openTab, activeTab, isTabOpen, setActiveTab } = useTabContext();
@@ -172,6 +173,11 @@ export function AdminSidebar() {
           icon: Sliders,
         },
         {
+          href: "/admin/announcements",
+          label: "Client Announcement",
+          icon: Bell,
+        },
+        {
           href: "/admin/office-calendar",
           label: "Office Calendar",
           icon: CalendarDays,
@@ -216,7 +222,12 @@ export function AdminSidebar() {
       ...section,
       items: section.items.filter((item) => {
         const routeModule = ROUTE_MODULE_MAP[item.href];
-        return routeModule && canView(routeModule);
+        return (
+          routeModule &&
+          canView(routeModule) &&
+          (item.href !== "/admin/announcements" ||
+            canEdit("configurations"))
+        );
       }),
     }))
     .filter((section) => section.items.length > 0); // Hide empty sections

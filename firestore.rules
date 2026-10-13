@@ -259,8 +259,11 @@ service cloud.firestore {
       allow get, list: if isAdmin()
         || (
           isSignedIn()
-          && userEmail() == 'dayonmerlitojr@gmail.com'
-          && resource.data.targetEmail == userEmail()
+          && userEmail() in [
+            'dayonmerlitojr@gmail.com',
+            'carmjavier@gmail.com'
+          ]
+          && resource.data.targetEmail == 'dayonmerlitojr@gmail.com'
         );
       allow create: if isAdmin()
         && request.resource.data.keys().hasOnly([

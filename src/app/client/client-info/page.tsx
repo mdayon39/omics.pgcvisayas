@@ -156,6 +156,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
+  CLIENT_ANNOUNCEMENT_VIEWER_EMAILS,
 } from "@/constants/clientAnnouncement";
 import ClientConformeModal from "@/components/forms/ClientConformeModal";
 import UploadReceipt from "@/components/client/UploadReceipt";
@@ -364,8 +365,12 @@ export default function ClientPortalPage() {
   const projectRequestIdParam = searchParams.get("projectRequestId");
 
   useEffect(() => {
+    const viewerEmail = user?.email?.trim().toLowerCase();
     if (
-      user?.email?.trim().toLowerCase() !== CLIENT_ANNOUNCEMENT_TARGET_EMAIL
+      !viewerEmail ||
+      !CLIENT_ANNOUNCEMENT_VIEWER_EMAILS.some(
+        (allowedEmail) => allowedEmail === viewerEmail,
+      )
     ) {
       setClientAnnouncements([]);
       return;

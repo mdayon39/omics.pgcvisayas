@@ -41,6 +41,7 @@ import { PermissionGuard } from "@/components/PermissionGuard";
 import {
   CLIENT_ANNOUNCEMENT_ID,
   CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
+  CLIENT_ANNOUNCEMENT_VIEWER_EMAILS,
   DEFAULT_CLIENT_ANNOUNCEMENT,
 } from "@/constants/clientAnnouncement";
 import useAuth from "@/hooks/useAuth";
@@ -262,7 +263,8 @@ function ClientAnnouncementContent() {
             </h1>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Manage portal announcements for {CLIENT_ANNOUNCEMENT_TARGET_EMAIL}.
+            Manage portal announcements for{" "}
+            {CLIENT_ANNOUNCEMENT_VIEWER_EMAILS.join(" and ")}.
           </p>
         </div>
         <Button
@@ -274,7 +276,13 @@ function ClientAnnouncementContent() {
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      <div
+        className={`grid gap-6 ${
+          editorOpen
+            ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]"
+            : "grid-cols-1"
+        }`}
+      >
         <Card>
           <CardHeader>
             <CardTitle>Announcements</CardTitle>
@@ -351,115 +359,95 @@ function ClientAnnouncementContent() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {editingId ? "Edit announcement" : "Create announcement"}
-            </CardTitle>
-            <CardDescription>
-              Only {CLIENT_ANNOUNCEMENT_TARGET_EMAIL} can view these
-              announcements.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {editorOpen ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="announcement-title">Title</Label>
-                  <Input
-                    id="announcement-title"
-                    value={title}
-                    onChange={(event) => setTitle(event.target.value)}
-                    maxLength={160}
-                    disabled={loading || saving}
-                  />
-                </div>
+        {editorOpen && (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {editingId ? "Edit announcement" : "Create announcement"}
+              </CardTitle>
+              <CardDescription>
+                Only {CLIENT_ANNOUNCEMENT_VIEWER_EMAILS.join(" and ")} can view
+                these announcements.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="announcement-title">Title</Label>
+                <Input
+                  id="announcement-title"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  maxLength={160}
+                  disabled={loading || saving}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="announcement-body">Message</Label>
-                  <Textarea
-                    id="announcement-body"
-                    value={body}
-                    onChange={(event) => setBody(event.target.value)}
-                    maxLength={4000}
-                    rows={11}
-                    className="min-h-64"
-                    disabled={loading || saving}
-                  />
-                  <p className="text-xs text-slate-500">
-                    Line breaks are preserved in the client carousel.
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-slate-800">
-                      Show in client portal
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {isActive ? "Enabled" : "Disabled"}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={isActive}
-                    onCheckedChange={setIsActive}
-                    disabled={loading || saving}
-                    aria-label="Enable announcement in client portal"
-                  />
-                </div>
-
-                <div className="flex items-start gap-2 rounded-md bg-blue-50 p-3 text-sm text-blue-900">
-                  <Info
-                    className="mt-0.5 h-4 w-4 shrink-0"
-                    aria-hidden="true"
-                  />
-                  <p>
-                    Changes to enabled announcements appear in the client
-                    portal carousel immediately after saving.
-                  </p>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={cancelEditing}
-                    disabled={saving}
-                  >
-                    <X className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={saveAnnouncement}
-                    disabled={loading || saving}
-                    className="bg-[#166FB5] hover:bg-[#125d99]"
-                  >
-                    <Save className="mr-2 h-4 w-4" aria-hidden="true" />
-                    {saving ? "Saving..." : "Save announcement"}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="rounded-lg border border-dashed p-6 text-center">
-                <p className="text-sm text-slate-500">
-                  Select an announcement to edit or create a new one.
+              <div className="space-y-2">
+                <Label htmlFor="announcement-body">Message</Label>
+                <Textarea
+                  id="announcement-body"
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  maxLength={4000}
+                  rows={11}
+                  className="min-h-64"
+                  disabled={loading || saving}
+                />
+                <p className="text-xs text-slate-500">
+                  Line breaks are preserved in the client carousel.
                 </p>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-slate-800">
+                    Show in client portal
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {isActive ? "Enabled" : "Disabled"}
+                  </p>
+                </div>
+                <Switch
+                  checked={isActive}
+                  onCheckedChange={setIsActive}
+                  disabled={loading || saving}
+                  aria-label="Enable announcement in client portal"
+                />
+              </div>
+
+              <div className="flex items-start gap-2 rounded-md bg-blue-50 p-3 text-sm text-blue-900">
+                <Info
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <p>
+                  Changes to enabled announcements appear in the client portal
+                  carousel immediately after saving.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2">
                 <Button
-                  className="mt-4 bg-[#166FB5] hover:bg-[#125d99]"
-                  onClick={() => {
-                    setTitle(DEFAULT_CLIENT_ANNOUNCEMENT.title);
-                    setBody(DEFAULT_CLIENT_ANNOUNCEMENT.body);
-                    setIsActive(true);
-                    setEditingId(null);
-                    setEditorOpen(true);
-                  }}
+                  type="button"
+                  variant="outline"
+                  onClick={cancelEditing}
+                  disabled={saving}
                 >
-                  Use sequencing-deadline example
+                  <X className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={saveAnnouncement}
+                  disabled={loading || saving}
+                  className="bg-[#166FB5] hover:bg-[#125d99]"
+                >
+                  <Save className="mr-2 h-4 w-4" aria-hidden="true" />
+                  {saving ? "Saving..." : "Save announcement"}
                 </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
       <AlertDialog
         open={announcementToDelete !== null}

@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTabContext } from "@/contexts/TabContext";
 import type { RolePermissions } from "@/types/Permissions";
+import { CLIENT_ANNOUNCEMENT_ADMIN_EMAILS } from "@/constants/clientAnnouncement";
 
 // Map routes to permission modules
 const ROUTE_MODULE_MAP: Record<string, keyof RolePermissions> = {
@@ -224,9 +225,12 @@ export function AdminSidebar() {
         const routeModule = ROUTE_MODULE_MAP[item.href];
         return (
           routeModule &&
-          canView(routeModule) &&
-          (item.href !== "/admin/announcements" ||
-            canEdit("configurations"))
+          (item.href === "/admin/announcements"
+            ? canEdit("configurations") ||
+              CLIENT_ANNOUNCEMENT_ADMIN_EMAILS.some(
+                (email) => email === adminInfo?.email?.trim().toLowerCase(),
+              )
+            : canView(routeModule))
         );
       }),
     }))

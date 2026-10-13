@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import {
+  CLIENT_ANNOUNCEMENT_ADMIN_EMAILS,
   CLIENT_ANNOUNCEMENT_ID,
   CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
   CLIENT_ANNOUNCEMENT_VIEWER_EMAILS,
@@ -58,6 +59,15 @@ interface ClientAnnouncement {
 const ANNOUNCEMENTS_REF = collection(db, "clientAnnouncements");
 
 export default function ClientAnnouncementPage() {
+  const { adminInfo } = useAuth();
+  const isAnnouncementAdmin = CLIENT_ANNOUNCEMENT_ADMIN_EMAILS.some(
+    (email) => email === adminInfo?.email?.trim().toLowerCase(),
+  );
+
+  if (isAnnouncementAdmin) {
+    return <ClientAnnouncementContent />;
+  }
+
   return (
     <PermissionGuard module="configurations" action="edit">
       <ClientAnnouncementContent />

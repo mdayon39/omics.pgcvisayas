@@ -4,6 +4,7 @@ export const CLIENT_ANNOUNCEMENT_VIEWER_EMAILS = [
   CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
   "carmjavier@gmail.com",
 ] as const;
+export const CLIENT_ANNOUNCEMENT_ADMIN_EMAILS = ["mfjavier@up.edu.ph"] as const;
 
 export const DEFAULT_CLIENT_ANNOUNCEMENT = {
   title: "ANNOUNCEMENT: 2026 SEQUENCING SERVICE DEADLINES",

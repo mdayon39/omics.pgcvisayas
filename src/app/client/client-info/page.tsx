@@ -7735,7 +7735,31 @@ export default function ClientPortalPage() {
                         Announcements
                       </span>
                     </div>
-                    {clientAnnouncements.length > 1 && (
+                  </div>
+                  {clientAnnouncements.map((announcement, index) =>
+                    index === announcementIndex ? (
+                      <div
+                        key={announcement.id}
+                        aria-live={isAnnouncementPlaying ? "off" : "polite"}
+                        aria-atomic="true"
+                        className="px-5 py-5"
+                      >
+                        <h2 className="break-words text-base font-semibold leading-snug tracking-tight text-slate-900">
+                          {announcement.title}
+                        </h2>
+                        <p className="mt-3 max-h-[50vh] overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                          {announcement.body}
+                        </p>
+                      </div>
+                    ) : null,
+                  )}
+                  {clientAnnouncements.length > 1 && (
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3">
+                      <p className="text-[11px] font-medium text-slate-400">
+                        {isAnnouncementPlaying
+                          ? "Updates rotate automatically"
+                          : "Rotation paused"}
+                      </p>
                       <Button
                         type="button"
                         variant="ghost"
@@ -7762,32 +7786,6 @@ export default function ClientPortalPage() {
                           <Play className="h-4 w-4" aria-hidden="true" />
                         )}
                       </Button>
-                    )}
-                  </div>
-                  {clientAnnouncements.map((announcement, index) =>
-                    index === announcementIndex ? (
-                      <div
-                        key={announcement.id}
-                        aria-live={isAnnouncementPlaying ? "off" : "polite"}
-                        aria-atomic="true"
-                        className="px-5 py-5"
-                      >
-                        <h2 className="break-words text-base font-semibold leading-snug tracking-tight text-slate-900">
-                          {announcement.title}
-                        </h2>
-                        <p className="mt-3 max-h-[50vh] overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-slate-600">
-                          {announcement.body}
-                        </p>
-                      </div>
-                    ) : null,
-                  )}
-                  {clientAnnouncements.length > 1 && (
-                    <div className="border-t border-slate-100 px-5 py-3">
-                      <p className="text-[11px] font-medium text-slate-400">
-                        {isAnnouncementPlaying
-                          ? "Updates rotate automatically"
-                          : "Rotation paused"}
-                      </p>
                     </div>
                   )}
                 </section>

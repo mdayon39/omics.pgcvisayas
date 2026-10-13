@@ -138,6 +138,8 @@ import {
   Key,
   Info,
   ChevronLeft,
+  Pause,
+  Play,
   Mail,
   Smartphone,
   MapPin,
@@ -355,6 +357,7 @@ export default function ClientPortalPage() {
     body: string;
   }[]>([]);
   const [announcementIndex, setAnnouncementIndex] = useState(0);
+  const [isAnnouncementPlaying, setIsAnnouncementPlaying] = useState(true);
 
   const emailParam = searchParams.get("email");
   const inquiryIdParam = searchParams.get("inquiryId");
@@ -400,6 +403,14 @@ export default function ClientPortalPage() {
       },
     );
   }, [user?.email]);
+
+  useEffect(() => {
+    if (!isAnnouncementPlaying || clientAnnouncements.length < 2) return;
+    const intervalId = window.setInterval(() => {
+      setAnnouncementIndex((current) => (current + 1) % clientAnnouncements.length);
+    }, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [clientAnnouncements.length, isAnnouncementPlaying]);
 
   // ── UI state ──────────────────────────────────────────────────
   const [showProjectsList, setShowProjectsList] = useState(true);
@@ -7663,7 +7674,7 @@ export default function ClientPortalPage() {
                     index === announcementIndex ? (
                       <div
                         key={announcement.id}
-                        aria-live="polite"
+                        aria-live={isAnnouncementPlaying ? "off" : "polite"}
                         aria-atomic="true"
                       >
                         <h2 className="break-words text-sm font-bold leading-snug text-blue-950">
@@ -7698,6 +7709,32 @@ export default function ClientPortalPage() {
                       >
                         {announcementIndex + 1} / {clientAnnouncements.length}
                       </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 border-blue-200 bg-white/70"
+                        onClick={() =>
+                          setIsAnnouncementPlaying((playing) => !playing)
+                        }
+                        aria-label={
+                          isAnnouncementPlaying
+                            ? "Pause announcements"
+                            : "Play announcements"
+                        }
+                        aria-pressed={isAnnouncementPlaying}
+                        title={
+                          isAnnouncementPlaying
+                            ? "Pause announcements"
+                            : "Play announcements"
+                        }
+                      >
+                        {isAnnouncementPlaying ? (
+                          <Pause className="h-4 w-4" aria-hidden="true" />
+                        ) : (
+                          <Play className="h-4 w-4" aria-hidden="true" />
+                        )}
+                      </Button>
                       <Button
                         type="button"
                         variant="outline"

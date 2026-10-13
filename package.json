@@ -12,6 +12,8 @@
     "start": "next start",
     "lint": "next lint",
     "backup": "node scripts/firestore-backup.js",
+    "backup:storage": "node scripts/firebase-storage-backup.js",
+    "storage:size": "node scripts/firebase-storage-backup.js --size-only",
     "backfill-owner-uids": "node scripts/backfill-owner-uids.cjs",
     "backfill-project-uuids": "node scripts/backfill-project-uuids.cjs",
     "restore": "node scripts/firestore-restore.js",

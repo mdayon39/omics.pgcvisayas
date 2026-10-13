@@ -59,6 +59,31 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 This application includes three comprehensive backup methods:
 
+### Download Firebase Storage files
+
+To download all objects from the Firebase Storage bucket to your computer, run:
+
+```bash
+npm run backup:storage
+```
+
+To check the total object count and stored size without downloading files, run:
+
+```bash
+npm run storage:size
+```
+
+The files are saved under `backups/firebase-storage-backup-<timestamp>/`, with
+their Storage folder structure preserved. The script also writes a
+`backup-metadata.json` file. Backups are excluded from Git.
+
+The command uses the Firebase Admin service account from
+`scripts/serviceAccountKey.json`, `FIREBASE_SERVICE_ACCOUNT`, or
+`GOOGLE_APPLICATION_CREDENTIALS`. Set `FIREBASE_STORAGE_BUCKET` or
+`NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` to the bucket name shown in Firebase
+Console. The service account must have permission to list and read objects in
+that bucket.
+
 ### 1. Download Backup to Your Computer ⬇️
 - **Best for:** Individual users wanting local backups
 - **Works on:** Any browser, any device (desktop, laptop, mobile)

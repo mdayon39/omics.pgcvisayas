@@ -408,7 +408,7 @@ export default function ClientPortalPage() {
     if (!isAnnouncementPlaying || clientAnnouncements.length < 2) return;
     const intervalId = window.setInterval(() => {
       setAnnouncementIndex((current) => (current + 1) % clientAnnouncements.length);
-    }, 5000);
+    }, 15 * 60 * 1000);
     return () => window.clearInterval(intervalId);
   }, [clientAnnouncements.length, isAnnouncementPlaying]);
 

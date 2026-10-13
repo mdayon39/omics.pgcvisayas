@@ -137,7 +137,6 @@ import {
   Settings,
   Key,
   Info,
-  ChevronLeft,
   Pause,
   Play,
   Mail,
@@ -7662,58 +7661,24 @@ export default function ClientPortalPage() {
                 <section
                   aria-roledescription="carousel"
                   aria-label="Announcements"
-                  className="sticky top-3 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-sm"
+                  className="sticky top-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60"
                 >
-                  <div className="mb-3 flex items-center gap-2 text-[#166FB5]">
-                    <Info className="h-5 w-5 shrink-0" aria-hidden="true" />
-                    <span className="text-xs font-semibold uppercase tracking-wider">
-                      Announcement
-                    </span>
-                  </div>
-                  {clientAnnouncements.map((announcement, index) =>
-                    index === announcementIndex ? (
-                      <div
-                        key={announcement.id}
-                        aria-live={isAnnouncementPlaying ? "off" : "polite"}
-                        aria-atomic="true"
-                      >
-                        <h2 className="break-words text-sm font-bold leading-snug text-blue-950">
-                          {announcement.title}
-                        </h2>
-                        <p className="mt-3 max-h-[50vh] overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                          {announcement.body}
-                        </p>
-                      </div>
-                    ) : null,
-                  )}
-                  {clientAnnouncements.length > 1 && (
-                    <div className="mt-4 flex items-center justify-between border-t border-blue-200 pt-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 border-blue-200 bg-white/70"
-                        onClick={() =>
-                          setAnnouncementIndex(
-                            (announcementIndex - 1 + clientAnnouncements.length) %
-                              clientAnnouncements.length,
-                          )
-                        }
-                        aria-label="Previous announcement"
-                      >
-                        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                      </Button>
-                      <span
-                        className="text-xs tabular-nums text-slate-600"
-                        aria-label={`Announcement ${announcementIndex + 1} of ${clientAnnouncements.length}`}
-                      >
-                        {announcementIndex + 1} / {clientAnnouncements.length}
+                  <div className="h-1 bg-gradient-to-r from-[#166FB5] via-blue-500 to-indigo-400" />
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#166FB5]">
+                        <Info className="h-4 w-4" aria-hidden="true" />
                       </span>
+                      <span className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        Announcements
+                      </span>
+                    </div>
+                    {clientAnnouncements.length > 1 && (
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
-                        className="h-8 w-8 border-blue-200 bg-white/70"
+                        className="h-8 w-8 shrink-0 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                         onClick={() =>
                           setIsAnnouncementPlaying((playing) => !playing)
                         }
@@ -7735,20 +7700,32 @@ export default function ClientPortalPage() {
                           <Play className="h-4 w-4" aria-hidden="true" />
                         )}
                       </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 border-blue-200 bg-white/70"
-                        onClick={() =>
-                          setAnnouncementIndex(
-                            (announcementIndex + 1) % clientAnnouncements.length,
-                          )
-                        }
-                        aria-label="Next announcement"
+                    )}
+                  </div>
+                  {clientAnnouncements.map((announcement, index) =>
+                    index === announcementIndex ? (
+                      <div
+                        key={announcement.id}
+                        aria-live={isAnnouncementPlaying ? "off" : "polite"}
+                        aria-atomic="true"
+                        className="px-5 py-5"
                       >
-                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                      </Button>
+                        <h2 className="break-words text-base font-semibold leading-snug tracking-tight text-slate-900">
+                          {announcement.title}
+                        </h2>
+                        <p className="mt-3 max-h-[50vh] overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                          {announcement.body}
+                        </p>
+                      </div>
+                    ) : null,
+                  )}
+                  {clientAnnouncements.length > 1 && (
+                    <div className="border-t border-slate-100 px-5 py-3">
+                      <p className="text-[11px] font-medium text-slate-400">
+                        {isAnnouncementPlaying
+                          ? "Updates rotate automatically"
+                          : "Rotation paused"}
+                      </p>
                     </div>
                   )}
                 </section>

@@ -7751,12 +7751,7 @@ export default function ClientPortalPage() {
                     ) : null,
                   )}
                   {clientAnnouncements.length > 1 && (
-                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3">
-                      <p className="text-[11px] font-medium text-slate-400">
-                        {isAnnouncementPlaying
-                          ? "Updates rotate automatically"
-                          : "Rotation paused"}
-                      </p>
+                    <div className="flex justify-end border-t border-slate-100 px-5 py-3">
                       <Button
                         type="button"
                         variant="ghost"

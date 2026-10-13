@@ -347,7 +347,7 @@ const SENDING_INSTITUTIONS = [
   "N/A",
 ] as const;
 
-const ANNOUNCEMENT_DURATION_MS = 15 * 60 * 1000;
+const ANNOUNCEMENT_DURATION_MS = 15 * 1000;
 
 export default function ClientPortalPage() {
   const searchParams = useSearchParams();
@@ -7695,7 +7695,7 @@ export default function ClientPortalPage() {
                     <div className="px-4 pt-3">
                       <div
                         role="group"
-                        aria-label={`${clientAnnouncements.length} announcements; each displays for 15 minutes`}
+                        aria-label={`${clientAnnouncements.length} announcements`}
                         className="flex gap-1.5"
                       >
                         {clientAnnouncements.map((announcement, index) => (
@@ -7721,9 +7721,6 @@ export default function ClientPortalPage() {
                           </div>
                         ))}
                       </div>
-                      <p className="mt-1.5 text-right text-[10px] font-medium text-slate-400">
-                        {clientAnnouncements.length} announcements · 15 min each
-                      </p>
                     </div>
                   )}
                   <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">

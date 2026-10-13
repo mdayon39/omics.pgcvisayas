@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 
 const projectRoot = path.join(__dirname, "..");
+const BACKUP_RETENTION_DAYS = 30;
 dotenv.config({ path: path.join(projectRoot, ".env.local") });
 dotenv.config({ path: path.join(projectRoot, ".env"), override: false });
 
@@ -90,6 +91,53 @@ function formatBytes(bytes) {
     units.length - 1,
   );
   return `${(bytes / 1024 ** unitIndex).toFixed(2)} ${units[unitIndex]}`;
+}
+
+function cleanupExpiredBackups(currentBackupPath) {
+  const backupsRoot = path.join(projectRoot, "backups");
+  const cutoff = Date.now() - BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  let removedCount = 0;
+
+  for (const entry of fs.readdirSync(backupsRoot, { withFileTypes: true })) {
+    if (
+      !entry.isDirectory() ||
+      !entry.name.startsWith("firebase-storage-backup-")
+    ) {
+      continue;
+    }
+
+    const backupPath = path.resolve(backupsRoot, entry.name);
+    if (backupPath === currentBackupPath) continue;
+
+    const metadataPath = path.join(backupPath, "backup-metadata.json");
+    if (!fs.existsSync(metadataPath)) continue;
+
+    try {
+      const metadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+      if (
+        metadata.backupType !== "firebase-storage" ||
+        typeof metadata.timestamp !== "string"
+      ) {
+        continue;
+      }
+
+      const backupTime = Date.parse(metadata.timestamp);
+      if (Number.isNaN(backupTime) || backupTime >= cutoff) continue;
+
+      fs.rmSync(backupPath, { recursive: true, force: false });
+      removedCount += 1;
+      console.log(`Removed expired Storage backup: ${entry.name}`);
+    } catch (error) {
+      console.error(
+        `Could not clean up Storage backup ${entry.name}:`,
+        error.message,
+      );
+    }
+  }
+
+  console.log(
+    `Retention cleanup removed ${removedCount} Storage backup(s) older than ${BACKUP_RETENTION_DAYS} days.`,
+  );
 }
 
 async function downloadStorageBackup() {
@@ -178,6 +226,7 @@ async function downloadStorageBackup() {
     `Storage download complete: ${objects.length} file(s), ${totalBytes} bytes.`,
   );
   console.log(`Local backup: ${backupPath}`);
+  cleanupExpiredBackups(backupPath);
 }
 
 downloadStorageBackup().catch((error) => {

@@ -73,6 +73,37 @@ To check the total object count and stored size without downloading files, run:
 npm run storage:size
 ```
 
+To schedule an automatic local download on Windows, open PowerShell in the
+repository folder and run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-firebase-storage-backup-task.ps1
+```
+
+The scheduled task runs every Monday, Wednesday, and Friday at 9:00 AM (or the
+next available scheduled day if today's run time has passed). It runs while the
+Windows account is logged in; Task Scheduler starts a missed run when possible. Each successful backup
+removes only valid Firebase Storage backup folders older than 30 days. The
+latest run log is `backups/firebase-storage-backup-task.log`. To remove the
+schedule, run
+`Unregister-ScheduledTask -TaskName "PGC Firebase Storage Backup" -Confirm:$false`.
+
+### Schedule Firestore collections backup on Windows
+
+To back up Firestore collections locally every day at 11:00 AM, run this from
+PowerShell in the repository folder:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-firestore-collections-backup-task.ps1
+```
+
+The task uses `scripts/serviceAccountKey.json`, retains Firestore collection
+backups for 30 days, and removes older collection backup folders after each
+successful daily backup. It runs while this Windows account is logged in and
+starts missed runs when possible. Its log is
+`backups/firestore-collections-backup-task.log`. To remove the schedule, run
+`Unregister-ScheduledTask -TaskName "PGC Firestore Collections Backup" -Confirm:$false`.
+
 The files are saved under `backups/firebase-storage-backup-<timestamp>/`, with
 their Storage folder structure preserved. The script also writes a
 `backup-metadata.json` file. Backups are excluded from Git.

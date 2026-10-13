@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const RETENTION_DAYS = 7; // Keep backups for 7 days
+const RETENTION_DAYS = 30; // Keep Firestore collection backups for 30 days
 
 function cleanupOldBackups() {
   const backupsDir = path.join(__dirname, '..', 'backups');

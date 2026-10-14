@@ -4,9 +4,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { addDoc, collection } from "firebase/firestore";
 import { pdf } from "@react-pdf/renderer";
 import { toast } from "sonner";
 
+import { db } from "@/lib/firebase";
+import { createQuotationAvailabilityEmail } from "@/lib/quotationEmail";
 import { calculateItemTotal } from "@/lib/calculatePrice";
 import { sanitizeObject } from "@/lib/sanitizeObject";
 import { getServiceCatalog } from "@/services/serviceCatalogService";
@@ -313,6 +316,40 @@ export default function QuotationBuilder({
         throw new Error(result.error || "Failed to save quotation");
       }
 
+      let emailQueued = result.emailQueued;
+      let emailError = result.emailError;
+      if (!emailQueued && clientInfo.email.trim()) {
+        try {
+          await addDoc(collection(db, "mail"), {
+            to: [clientInfo.email.trim().toLowerCase()],
+            ...(quotationRecord.inquiryId
+              ? { inquiryId: quotationRecord.inquiryId }
+              : {}),
+            message: createQuotationAvailabilityEmail(
+              clientInfo.name || "Client",
+            ),
+          });
+          emailQueued = true;
+          emailError = undefined;
+          console.info(
+            `Quotation notification email queued for ${clientInfo.email}`,
+          );
+        } catch (error) {
+          console.error(
+            `Could not queue quotation notification from the admin client for ${clientInfo.email}:`,
+            error,
+          );
+          const code =
+            typeof error === "object" &&
+            error !== null &&
+            "code" in error &&
+            typeof error.code === "string"
+              ? error.code
+              : "unknown";
+          emailError = `Email queue fallback failed (${code}). Check that your admin account can create mail records.`;
+        }
+      }
+
       // Invalidate both potential query keys used in QuotationHistoryPanel
       const normalizedInquiryId = effectiveInquiryId.trim().toUpperCase();
       queryClient.invalidateQueries({ queryKey: ["quotationHistory", "inquiry", normalizedInquiryId] });
@@ -321,11 +358,13 @@ export default function QuotationBuilder({
       }
 
       toast.success("Quotation saved successfully!");
-      if (!result.emailQueued) {
+      if (!emailQueued) {
         toast.error(
-          result.emailError ||
+          emailError ||
             "Quotation saved, but the client notification email was not queued.",
         );
+      } else if (!result.emailQueued) {
+        toast.success("Client notification email queued.");
       }
       setOpenPreview(false);
     } catch (error) {

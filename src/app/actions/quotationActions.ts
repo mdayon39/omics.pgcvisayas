@@ -9,12 +9,23 @@ import { updateInquiryStatus, getInquiryById } from "@/services/inquiryService";
 import { QuotationRecord } from "@/types/Quotation";
 import { logActivity } from "@/services/activityLogService";
 import { sanitizeObject } from "@/lib/sanitizeObject";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { adminDb } from "@/lib/firebase-admin";
 
 function normalizeEmail(value?: string | null): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character];
+  });
 }
 
 async function resolveUidFromUsersByEmail(
@@ -58,39 +69,49 @@ export async function saveQuotationAction(
     const cleanedQuotation = sanitizeObject(quotation) as QuotationRecord;
     await saveQuotationToFirestore(cleanedQuotation);
 
-    // Automatically update inquiry status from "Pending" to "Ongoing Quotation"
+    let inquiry: Awaited<ReturnType<typeof getInquiryById>> | null = null;
     if (quotation.inquiryId) {
       try {
         await updateInquiryStatus(quotation.inquiryId, "Ongoing Quotation");
+      } catch (statusError) {
+        console.warn(
+          `Could not update inquiry ${quotation.inquiryId} status:`,
+          statusError,
+        );
+      }
 
-        // Send email to client about quotation availability
-        const inquiry = await getInquiryById(quotation.inquiryId);
-        let resolvedUid: string | null = null;
+      try {
+        inquiry = await getInquiryById(quotation.inquiryId);
+      } catch (inquiryError) {
+        console.warn(
+          `Could not load inquiry ${quotation.inquiryId} for quotation notification:`,
+          inquiryError,
+        );
+      }
+    }
 
-        // Keep inquiry ownership in sync during quotation send by deriving
-        // uuid from users.email -> users.uid using inquiry email.
-        if (adminDb && inquiry?.email) {
-          resolvedUid = await resolveUidFromUsersByEmail(inquiry.email);
-          if (resolvedUid) {
-            await adminDb
-              .collection("inquiries")
-              .doc(quotation.inquiryId)
-              .set({ uuid: resolvedUid }, { merge: true });
-          }
-        }
+    const recipientEmail =
+      normalizeEmail(quotation.email) || normalizeEmail(inquiry?.email);
+    let emailQueued = false;
+    let emailError: string | undefined;
 
-        if (inquiry && inquiry.email) {
-          const notificationUuid =
-            resolvedUid ||
-            inquiry.uuid ||
-            (await resolveUidFromUsersByEmail(inquiry.email));
-          const mailCollection = collection(db, "mail");
-
-          const clientEmailHtml = `
+    if (!recipientEmail) {
+      emailError =
+        "Quotation saved, but no client email address was available for the notification.";
+    } else if (!adminDb) {
+      console.error(
+        "Quotation was saved, but Firebase Admin is unavailable; notification email was not queued.",
+      );
+      emailError =
+        "Quotation saved, but the notification email could not be queued. Please contact support.";
+    } else {
+      const clientName = quotation.name || inquiry?.name || "Client";
+      const escapedClientName = escapeHtml(clientName);
+      const clientEmailHtml = `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; color: #334155; line-height: 1.6;">
               <div style="background-color: #f1f5f9; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
                 <h2 style="color: #1e3a8a; margin-top: 0;">Quotation Available - PGC Visayas</h2>
-                <p>Dear ${inquiry.name},</p>
+                <p>Dear ${escapedClientName},</p>
                 <p>Your quotation is now available in your client portal. <strong>Please note that the quotation does not include re-runs for unsuccessful samples.</strong> Make sure to read our <a href="https://omics.pgcvisayas.upv.edu.ph/faqs" style="color: #1e3a8a; font-weight: 600; text-decoration: underline;">FAQs</a> for details about turnaround time, sample submission, and payment details.</p>
                 
                 <div style="background-color: #ffffff; padding: 15px; border-radius: 6px; border-left: 4px solid #1e3a8a; margin: 15px 0;">
@@ -107,10 +128,10 @@ export async function saveQuotationAction(
             </div>
           `;
 
-          const clientEmailText = `
+      const clientEmailText = `
 Quotation Available - PGC Visayas
 
-Dear ${inquiry.name},
+Dear ${clientName},
 
 Your quotation is now available in your client portal. Please note that the quotation does not include re-runs for unsuccessful samples. Make sure to read our FAQs (https://omics.pgcvisayas.upv.edu.ph/faqs) for details about turnaround time, sample submission, and payment details.
 
@@ -122,31 +143,54 @@ Yours in utilizing OMICS for a better Philippines,
 Philippine Genome Center Visayas
           `.trim();
 
-          await addDoc(mailCollection, {
-            to: [inquiry.email],
-            message: {
-              subject: "Quotation Available: PGC Visayas",
-              text: clientEmailText,
-              html: clientEmailHtml,
-            },
-          });
-          console.log(
-            `✅ Quotation availability email sent to ${inquiry.email}`,
-          );
+      try {
+        await adminDb.collection("mail").add({
+          to: [recipientEmail],
+          ...(quotation.inquiryId ? { inquiryId: quotation.inquiryId } : {}),
+          message: {
+            subject: "Quotation Available: PGC Visayas",
+            text: clientEmailText,
+            html: clientEmailHtml,
+          },
+        });
+        emailQueued = true;
+        console.info(`Quotation notification email queued for ${recipientEmail}`);
+      } catch (emailQueueError) {
+        console.error(
+          `Quotation was saved, but notification email could not be queued for ${recipientEmail}:`,
+          emailQueueError,
+        );
+        emailError =
+          "Quotation saved, but the notification email could not be queued. Please contact support.";
+      }
 
-          // In-app notification
-          await addDoc(collection(db, "clientNotifications"), {
-            recipientEmail: inquiry.email,
-            ...(notificationUuid ? { uuid: notificationUuid } : {}),
+      if (quotation.inquiryId && inquiry) {
+        try {
+          const resolvedUid = await resolveUidFromUsersByEmail(recipientEmail);
+          if (resolvedUid) {
+            await adminDb
+              .collection("inquiries")
+              .doc(quotation.inquiryId)
+              .set({ uuid: resolvedUid }, { merge: true });
+          }
+
+          await adminDb.collection("clientNotifications").add({
+            recipientEmail,
+            ...((resolvedUid || inquiry.uuid)
+              ? { uuid: resolvedUid || inquiry.uuid }
+              : {}),
             type: "quotation",
             title: "Quotation Available",
             body: "Your quotation is now available in the client portal. Please review it at your convenience.",
             read: false,
             createdAt: new Date(),
           });
+        } catch (notificationError) {
+          console.warn(
+            `Could not create in-app quotation notification for ${recipientEmail}:`,
+            notificationError,
+          );
         }
-      } catch (statusError) {
-        console.warn("Could not handle inquiry update or email:", statusError);
       }
     }
 
@@ -165,7 +209,7 @@ Philippine Genome Center Visayas
 
     revalidatePath("/admin/quotations");
     revalidatePath("/admin/inquiries");
-    return { success: true };
+    return { success: true, emailQueued, emailError };
   } catch (error) {
     console.error("Error saving quotation:", error);
     return { success: false, error: "Failed to save quotation" };

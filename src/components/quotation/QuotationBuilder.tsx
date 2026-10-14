@@ -321,6 +321,12 @@ export default function QuotationBuilder({
       }
 
       toast.success("Quotation saved successfully!");
+      if (!result.emailQueued) {
+        toast.error(
+          result.emailError ||
+            "Quotation saved, but the client notification email was not queued.",
+        );
+      }
       setOpenPreview(false);
     } catch (error) {
       console.error("Error saving quotation:", error);

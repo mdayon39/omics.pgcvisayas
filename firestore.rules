@@ -267,7 +267,6 @@ service cloud.firestore {
         && request.resource.data.subject.size() <= 200
         && request.resource.data.recipientCount is int
         && request.resource.data.recipientCount >= 1
-        && request.resource.data.recipientCount <= 200
         && request.resource.data.createdByUid == userUid()
         && request.resource.data.createdByEmail == userEmail()
         && request.resource.data.createdAt is timestamp;

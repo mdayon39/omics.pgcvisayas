@@ -23,7 +23,6 @@ import useAuth from "@/hooks/useAuth";
 import { auth, db } from "@/lib/firebase";
 import { queueClientBroadcast } from "@/app/actions/broadcastEmailActions";
 
-const MAX_BROADCAST_RECIPIENTS = 200;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RECIPIENT_STATUSES = [
   "Ongoing Quotation",
@@ -78,12 +77,6 @@ export default function BroadcastEmailPage() {
       return;
     }
     const next = [...new Set([...recipientEmails, ...entries])];
-    if (next.length > MAX_BROADCAST_RECIPIENTS) {
-      toast.error(
-        `A broadcast can include at most ${MAX_BROADCAST_RECIPIENTS} email addresses.`,
-      );
-      return;
-    }
     setRecipientEmails(next);
     setEmailInput("");
   };
@@ -149,12 +142,6 @@ export default function BroadcastEmailPage() {
       (email) => !recipientEmails.includes(email),
     );
     const next = [...recipientEmails, ...additions];
-    if (next.length > MAX_BROADCAST_RECIPIENTS) {
-      toast.error(
-        `You can add ${Math.max(0, MAX_BROADCAST_RECIPIENTS - recipientEmails.length)} more recipient${MAX_BROADCAST_RECIPIENTS - recipientEmails.length === 1 ? "" : "s"} at most.`,
-      );
-      return;
-    }
     if (additions.length === 0) {
       toast.info("Select at least one new email address.");
       return;
@@ -181,6 +168,9 @@ export default function BroadcastEmailPage() {
         body,
       });
       if (!result.success) {
+        if (result.queuedCount) {
+          setRecipientEmails((current) => current.slice(result.queuedCount));
+        }
         toast.error(result.error);
         return;
       }
@@ -228,8 +218,8 @@ export default function BroadcastEmailPage() {
               private. Use this for relevant service or administrative updates,
               and only contact clients when you have an appropriate basis to do
               so. This is not a consent or unsubscribe management tool. A
-              maximum of {MAX_BROADCAST_RECIPIENTS} addresses can be added per
-              broadcast.
+              separate email is queued for each address. Delivery is subject
+              to your configured email provider's quotas and rate limits.
             </p>
           </div>
 
@@ -325,14 +315,11 @@ export default function BroadcastEmailPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          const room = MAX_BROADCAST_RECIPIENTS - recipientEmails.length;
                           const available = inquiryRecipients
                             .filter((recipient) => !recipientEmails.includes(recipient.email))
-                            .slice(0, room)
                             .map((recipient) => recipient.email);
                           setSelectedInquiryEmails(new Set(available));
                         }}
-                        disabled={recipientEmails.length >= MAX_BROADCAST_RECIPIENTS}
                       >
                         Select available
                       </Button>

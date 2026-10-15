@@ -6,14 +6,19 @@ import { randomUUID } from "node:crypto";
 import { adminDb } from "@/lib/firebase-admin";
 import type { UserRole } from "@/types/Permissions";
 
-const MAX_BROADCAST_RECIPIENTS = 200;
+const MAX_FIRESTORE_COMMIT_WRITES = 500;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 class BroadcastActionError extends Error {}
 
 type QueueBroadcastResult =
   | { success: true; broadcastId: string; queuedCount: number }
-  | { success: false; error: string };
+  | {
+      success: false;
+      error: string;
+      queuedCount?: number;
+      totalCount?: number;
+    };
 
 function normalizeEmail(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -289,6 +294,9 @@ export async function queueClientBroadcast(
   input: { recipientEmails: string[]; subject: string; body: string },
 ): Promise<QueueBroadcastResult> {
   const stageState = { value: "starting admin authorization" };
+  let broadcastId: string | undefined;
+  let queuedCount = 0;
+  let totalCount = 0;
   try {
     const sender = await authorizeBroadcast(idToken, stageState);
     if (!adminDb) {
@@ -311,6 +319,7 @@ export async function queueClientBroadcast(
           ),
         ]
       : [];
+    totalCount = recipientEmails.length;
 
     if (!subject || subject.length > 200) {
       throw new BroadcastActionError("Enter a subject of 1 to 200 characters.");
@@ -320,12 +329,9 @@ export async function queueClientBroadcast(
         "Enter a message of 1 to 10,000 characters.",
       );
     }
-    if (
-      recipientEmails.length === 0 ||
-      recipientEmails.length > MAX_BROADCAST_RECIPIENTS
-    ) {
+    if (recipientEmails.length === 0) {
       throw new BroadcastActionError(
-        `Enter between 1 and ${MAX_BROADCAST_RECIPIENTS} email addresses.`,
+        "Enter at least one email address.",
       );
     }
     if (recipientEmails.some((email) => !EMAIL_PATTERN.test(email))) {
@@ -343,7 +349,7 @@ export async function queueClientBroadcast(
       );
     }
 
-    const broadcastId = randomUUID();
+    broadcastId = randomUUID();
     stageState.value = "Firestore queue preparation";
     const writes = [
       firestoreDocument(projectId, "emailBroadcasts", broadcastId, {
@@ -383,7 +389,20 @@ export async function queueClientBroadcast(
       );
     }
 
-    stageState.value = "Firestore queue commit";
+    const writeBatches: (typeof writes)[] = [];
+    let writeOffset = 0;
+    while (writeOffset < writes.length) {
+      const batchSize =
+        writeOffset === 0
+          ? MAX_FIRESTORE_COMMIT_WRITES - 1
+          : MAX_FIRESTORE_COMMIT_WRITES;
+      writeBatches.push(writes.slice(writeOffset, writeOffset + batchSize));
+      writeOffset += batchSize;
+    }
+
+    for (let batchIndex = 0; batchIndex < writeBatches.length; batchIndex++) {
+      stageState.value = `Firestore queue commit ${batchIndex + 1} of ${writeBatches.length}`;
+      const batchWrites = writeBatches[batchIndex];
     const commitUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents:commit`;
     const commitResponse = await fetch(commitUrl, {
       method: "POST",
@@ -391,7 +410,7 @@ export async function queueClientBroadcast(
         Authorization: `Bearer ${idToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ writes }),
+      body: JSON.stringify({ writes: batchWrites }),
       cache: "no-store",
     });
     if (!commitResponse.ok) {
@@ -412,14 +431,25 @@ export async function queueClientBroadcast(
         `Firestore rejected the broadcast queue (${firestoreCode}): ${firestoreMessage}`,
       );
     }
+      queuedCount +=
+        (batchWrites.length - (batchIndex === 0 ? 1 : 0)) / 2;
+    }
     return {
       success: true,
       broadcastId,
-      queuedCount: recipientEmails.length,
+      queuedCount,
     };
   } catch (error) {
+    const partialQueueNotice =
+      queuedCount > 0
+        ? ` ${queuedCount} of ${totalCount} recipients were queued; check Email Monitoring before retrying.`
+        : "";
     if (error instanceof BroadcastActionError) {
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        error: `${error.message}${partialQueueNotice}`,
+        ...(queuedCount > 0 ? { queuedCount, totalCount } : {}),
+      };
     }
     const errorCode =
       error &&
@@ -436,7 +466,8 @@ export async function queueClientBroadcast(
     });
     return {
       success: false,
-      error: `Could not queue the broadcast during ${stageState.value} (error ${errorCode}). Check server logs for details. No success was reported; check Sent Items before retrying.`,
+      error: `Could not queue the broadcast during ${stageState.value} (error ${errorCode}).${partialQueueNotice || " Check server logs for details. No success was reported; check Sent Items before retrying."}`,
+      ...(queuedCount > 0 ? { queuedCount, totalCount } : {}),
     };
   }
 }

@@ -25,7 +25,11 @@ import { queueClientBroadcast } from "@/app/actions/broadcastEmailActions";
 
 const MAX_BROADCAST_RECIPIENTS = 200;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const RECIPIENT_STATUSES = ["Ongoing Quotation", "Approved Client"] as const;
+const RECIPIENT_STATUSES = [
+  "Ongoing Quotation",
+  "Approved Client",
+  "In Progress",
+] as const;
 
 type InquiryRecipient = {
   email: string;
@@ -258,7 +262,7 @@ export default function BroadcastEmailPage() {
                   </h3>
                   <p className="text-xs text-slate-600">
                     Find unique email addresses from inquiries with status
-                    {" "}Ongoing Quotation or Approved Client.
+                    {" "}Ongoing Quotation, Approved Client, or In Progress.
                   </p>
                 </div>
                 <Button

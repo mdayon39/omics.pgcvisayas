@@ -45,6 +45,7 @@ import { cn } from "@/lib/utils";
 import { useTabContext } from "@/contexts/TabContext";
 import type { RolePermissions } from "@/types/Permissions";
 import { CLIENT_ANNOUNCEMENT_ADMIN_EMAILS } from "@/constants/clientAnnouncement";
+import { hasAdminEmailOperationsAccess } from "@/constants/adminEmailAccess";
 import { db } from "@/lib/firebase";
 
 // Map routes to permission modules
@@ -82,7 +83,9 @@ export function AdminSidebar() {
   );
   const [emailMonitoringAlertCount, setEmailMonitoringAlertCount] =
     React.useState(0);
-  const canViewEmailMonitoring = canView("sentItems");
+  const hasEmailOperationsAccess = hasAdminEmailOperationsAccess(adminInfo?.email);
+  const canViewEmailMonitoring =
+    canView("sentItems") || hasEmailOperationsAccess;
   React.useEffect(() => {
     if (permissionsLoading || !canViewEmailMonitoring) {
       setEmailMonitoringAlertCount(0);
@@ -314,8 +317,10 @@ export function AdminSidebar() {
                 (email) => email === adminInfo?.email?.trim().toLowerCase(),
               )
             : item.href === "/admin/broadcast-email"
-              ? adminInfo?.role === "superadmin"
-            : canView(routeModule))
+              ? adminInfo?.role === "superadmin" || hasEmailOperationsAccess
+              : item.href === "/admin/email-monitoring"
+                ? canView("sentItems") || hasEmailOperationsAccess
+                : canView(routeModule))
         );
       }),
     }))

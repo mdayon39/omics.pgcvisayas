@@ -5,6 +5,7 @@ import type { DecodedIdToken } from "firebase-admin/auth";
 import { randomUUID } from "node:crypto";
 import { adminDb } from "@/lib/firebase-admin";
 import type { UserRole } from "@/types/Permissions";
+import { hasAdminEmailOperationsAccess } from "@/constants/adminEmailAccess";
 
 const MAX_FIRESTORE_COMMIT_WRITES = 500;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -125,9 +126,13 @@ async function authorizeBroadcast(
     );
   }
 
-  if (adminRole !== "superadmin") {
+  const isNamedEmailOperator = hasAdminEmailOperationsAccess(email);
+  if (
+    adminRole !== "superadmin" &&
+    (!isNamedEmailOperator || adminRole !== "admin")
+  ) {
     throw new BroadcastActionError(
-      "Only superadmins can use client email broadcast.",
+      "You do not have permission to use client email broadcast.",
     );
   }
 

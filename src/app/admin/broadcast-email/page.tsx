@@ -22,6 +22,7 @@ import {
 import useAuth from "@/hooks/useAuth";
 import { auth, db } from "@/lib/firebase";
 import { queueClientBroadcast } from "@/app/actions/broadcastEmailActions";
+import { hasAdminEmailOperationsAccess } from "@/constants/adminEmailAccess";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RECIPIENT_STATUSES = [
@@ -40,6 +41,9 @@ type InquiryRecipient = {
 export default function BroadcastEmailPage() {
   const router = useRouter();
   const { adminInfo, loading: authLoading } = useAuth();
+  const canAccessBroadcast =
+    adminInfo?.role === "superadmin" ||
+    hasAdminEmailOperationsAccess(adminInfo?.email);
   const [recipientEmails, setRecipientEmails] = useState<string[]>([]);
   const [inquiryRecipients, setInquiryRecipients] = useState<InquiryRecipient[]>([]);
   const [selectedInquiryEmails, setSelectedInquiryEmails] = useState<Set<string>>(
@@ -57,10 +61,10 @@ export default function BroadcastEmailPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (adminInfo?.role !== "superadmin") {
+    if (!canAccessBroadcast) {
       router.replace("/admin/dashboard");
     }
-  }, [adminInfo?.role, authLoading, router]);
+  }, [canAccessBroadcast, authLoading, router]);
 
   const addRecipients = () => {
     const entries = emailInput
@@ -194,7 +198,7 @@ export default function BroadcastEmailPage() {
 
   return (
     <>
-      {authLoading || adminInfo?.role !== "superadmin" ? (
+      {authLoading || !canAccessBroadcast ? (
         <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">
           Checking superadmin access…
         </div>

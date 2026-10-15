@@ -1,10 +1,13 @@
+import { ADMIN_EMAIL_OPERATIONS_EMAILS } from "@/constants/adminEmailAccess";
+
 export const CLIENT_ANNOUNCEMENT_ID = "sequencingServiceDeadlines2026";
 export const CLIENT_ANNOUNCEMENT_TARGET_EMAIL = "dayonmerlitojr@gmail.com";
 export const CLIENT_ANNOUNCEMENT_VIEWER_EMAILS = [
   CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
   "carmjavier@gmail.com",
 ] as const;
-export const CLIENT_ANNOUNCEMENT_ADMIN_EMAILS = ["mfjavier@up.edu.ph"] as const;
+export const CLIENT_ANNOUNCEMENT_ADMIN_EMAILS =
+  ADMIN_EMAIL_OPERATIONS_EMAILS;
 
 export const DEFAULT_CLIENT_ANNOUNCEMENT = {
   title: "ANNOUNCEMENT: 2026 SEQUENCING SERVICE DEADLINES",

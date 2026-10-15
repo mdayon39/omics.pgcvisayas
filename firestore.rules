@@ -42,6 +42,18 @@ service cloud.firestore {
         );
     }
 
+    function isEmailOperationsAdmin() {
+      return isSignedIn()
+        && userEmail() != null
+        && userEmail() in [
+          'mfjavier@up.edu.ph',
+          'acnoblezada@up.edu.ph'
+        ]
+        && adminByEmail()
+        && get(/databases/$(database)/documents/admins/$(userEmail())).data.status != 'deactivated'
+        && get(/databases/$(database)/documents/admins/$(userEmail())).data.role in ['admin', 'superadmin'];
+    }
+
     function userProfileExists() {
       return isSignedIn() && exists(/databases/$(database)/documents/users/$(userUid()));
     }
@@ -222,8 +234,9 @@ service cloud.firestore {
     }
 
     match /mail/{mailId} {
-      allow read, update, delete: if isAdmin();
-      allow create: if isAdmin()
+      allow read: if isAdmin() || isEmailOperationsAdmin();
+      allow update, delete: if isAdmin();
+      allow create: if (isAdmin() || isEmailOperationsAdmin())
         || isServiceReportReceiptEmail()
         || (
           isSignedIn()
@@ -256,8 +269,8 @@ service cloud.firestore {
     }
 
     match /emailBroadcasts/{broadcastId} {
-      allow read: if isSuperAdmin();
-      allow create: if isSuperAdmin()
+      allow read: if isSuperAdmin() || isEmailOperationsAdmin();
+      allow create: if (isSuperAdmin() || isEmailOperationsAdmin())
         && request.resource.data.keys().hasOnly([
           'subject', 'recipientCount', 'createdByUid',
           'createdByEmail', 'createdAt'
@@ -274,8 +287,8 @@ service cloud.firestore {
     }
 
     match /emailMonitoringEvents/{eventId} {
-      allow read: if isAdmin();
-      allow create: if isAdmin()
+      allow read: if isAdmin() || isEmailOperationsAdmin();
+      allow create: if isAdmin() || isEmailOperationsAdmin()
         || (
           isSignedIn()
           && request.resource.data.keys().hasOnly([
@@ -301,7 +314,7 @@ service cloud.firestore {
     }
 
     match /clientAnnouncements/{announcementId} {
-      allow get, list: if isAdmin()
+      allow get, list: if isAdmin() || isEmailOperationsAdmin()
         || (
           isSignedIn()
           && userEmail() in [
@@ -310,7 +323,7 @@ service cloud.firestore {
           ]
           && resource.data.targetEmail == 'dayonmerlitojr@gmail.com'
         );
-      allow create: if isAdmin()
+      allow create: if (isAdmin() || isEmailOperationsAdmin())
         && request.resource.data.keys().hasOnly([
           'title', 'body', 'isActive', 'targetEmail', 'createdAt',
           'createdBy', 'updatedAt', 'updatedBy', 'startAt', 'endAt'
@@ -330,7 +343,7 @@ service cloud.firestore {
         && request.resource.data.startAt is timestamp
         && request.resource.data.endAt is timestamp
         && request.resource.data.endAt > request.resource.data.startAt;
-      allow update: if isAdmin()
+      allow update: if (isAdmin() || isEmailOperationsAdmin())
         && request.resource.data.keys().hasOnly([
           'title', 'body', 'isActive', 'targetEmail', 'createdAt',
           'createdBy', 'updatedAt', 'updatedBy', 'startAt', 'endAt'
@@ -356,11 +369,11 @@ service cloud.firestore {
           !('createdBy' in resource.data)
           || request.resource.data.createdBy == resource.data.createdBy
         );
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isEmailOperationsAdmin();
     }
 
     match /clientAnnouncementSettings/{settingId} {
-      allow read, write: if isAdmin();
+      allow read, write: if isAdmin() || isEmailOperationsAdmin();
     }
 
     match /officeCalendar/{eventId} {

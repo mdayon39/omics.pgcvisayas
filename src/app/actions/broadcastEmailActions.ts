@@ -153,18 +153,14 @@ function createBroadcastMessage(subject: string, body: string) {
 
   return {
     text: [
-      "PHILIPPINE GENOME CENTER VISAYAS",
-      "CLIENT ANNOUNCEMENT",
-      "",
       subject,
       "",
       "Dear Client,",
       "",
       body,
       "",
-      "Regards,",
+      "Yours in utilizing OMICS for a better Philippines,",
       "Philippine Genome Center Visayas",
-      "University of the Philippines Visayas",
     ].join("\n"),
     html: `<!doctype html>
 <html lang="en">
@@ -184,14 +180,7 @@ function createBroadcastMessage(subject: string, body: string) {
               <td style="height:6px;background-color:#166fb5;font-size:0;line-height:0;">&nbsp;</td>
             </tr>
             <tr>
-              <td style="padding:28px 36px 22px;border-bottom:1px solid #e2e8f0;">
-                <p style="margin:0 0 5px;color:#166fb5;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.2px;line-height:1.4;">PHILIPPINE GENOME CENTER VISAYAS</p>
-                <p style="margin:0;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">University of the Philippines Visayas</p>
-              </td>
-            </tr>
-            <tr>
               <td style="padding:32px 36px 12px;">
-                <p style="margin:0 0 10px;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;line-height:1.4;">CLIENT ANNOUNCEMENT</p>
                 <h1 style="margin:0;color:#0f172a;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;line-height:1.3;">${escapedSubject}</h1>
               </td>
             </tr>
@@ -199,7 +188,8 @@ function createBroadcastMessage(subject: string, body: string) {
               <td style="padding:12px 36px 28px;">
                 <p style="margin:0 0 18px;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7;">Dear Client,</p>
                 ${bodyParagraphs}
-                <p style="margin:24px 0 0;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7;">Regards,<br /><strong>Philippine Genome Center Visayas</strong><br />University of the Philippines Visayas</p>
+                <p style="margin:24px 0 6px;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7;">Yours in utilizing OMICS for a better Philippines,</p>
+                <p style="margin:0;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;line-height:1.7;">Philippine Genome Center Visayas</p>
               </td>
             </tr>
             <tr>

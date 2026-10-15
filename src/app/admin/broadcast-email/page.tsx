@@ -83,6 +83,10 @@ export default function BroadcastEmailPage() {
         subject,
         body,
       });
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
       toast.success(
         `Email queued for ${result.queuedCount} recipient${result.queuedCount === 1 ? "" : "s"}.`,
       );
@@ -92,7 +96,9 @@ export default function BroadcastEmailPage() {
     } catch (error) {
       console.error("Could not queue client broadcast:", error);
       toast.error(
-        error instanceof Error ? error.message : "Could not queue the broadcast.",
+        error instanceof Error
+          ? error.message
+          : "Could not queue the broadcast.",
       );
     } finally {
       setSending(false);
@@ -106,69 +112,74 @@ export default function BroadcastEmailPage() {
           Checking superadmin access…
         </div>
       ) : (
-      <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <header>
-          <div className="flex items-center gap-2">
-            <Mail className="h-6 w-6 text-slate-700" />
-            <h1 className="text-2xl font-bold">Client Email Broadcast</h1>
-          </div>
-          <p className="mt-1 text-sm text-slate-600">
-            Enter recipient addresses, review the list, and confirm it before
-            queueing the email.
-          </p>
-        </header>
-
-        <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
-          <p className="font-semibold">Send responsibly</p>
-          <p className="mt-1">
-            Each client receives a separate email, so recipient addresses are
-            private. Use this for relevant service or administrative updates,
-            and only contact clients when you have an appropriate basis to do
-            so. This is not a consent or unsubscribe management tool. A maximum
-            of {MAX_BROADCAST_RECIPIENTS} addresses can be added per
-            broadcast.
-          </p>
-        </div>
-
-        <section className="space-y-4 rounded-lg border bg-white p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="font-semibold">Recipients</h2>
-              <p className="text-sm text-slate-600">
-                {recipientEmails.length} recipient
-                {recipientEmails.length === 1 ? "" : "s"} added
-              </p>
+        <main className="mx-auto max-w-5xl space-y-6 p-6">
+          <header>
+            <div className="flex items-center gap-2">
+              <Mail className="h-6 w-6 text-slate-700" />
+              <h1 className="text-2xl font-bold">Client Email Broadcast</h1>
             </div>
+            <p className="mt-1 text-sm text-slate-600">
+              Enter recipient addresses, review the list, and confirm it before
+              queueing the email.
+            </p>
+          </header>
+
+          <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+            <p className="font-semibold">Send responsibly</p>
+            <p className="mt-1">
+              Each client receives a separate email, so recipient addresses are
+              private. Use this for relevant service or administrative updates,
+              and only contact clients when you have an appropriate basis to do
+              so. This is not a consent or unsubscribe management tool. A
+              maximum of {MAX_BROADCAST_RECIPIENTS} addresses can be added per
+              broadcast.
+            </p>
           </div>
 
-          <div className="flex gap-2">
-            <Input
-              type="email"
-              value={emailInput}
-              onChange={(event) => setEmailInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  addRecipients();
-                }
-              }}
-              placeholder="Enter an email address (or paste comma-separated addresses)"
-              aria-label="Recipient email addresses"
-            />
-            <Button type="button" variant="outline" onClick={addRecipients}>
-              Add
-            </Button>
-          </div>
-          <div className="rounded-md border bg-slate-50 p-3">
-            <h3 className="text-sm font-semibold">Selected email addresses</h3>
-            {recipientEmails.length === 0 ? (
-              <p className="mt-1 text-sm text-slate-500">
-                No recipients added yet.
-              </p>
-            ) : (
-              <ul className="mt-2 max-h-64 space-y-1 overflow-y-auto text-sm">
-                {recipientEmails.map((email) => (
-                    <li key={email} className="flex items-center justify-between gap-2">
+          <section className="space-y-4 rounded-lg border bg-white p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="font-semibold">Recipients</h2>
+                <p className="text-sm text-slate-600">
+                  {recipientEmails.length} recipient
+                  {recipientEmails.length === 1 ? "" : "s"} added
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                value={emailInput}
+                onChange={(event) => setEmailInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addRecipients();
+                  }
+                }}
+                placeholder="Enter an email address (or paste comma-separated addresses)"
+                aria-label="Recipient email addresses"
+              />
+              <Button type="button" variant="outline" onClick={addRecipients}>
+                Add
+              </Button>
+            </div>
+            <div className="rounded-md border bg-slate-50 p-3">
+              <h3 className="text-sm font-semibold">
+                Selected email addresses
+              </h3>
+              {recipientEmails.length === 0 ? (
+                <p className="mt-1 text-sm text-slate-500">
+                  No recipients added yet.
+                </p>
+              ) : (
+                <ul className="mt-2 max-h-64 space-y-1 overflow-y-auto text-sm">
+                  {recipientEmails.map((email) => (
+                    <li
+                      key={email}
+                      className="flex items-center justify-between gap-2"
+                    >
                       <strong className="break-all">{email}</strong>
                       <Button
                         type="button"
@@ -184,98 +195,96 @@ export default function BroadcastEmailPage() {
                         <X className="h-4 w-4" />
                       </Button>
                     </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
 
-        <section className="space-y-4 rounded-lg border bg-white p-5">
-          <h2 className="font-semibold">Message</h2>
-          <div className="space-y-2">
-            <Label htmlFor="broadcast-subject">Subject</Label>
-            <Input
-              id="broadcast-subject"
-              value={subject}
-              onChange={(event) => setSubject(event.target.value)}
-              maxLength={200}
-              placeholder="Enter a clear, descriptive subject"
-            />
-            <p className="text-right text-xs text-slate-500">
-              {subject.length}/200
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="broadcast-body">Message</Label>
-            <Textarea
-              id="broadcast-body"
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              maxLength={10_000}
-              rows={10}
-              placeholder="Write your message. It will be sent as plain text and safely formatted for email."
-            />
-            <p className="text-right text-xs text-slate-500">
-              {body.length}/10,000
-            </p>
-          </div>
-        </section>
-
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            onClick={() => setConfirming(true)}
-            disabled={
-              sending ||
-              recipientEmails.length === 0 ||
-              !subject.trim() ||
-              !body.trim()
-            }
-          >
-            <Send className="mr-2 h-4 w-4" />
-            {sending
-              ? "Queueing…"
-              : `Review and send (${recipientEmails.length})`}
-          </Button>
-        </div>
-
-        <AlertDialog open={confirming} onOpenChange={setConfirming}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Queue this broadcast?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will queue {recipientEmails.length} individual email
-                {recipientEmails.length === 1 ? "message" : "messages"}. Verify
-                all recipients and the subject before confirming. Queued
-                messages cannot be recalled from this screen.
-              </AlertDialogDescription>
-              <ul className="max-h-32 overflow-y-auto rounded-md border bg-slate-50 p-3 text-sm">
-                {recipientEmails.map((email) => (
-                  <li key={email}>{email}</li>
-                ))}
-              </ul>
-              <p className="text-sm font-medium">
-                Subject: {subject.trim()}
+          <section className="space-y-4 rounded-lg border bg-white p-5">
+            <h2 className="font-semibold">Message</h2>
+            <div className="space-y-2">
+              <Label htmlFor="broadcast-subject">Subject</Label>
+              <Input
+                id="broadcast-subject"
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+                maxLength={200}
+                placeholder="Enter a clear, descriptive subject"
+              />
+              <p className="text-right text-xs text-slate-500">
+                {subject.length}/200
               </p>
-              <div className="max-h-48 overflow-y-auto whitespace-pre-wrap rounded-md border bg-slate-50 p-3 text-sm text-slate-700">
-                {body.trim()}
-              </div>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={sending}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                disabled={sending}
-                onClick={(event) => {
-                  event.preventDefault();
-                  void sendBroadcast();
-                }}
-              >
-                {sending ? "Queueing…" : "Queue emails"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </main>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="broadcast-body">Message</Label>
+              <Textarea
+                id="broadcast-body"
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                maxLength={10_000}
+                rows={10}
+                placeholder="Write your message. It will be sent as plain text and safely formatted for email."
+              />
+              <p className="text-right text-xs text-slate-500">
+                {body.length}/10,000
+              </p>
+            </div>
+          </section>
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              onClick={() => setConfirming(true)}
+              disabled={
+                sending ||
+                recipientEmails.length === 0 ||
+                !subject.trim() ||
+                !body.trim()
+              }
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {sending
+                ? "Queueing…"
+                : `Review and send (${recipientEmails.length})`}
+            </Button>
+          </div>
+
+          <AlertDialog open={confirming} onOpenChange={setConfirming}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Queue this broadcast?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will queue {recipientEmails.length} individual email
+                  {recipientEmails.length === 1 ? "message" : "messages"}.
+                  Verify all recipients and the subject before confirming.
+                  Queued messages cannot be recalled from this screen.
+                </AlertDialogDescription>
+                <ul className="max-h-32 overflow-y-auto rounded-md border bg-slate-50 p-3 text-sm">
+                  {recipientEmails.map((email) => (
+                    <li key={email}>{email}</li>
+                  ))}
+                </ul>
+                <p className="text-sm font-medium">Subject: {subject.trim()}</p>
+                <div className="max-h-48 overflow-y-auto whitespace-pre-wrap rounded-md border bg-slate-50 p-3 text-sm text-slate-700">
+                  {body.trim()}
+                </div>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={sending}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={sending}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void sendBroadcast();
+                  }}
+                >
+                  {sending ? "Queueing…" : "Queue emails"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </main>
       )}
     </>
   );

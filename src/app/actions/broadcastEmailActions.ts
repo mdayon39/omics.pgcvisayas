@@ -2,6 +2,7 @@
 
 import admin from "firebase-admin";
 import type { DecodedIdToken } from "firebase-admin/auth";
+import { randomUUID } from "node:crypto";
 import { adminDb } from "@/lib/firebase-admin";
 import type { UserRole } from "@/types/Permissions";
 
@@ -50,8 +51,9 @@ async function authorizeBroadcast(
     );
   }
 
-  const email = normalizeEmail(decodedToken.email);
-  if (!email || decodedToken.email_verified !== true) {
+  const tokenEmail = decodedToken.email;
+  const email = normalizeEmail(tokenEmail);
+  if (!tokenEmail || !email || decodedToken.email_verified !== true) {
     throw new BroadcastActionError("A verified admin account is required.");
   }
 
@@ -117,7 +119,11 @@ async function authorizeBroadcast(
     );
   }
 
-  return { uid: decodedToken.uid, email, role: adminRole as UserRole };
+  return {
+    uid: decodedToken.uid,
+    email: tokenEmail,
+    role: adminRole as UserRole,
+  };
 }
 
 function escapeHtml(value: string): string {
@@ -131,6 +137,54 @@ function escapeHtml(value: string): string {
     };
     return entities[character];
   });
+}
+
+function toFirestoreValue(value: unknown): Record<string, unknown> {
+  if (value instanceof Date) {
+    return { timestampValue: value.toISOString() };
+  }
+  if (typeof value === "string") return { stringValue: value };
+  if (typeof value === "boolean") return { booleanValue: value };
+  if (typeof value === "number") {
+    return Number.isInteger(value)
+      ? { integerValue: String(value) }
+      : { doubleValue: value };
+  }
+  if (Array.isArray(value)) {
+    return { arrayValue: { values: value.map(toFirestoreValue) } };
+  }
+  if (value && typeof value === "object") {
+    return {
+      mapValue: {
+        fields: Object.fromEntries(
+          Object.entries(value).map(([key, nestedValue]) => [
+            key,
+            toFirestoreValue(nestedValue),
+          ]),
+        ),
+      },
+    };
+  }
+  return { nullValue: null };
+}
+
+function firestoreDocument(
+  projectId: string,
+  collectionName: string,
+  documentId: string,
+  fields: Record<string, unknown>,
+) {
+  return {
+    update: {
+      name: `projects/${projectId}/databases/(default)/documents/${collectionName}/${documentId}`,
+      fields: Object.fromEntries(
+        Object.entries(fields).map(([key, value]) => [
+          key,
+          toFirestoreValue(value),
+        ]),
+      ),
+    },
+  };
 }
 
 export async function queueClientBroadcast(
@@ -183,23 +237,33 @@ export async function queueClientBroadcast(
       );
     }
 
-    const broadcastId = adminDb.collection("emailBroadcasts").doc().id;
-    const batch = adminDb.batch();
+    const projectId =
+      process.env.FIREBASE_PROJECT_ID ||
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    if (!projectId) {
+      throw new BroadcastActionError(
+        "Firebase project ID is not configured on the server.",
+      );
+    }
+
+    const broadcastId = randomUUID();
     stageState.value = "Firestore queue preparation";
-    batch.set(adminDb.collection("emailBroadcasts").doc(broadcastId), {
-      subject,
-      recipientCount: recipientEmails.length,
-      createdByUid: sender.uid,
-      createdByEmail: sender.email,
-      createdAt: new Date(),
-    });
+    const writes = [
+      firestoreDocument(projectId, "emailBroadcasts", broadcastId, {
+        subject,
+        recipientCount: recipientEmails.length,
+        createdByUid: sender.uid,
+        createdByEmail: sender.email,
+        createdAt: new Date(),
+      }),
+    ];
 
     for (const email of recipientEmails) {
-      const mailReference = adminDb.collection("mail").doc();
-      const eventReference = adminDb.collection("emailMonitoringEvents").doc();
+      const mailId = randomUUID();
+      const eventId = randomUUID();
       const safeBody = escapeHtml(body).replace(/\n/g, "<br />");
 
-      batch.set(mailReference, {
+      writes.push(firestoreDocument(projectId, "mail", mailId, {
         to: [email],
         message: {
           subject,
@@ -207,20 +271,47 @@ export async function queueClientBroadcast(
           html: `<div><p>${safeBody}</p></div>`,
         },
         broadcastId,
-      });
-      batch.set(eventReference, {
+      }));
+      writes.push(firestoreDocument(projectId, "emailMonitoringEvents", eventId, {
         category: "Client broadcast",
         recipient: email,
         sourceId: broadcastId,
         triggeredByUid: sender.uid,
         triggeredAt: new Date(),
         queueStatus: "queued",
-        mailDocumentId: mailReference.id,
-      });
+        mailDocumentId: mailId,
+      }));
     }
 
     stageState.value = "Firestore queue commit";
-    await batch.commit();
+    const commitUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents:commit`;
+    const commitResponse = await fetch(commitUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ writes }),
+      cache: "no-store",
+    });
+    if (!commitResponse.ok) {
+      const responseBody = await commitResponse.json().catch(() => null);
+      const firestoreCode =
+        typeof responseBody?.error?.status === "string"
+          ? responseBody.error.status
+          : `HTTP ${commitResponse.status}`;
+      const firestoreMessage =
+        typeof responseBody?.error?.message === "string"
+          ? responseBody.error.message
+          : "Firestore rejected the write.";
+      console.error("Firestore rejected client broadcast queue:", {
+        code: firestoreCode,
+        message: firestoreMessage,
+      });
+      throw new BroadcastActionError(
+        `Firestore rejected the broadcast queue (${firestoreCode}): ${firestoreMessage}`,
+      );
+    }
     return {
       success: true,
       broadcastId,

@@ -255,6 +255,25 @@ service cloud.firestore {
         );
     }
 
+    match /emailBroadcasts/{broadcastId} {
+      allow read: if isSuperAdmin();
+      allow create: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly([
+          'subject', 'recipientCount', 'createdByUid',
+          'createdByEmail', 'createdAt'
+        ])
+        && request.resource.data.subject is string
+        && request.resource.data.subject.size() > 0
+        && request.resource.data.subject.size() <= 200
+        && request.resource.data.recipientCount is int
+        && request.resource.data.recipientCount >= 1
+        && request.resource.data.recipientCount <= 200
+        && request.resource.data.createdByUid == userUid()
+        && request.resource.data.createdByEmail == userEmail()
+        && request.resource.data.createdAt is timestamp;
+      allow update, delete: if false;
+    }
+
     match /emailMonitoringEvents/{eventId} {
       allow read: if isAdmin();
       allow create: if isAdmin()

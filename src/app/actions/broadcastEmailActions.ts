@@ -20,7 +20,9 @@ function normalizeEmail(value: unknown): string {
 
 async function authorizeBroadcast(
   idToken: string,
+  stageState: { value: string },
 ): Promise<{ uid: string; email: string; role: UserRole }> {
+  stageState.value = "checking server Firebase configuration";
   if (!adminDb)
     throw new BroadcastActionError("Email broadcast is unavailable.");
   if (typeof idToken !== "string" || !idToken.trim()) {
@@ -30,6 +32,7 @@ async function authorizeBroadcast(
   }
 
   let decodedToken: DecodedIdToken;
+  stageState.value = "verifying Firebase sign-in token";
   try {
     decodedToken = await admin.auth().verifyIdToken(idToken);
   } catch {
@@ -43,6 +46,7 @@ async function authorizeBroadcast(
     throw new BroadcastActionError("A verified admin account is required.");
   }
 
+  stageState.value = "reading the admin access record from Firestore";
   const adminSnapshot = await adminDb.collection("admins").doc(email).get();
   if (!adminSnapshot.exists || adminSnapshot.data()?.status === "deactivated") {
     throw new BroadcastActionError(
@@ -77,14 +81,14 @@ export async function queueClientBroadcast(
   idToken: string,
   input: { recipientEmails: string[]; subject: string; body: string },
 ): Promise<QueueBroadcastResult> {
-  let stage = "admin authorization";
+  const stageState = { value: "starting admin authorization" };
   try {
-    const sender = await authorizeBroadcast(idToken);
+    const sender = await authorizeBroadcast(idToken, stageState);
     if (!adminDb) {
       throw new BroadcastActionError("Email broadcast is unavailable.");
     }
 
-    stage = "message validation";
+    stageState.value = "message validation";
     const subject =
       typeof input?.subject === "string" ? input.subject.trim() : "";
     const body =
@@ -125,7 +129,7 @@ export async function queueClientBroadcast(
 
     const broadcastId = adminDb.collection("emailBroadcasts").doc().id;
     const batch = adminDb.batch();
-    stage = "Firestore queue preparation";
+    stageState.value = "Firestore queue preparation";
     batch.set(adminDb.collection("emailBroadcasts").doc(broadcastId), {
       subject,
       recipientCount: recipientEmails.length,
@@ -159,7 +163,7 @@ export async function queueClientBroadcast(
       });
     }
 
-    stage = "Firestore queue commit";
+    stageState.value = "Firestore queue commit";
     await batch.commit();
     return {
       success: true,
@@ -177,14 +181,16 @@ export async function queueClientBroadcast(
       (typeof error.code === "string" || typeof error.code === "number")
         ? String(error.code)
         : "unknown";
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
     console.error("Failed to queue client email broadcast:", {
-      stage,
+      stage: stageState.value,
       errorCode,
-      error,
+      errorMessage,
     });
     return {
       success: false,
-      error: `Could not queue the broadcast during ${stage} (error ${errorCode}). No success was reported; check Sent Items before retrying.`,
+      error:       `Could not queue the broadcast during ${stageState.value} (error ${errorCode}). Check server logs for details. No success was reported; check Sent Items before retrying.`,
     };
   }
 }

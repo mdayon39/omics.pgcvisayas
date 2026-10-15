@@ -177,18 +177,18 @@ function createBroadcastMessage(subject: string, body: string) {
         <td align="center" style="padding:32px 16px;">
           <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
             <tr>
-              <td style="height:6px;background-color:#166fb5;font-size:0;line-height:0;">&nbsp;</td>
+              <td style="height:3px;background-color:#166fb5;font-size:0;line-height:0;">&nbsp;</td>
             </tr>
             <tr>
-              <td style="padding:24px 36px;border-bottom:1px solid #e2e8f0;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+              <td style="padding:16px 24px;border-bottom:1px solid #e2e8f0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;">
                   <tr>
-                    <td valign="middle" style="padding-right:16px;">
-                      <img src="https://omics.pgcvisayas.upv.edu.ph/assets/pgc-logo.png" width="90" alt="Philippine Genome Center Visayas logo" style="display:block;width:90px;height:auto;border:0;" />
+                    <td valign="middle" style="width:132px;padding-right:16px;">
+                      <img src="https://omics.pgcvisayas.upv.edu.ph/assets/pgc-logo.png" width="120" alt="Philippine Genome Center Visayas logo" style="display:block;width:120px;max-width:100%;height:auto;border:0;" />
                     </td>
                     <td valign="middle" style="font-family:Arial,Helvetica,sans-serif;">
-                      <p style="margin:0 0 5px;color:#166fb5;font-size:16px;font-weight:700;letter-spacing:0.5px;line-height:1.35;">PHILIPPINE GENOME CENTER VISAYAS</p>
-                      <p style="margin:0;color:#64748b;font-size:12px;line-height:1.5;">University of the Philippines Visayas, Miagao, Iloilo</p>
+                      <p style="margin:0 0 4px;color:#1769b0;font-size:14px;font-weight:700;letter-spacing:0.65px;line-height:1.3;">PHILIPPINE GENOME CENTER VISAYAS</p>
+                      <p style="margin:0;color:#64748b;font-size:10px;letter-spacing:0.15px;line-height:1.4;">UNIVERSITY OF THE PHILIPPINES VISAYAS, MIAGAO, ILOILO</p>
                     </td>
                   </tr>
                 </table>

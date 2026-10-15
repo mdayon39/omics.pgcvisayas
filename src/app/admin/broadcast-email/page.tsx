@@ -385,9 +385,23 @@ export default function BroadcastEmailPage() {
               )}
             </div>
             <div className="rounded-md border bg-slate-50 p-3">
-              <h3 className="text-sm font-semibold">
-                Selected email addresses
-              </h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold">
+                  Selected email addresses ({recipientEmails.length})
+                </h3>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={recipientEmails.length === 0}
+                  onClick={() => {
+                    setRecipientEmails([]);
+                    setSelectedInquiryEmails(new Set());
+                  }}
+                >
+                  Unselect all
+                </Button>
+              </div>
               {recipientEmails.length === 0 ? (
                 <p className="mt-1 text-sm text-slate-500">
                   No recipients added yet.

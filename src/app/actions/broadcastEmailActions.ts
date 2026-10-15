@@ -180,6 +180,21 @@ function createBroadcastMessage(subject: string, body: string) {
               <td style="height:6px;background-color:#166fb5;font-size:0;line-height:0;">&nbsp;</td>
             </tr>
             <tr>
+              <td style="padding:24px 36px;border-bottom:1px solid #e2e8f0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td valign="middle" style="padding-right:16px;">
+                      <img src="https://omics.pgcvisayas.upv.edu.ph/assets/pgc-logo.png" width="90" alt="Philippine Genome Center Visayas logo" style="display:block;width:90px;height:auto;border:0;" />
+                    </td>
+                    <td valign="middle" style="font-family:Arial,Helvetica,sans-serif;">
+                      <p style="margin:0 0 5px;color:#166fb5;font-size:16px;font-weight:700;letter-spacing:0.5px;line-height:1.35;">PHILIPPINE GENOME CENTER VISAYAS</p>
+                      <p style="margin:0;color:#64748b;font-size:12px;line-height:1.5;">University of the Philippines Visayas, Miagao, Iloilo</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
               <td style="padding:32px 36px 12px;">
                 <h1 style="margin:0;color:#0f172a;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;line-height:1.3;">${escapedSubject}</h1>
               </td>

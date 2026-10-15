@@ -84,7 +84,7 @@ export async function getBroadcastRecipients(
   idToken: string,
 ): Promise<BroadcastRecipient[]> {
   await authorizeBroadcast(idToken);
-  const snapshot = await adminDb!.collection("clients").get();
+  const snapshot = await adminDb!.collection("inquiries").get();
   return readRecipients(snapshot.docs);
 }
 
@@ -103,7 +103,7 @@ function escapeHtml(value: string): string {
 
 export async function queueClientBroadcast(
   idToken: string,
-  input: { clientIds: string[]; subject: string; body: string },
+  input: { inquiryIds: string[]; subject: string; body: string },
 ): Promise<{ broadcastId: string; queuedCount: number }> {
   const sender = await authorizeBroadcast(idToken);
   if (!adminDb) throw new Error("Email broadcast is unavailable.");
@@ -113,8 +113,8 @@ export async function queueClientBroadcast(
     typeof input?.body === "string"
       ? input.body.trim().replace(/\r\n?/g, "\n")
       : "";
-  const clientIds = Array.isArray(input?.clientIds)
-    ? [...new Set(input.clientIds.filter((id) => typeof id === "string"))]
+  const inquiryIds = Array.isArray(input?.inquiryIds)
+    ? [...new Set(input.inquiryIds.filter((id) => typeof id === "string"))]
     : [];
 
   if (!subject || subject.length > 200) {
@@ -123,27 +123,27 @@ export async function queueClientBroadcast(
   if (!body || body.length > 10_000) {
     throw new Error("Enter a message of 1 to 10,000 characters.");
   }
-  if (clientIds.length !== 1) {
-    throw new Error("Select the test client to send a broadcast.");
+  if (inquiryIds.length !== 1) {
+    throw new Error("Select the test inquiry email to send a broadcast.");
   }
-  if (clientIds.some((id) => !id || id.length > 1_500 || id.includes("/"))) {
-    throw new Error("The selected client list is invalid. Refresh it and try again.");
+  if (inquiryIds.some((id) => !id || id.length > 1_500 || id.includes("/"))) {
+    throw new Error("The selected inquiry list is invalid. Refresh it and try again.");
   }
 
-  const clientReferences = clientIds.map((id) =>
-    adminDb!.collection("clients").doc(id),
+  const inquiryReferences = inquiryIds.map((id) =>
+    adminDb!.collection("inquiries").doc(id),
   );
-  const clientSnapshots = await adminDb.getAll(...clientReferences);
-  if (clientSnapshots.some((snapshot) => !snapshot.exists)) {
-    throw new Error("The client list changed. Refresh it and try again.");
+  const inquirySnapshots = await adminDb.getAll(...inquiryReferences);
+  if (inquirySnapshots.some((snapshot) => !snapshot.exists)) {
+    throw new Error("The inquiry list changed. Refresh it and try again.");
   }
-  const recipients = readRecipients(clientSnapshots);
+  const recipients = readRecipients(inquirySnapshots);
   if (
     recipients.length !== 1 ||
     recipients[0].email !== TEST_RECIPIENT_EMAIL
   ) {
     throw new Error(
-      `Only ${TEST_RECIPIENT_EMAIL} can receive test broadcasts. Refresh the client list.`,
+      `Only ${TEST_RECIPIENT_EMAIL} can receive test broadcasts. Refresh the inquiry list.`,
     );
   }
 

@@ -31,7 +31,12 @@ function getErrorCode(error: unknown): string | undefined {
 async function authorizeBroadcast(
   idToken: string,
   stageState: { value: string },
-): Promise<{ uid: string; email: string; role: UserRole }> {
+): Promise<{
+  uid: string;
+  email: string;
+  senderName?: string;
+  role: UserRole;
+}> {
   stageState.value = "checking server Firebase configuration";
   if (!adminDb)
     throw new BroadcastActionError("Email broadcast is unavailable.");
@@ -69,6 +74,8 @@ async function authorizeBroadcast(
 
   let adminRecord: {
     fields?: {
+      name?: { stringValue?: string };
+      displayName?: { stringValue?: string };
       role?: { stringValue?: string };
       status?: { stringValue?: string };
     };
@@ -122,6 +129,11 @@ async function authorizeBroadcast(
   return {
     uid: decodedToken.uid,
     email: tokenEmail,
+    senderName:
+      adminRecord.fields?.name?.stringValue?.trim() ||
+      adminRecord.fields?.displayName?.stringValue?.trim() ||
+      (typeof decodedToken.name === "string" ? decodedToken.name.trim() : "") ||
+      undefined,
     role: adminRole as UserRole,
   };
 }
@@ -352,6 +364,7 @@ export async function queueClientBroadcast(
         firestoreDocument(projectId, "mail", mailId, {
           to: [email],
           senderEmail: sender.email,
+          ...(sender.senderName ? { senderName: sender.senderName } : {}),
           message: { subject, ...message },
           broadcastId,
         }),

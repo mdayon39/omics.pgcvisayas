@@ -65,6 +65,7 @@ type SentEmail = {
   inquiryId: string;
   clientName: string;
   recipient: string;
+  sentBy: string;
   subject: string;
   category: EmailCategory;
   status: EmailStatus;
@@ -325,6 +326,19 @@ function SentItemsContent() {
               knownName ||
               getKnownClientName(clientData?.name, clientData?.fullName) ||
               "Unknown client";
+            const senderName = getKnownClientName(
+              data.senderName,
+              data.triggeredByName,
+              data.createdByName,
+            );
+            const sentBy =
+              senderName ||
+              getKnownClientName(
+                data.senderEmail,
+                data.triggeredByEmail,
+                data.createdByEmail,
+              ) ||
+              "Not recorded";
             const searchText = getSearchableText({
               ...data,
               message,
@@ -332,6 +346,7 @@ function SentItemsContent() {
               subject,
               clientName,
               recipient,
+              sentBy,
             }).toLowerCase();
 
             return {
@@ -339,6 +354,7 @@ function SentItemsContent() {
               inquiryId,
               clientName,
               recipient: recipient || "Unknown recipient",
+              sentBy,
               subject,
               category: data.broadcastId
                 ? "Client broadcast"
@@ -691,6 +707,7 @@ function SentItemsContent() {
                 <th className="w-[150px] px-4 py-3">Inquiry ID</th>
                 <th className="w-[200px] px-4 py-3">Client name</th>
                 <th className="w-[220px] px-4 py-3">Recipient</th>
+                <th className="w-[200px] px-4 py-3">Sent by</th>
                 <th className="w-[180px] px-4 py-3">Category</th>
                 <th className="px-4 py-3">Subject</th>
                 <th className="w-[150px] px-4 py-3">Status</th>
@@ -701,7 +718,7 @@ function SentItemsContent() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={isSuperadmin ? 9 : 8}
+                    colSpan={isSuperadmin ? 10 : 9}
                     className="h-32 text-center"
                   >
                     <RefreshCw className="mr-2 inline h-4 w-4 animate-spin" />
@@ -711,7 +728,7 @@ function SentItemsContent() {
               ) : filteredEmails.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={isSuperadmin ? 9 : 8}
+                    colSpan={isSuperadmin ? 10 : 9}
                     className="h-32 text-center text-muted-foreground"
                   >
                     <Mail className="mr-2 inline h-4 w-4" />
@@ -797,6 +814,12 @@ function SentItemsContent() {
                         <span className="truncate">{email.recipient}</span>
                       </div>
                     </td>
+                    <td
+                      className="truncate px-4 py-3 text-xs"
+                      title={email.sentBy}
+                    >
+                      {email.sentBy}
+                    </td>
                     <td className="truncate px-4 py-3" title={email.category}>
                       <Badge variant="outline" className="max-w-full truncate">
                         {email.category}
@@ -865,6 +888,8 @@ function SentItemsContent() {
             <DialogTitle>{viewingEmail?.subject || "Email message"}</DialogTitle>
             <DialogDescription>
               To: {viewingEmail?.recipient || "Unknown recipient"}
+              {" | Sent by: "}
+              {viewingEmail?.sentBy || "Not recorded"}
               {viewingEmail ? ` | ${formatDate(viewingEmail.sentAt)}` : ""}
             </DialogDescription>
           </DialogHeader>

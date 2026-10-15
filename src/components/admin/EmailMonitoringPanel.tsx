@@ -298,16 +298,17 @@ export function EmailMonitoringPanel() {
           <p className="p-6 text-sm text-slate-500">No tracked notification triggers yet. Monitoring starts with app versions that write email event records.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Triggered</th>
                   <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3">Recipient</th>
                   <th className="px-4 py-3">Sent by</th>
-                  <th className="px-4 py-3">Source</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Details</th>
+                  <th className="w-12 px-4 py-3">
+                    <span className="sr-only">View email</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -323,19 +324,18 @@ export function EmailMonitoringPanel() {
                           : undefined) ||
                         "Not recorded"}
                     </td>
-                    <td className="px-4 py-3">{row.sourceId || "—"}</td>
                     <td className="px-4 py-3"><Badge className={statusClass(row.status)}>{row.status}</Badge></td>
-                    <td className="max-w-sm px-4 py-3 text-xs text-slate-600">
-                      <div>{row.error || row.mailDocumentId || "—"}</div>
+                    <td className="px-4 py-3">
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        className="mt-1 h-7 px-2"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label={`View email to ${row.recipient || "recipient"}`}
+                        title="View email"
                         onClick={() => setSelectedEventId(row.id)}
                       >
-                        <Eye className="mr-1 h-3.5 w-3.5" />
-                        View email
+                        <Eye className="h-4 w-4" />
                       </Button>
                     </td>
                   </tr>

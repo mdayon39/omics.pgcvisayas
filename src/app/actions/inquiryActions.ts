@@ -40,6 +40,11 @@ import {
   getDefaultConfigurationSettings,
   getInquiryNotificationRecipients,
 } from "@/services/configurationSettingsService";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringAdmin";
 
 async function addMailDocument(data: Record<string, unknown>) {
   if (adminDb) {
@@ -1123,6 +1128,11 @@ Submitted: ${new Date().toLocaleString()}
     const emailFallbackDocs: Record<string, unknown>[] = [];
 
     if (emailRecipients.length > 0) {
+      const adminInquiryMonitorId = await beginEmailMonitorEvent(
+        "Inquiry received",
+        emailRecipients.join(", "),
+        finalInquiryId,
+      );
       try {
         console.log(
           "EMAIL DEBUG: Attempting to create admin email document...",
@@ -1156,6 +1166,7 @@ Submitted: ${new Date().toLocaleString()}
         const emailDocRef = await addMailDocument(
           emailData as Record<string, unknown>,
         );
+        await markEmailMonitorQueued(adminInquiryMonitorId, emailDocRef.id);
         emailDocumentCreated = true;
         emailDocId = emailDocRef.id;
 
@@ -1252,7 +1263,8 @@ Submitted: ${new Date().toLocaleString()}
           }
         }, 5000);
       } catch (emailError) {
-        adminEmailError =
+          await markEmailMonitorFailed(adminInquiryMonitorId, emailError);
+          adminEmailError =
           emailError instanceof Error ? emailError.message : String(emailError);
         emailFallbackDocs.push(emailData as Record<string, unknown>);
         console.error("âŒ EMAIL CREATION FAILED:", emailError);
@@ -1290,6 +1302,15 @@ Submitted: ${new Date().toLocaleString()}
         );
       }
     } else {
+      const missingAdminRecipientsEvent = await beginEmailMonitorEvent(
+        "Inquiry received",
+        "",
+        finalInquiryId,
+      );
+      await markEmailMonitorFailed(
+        missingAdminRecipientsEvent,
+        "No admin notification recipients are configured for this inquiry service.",
+      );
       console.warn(
         "EMAIL DEBUG: No admin notification recipients configured for service:",
         inquiryData.service,
@@ -1299,6 +1320,11 @@ Submitted: ${new Date().toLocaleString()}
     // === CLIENT CONFIRMATION EMAIL ===
     // Send automated confirmation email to the client even if admin email fails.
     let clientEmailFallbackDoc: Record<string, unknown> | null = null;
+    const inquiryEmailMonitorId = await beginEmailMonitorEvent(
+      "Inquiry received",
+      inquiryData.email || "",
+      finalInquiryId,
+    );
 
     try {
       if (inquiryData.email) {
@@ -1367,18 +1393,26 @@ Submitted: ${new Date().toLocaleString()}
 
         clientEmailFallbackDoc = clientEmailData as Record<string, unknown>;
 
-        await addMailDocument(clientEmailData as Record<string, unknown>);
+        const clientMail = await addMailDocument(
+          clientEmailData as Record<string, unknown>,
+        );
+        await markEmailMonitorQueued(inquiryEmailMonitorId, clientMail.id);
         clientEmailSent = true;
         console.log(
           "âœ… EMAIL SUCCESS: Client confirmation email sent to:",
           inquiryData.email,
         );
       } else {
+        await markEmailMonitorFailed(
+          inquiryEmailMonitorId,
+          "No client email address was provided with the inquiry.",
+        );
         console.log(
           "âš ï¸ EMAIL WARNING: No client email provided, skipping confirmation email",
         );
       }
     } catch (error) {
+      await markEmailMonitorFailed(inquiryEmailMonitorId, error);
       clientEmailError = error instanceof Error ? error.message : String(error);
       if (clientEmailFallbackDoc) {
         emailFallbackDocs.push(clientEmailFallbackDoc);
@@ -1530,6 +1564,11 @@ export async function updateInquiryAction(
       data.status === "Service Not Offered" &&
       data.sendStatusEmail !== false
     ) {
+      const monitorEventId = await beginEmailMonitorEvent(
+        "Update regarding your inquiry",
+        data.email || "",
+        id,
+      );
       const emailHtml = `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <!-- Header with Logo -->
@@ -1581,7 +1620,8 @@ export async function updateInquiryAction(
       `;
 
       const mailDocRef = doc(collection(db, "mail"));
-      await setDoc(mailDocRef, {
+      try {
+        await setDoc(mailDocRef, {
         to: data.email,
         message: {
           subject: "Update Regarding Your Inquiry",
@@ -1593,7 +1633,12 @@ export async function updateInquiryAction(
           remarks: data.remarks || "",
         },
         createdAt: serverTimestamp(),
-      });
+        });
+        await markEmailMonitorQueued(monitorEventId, mailDocRef.id);
+      } catch (emailError) {
+        await markEmailMonitorFailed(monitorEventId, emailError);
+        throw emailError;
+      }
     }
 
     // Log the activity
@@ -1791,10 +1836,16 @@ export async function sendProjectApprovalEmail(
   projectPid: string,
   inquiryId: string,
 ) {
+  let monitorEventId: string | null = null;
   try {
-    const { collection, doc, setDoc } = await import("firebase/firestore");
-    const { db } = await import("@/lib/firebase");
-
+    monitorEventId = await beginEmailMonitorEvent(
+      "Project approval and next steps",
+      clientEmail,
+      projectPid,
+    );
+    if (!adminDb) {
+      throw new Error("Firebase Admin is unavailable for email queueing.");
+    }
     const portalUrl = "https://omics.pgcvisayas.upv.edu.ph/portal";
 
     const emailHtml = `
@@ -1881,8 +1932,7 @@ We look forward to working with you!
 Yours in utilizing OMICS for a better Philippines,
 Philippine Genome Center Visayas`.trim();
 
-    const mailDocRef = doc(collection(db, "mail"));
-    await setDoc(mailDocRef, {
+    const mailDocRef = await adminDb.collection("mail").add({
       to: clientEmail,
       message: {
         subject: `Project Approval and Next Steps: ${projectName}`,
@@ -1896,9 +1946,11 @@ Philippine Genome Center Visayas`.trim();
         projectPid,
       },
     });
+    await markEmailMonitorQueued(monitorEventId, mailDocRef.id);
 
     return { success: true };
   } catch (error) {
+    await markEmailMonitorFailed(monitorEventId, error);
     console.error("Error sending project approval email:", error);
     return {
       success: false,

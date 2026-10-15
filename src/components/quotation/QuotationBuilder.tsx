@@ -10,6 +10,11 @@ import { toast } from "sonner";
 
 import { db } from "@/lib/firebase";
 import { createQuotationAvailabilityEmail } from "@/lib/quotationEmail";
+import {
+  beginEmailMonitorEvent as beginClientEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringClient";
 import { calculateItemTotal } from "@/lib/calculatePrice";
 import { sanitizeObject } from "@/lib/sanitizeObject";
 import { getServiceCatalog } from "@/services/serviceCatalogService";
@@ -318,9 +323,17 @@ export default function QuotationBuilder({
 
       let emailQueued = result.emailQueued;
       let emailError = result.emailError;
+      let emailMonitorEventId = result.emailMonitorEventId;
       if (!emailQueued && clientInfo.email.trim()) {
+        if (!emailMonitorEventId) {
+          emailMonitorEventId = await beginClientEmailMonitorEvent(
+            "Quotation available",
+            clientInfo.email.trim().toLowerCase(),
+            quotationRecord.referenceNumber,
+          );
+        }
         try {
-          await addDoc(collection(db, "mail"), {
+          const mailDocument = await addDoc(collection(db, "mail"), {
             to: [clientInfo.email.trim().toLowerCase()],
             ...(quotationRecord.inquiryId
               ? { inquiryId: quotationRecord.inquiryId }
@@ -329,12 +342,14 @@ export default function QuotationBuilder({
               clientInfo.name || "Client",
             ),
           });
+          await markEmailMonitorQueued(emailMonitorEventId, mailDocument.id);
           emailQueued = true;
           emailError = undefined;
           console.info(
             `Quotation notification email queued for ${clientInfo.email}`,
           );
         } catch (error) {
+          await markEmailMonitorFailed(emailMonitorEventId, error);
           console.error(
             `Could not queue quotation notification from the admin client for ${clientInfo.email}:`,
             error,

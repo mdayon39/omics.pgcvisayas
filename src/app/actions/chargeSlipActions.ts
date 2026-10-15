@@ -11,6 +11,12 @@ import { logActivity } from "@/services/activityLogService";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { resolveClientUuid } from "@/services/clientUuidService";
+import { adminDb } from "@/lib/firebase-admin";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringAdmin";
 
 const MODE_OF_PAYMENT_URL =
   "https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2FMode%20of%20Payment_PGCV-MP-v005.pdf?alt=media&token=bb3d7fdf-77db-430c-9b3a-6b56724bca84";
@@ -25,8 +31,16 @@ export async function saveChargeSlipAction(
     // Send email notification to client about billing availability
     const recipientEmail = slip.clientInfo?.email || slip.client?.email || "";
     if (recipientEmail) {
+      const monitorEventId = await beginEmailMonitorEvent(
+        "Charge slip",
+        recipientEmail,
+        slip.referenceNumber || slip.id || "unknown",
+      );
+      let mailQueued = false;
       try {
-        const mailCollection = collection(db, "mail");
+        if (!adminDb) {
+          throw new Error("Firebase Admin is unavailable for email queueing.");
+        }
         const clientName =
           slip.clientInfo?.name || slip.client?.name || "Valued Client";
 
@@ -70,7 +84,7 @@ Yours in utilizing OMICS for a better Philippines,
 Philippine Genome Center Visayas
         `.trim();
 
-        await addDoc(mailCollection, {
+        const mailDocument = await adminDb.collection("mail").add({
           to: [recipientEmail],
           message: {
             subject: "Billing/Invoice: PGC Visayas",
@@ -78,6 +92,8 @@ Philippine Genome Center Visayas
             html: clientEmailHtml,
           },
         });
+        await markEmailMonitorQueued(monitorEventId, mailDocument.id);
+        mailQueued = true;
         console.log(
           `✅ Billing notification email sent to ${slip.clientInfo.email}`,
         );
@@ -97,8 +113,21 @@ Philippine Genome Center Visayas
           createdAt: new Date(),
         });
       } catch (emailError) {
+        if (!mailQueued) {
+          await markEmailMonitorFailed(monitorEventId, emailError);
+        }
         console.warn("Could not send billing notification email:", emailError);
       }
+    } else {
+      const monitorEventId = await beginEmailMonitorEvent(
+        "Charge slip",
+        "",
+        slip.referenceNumber || slip.id || "unknown",
+      );
+      await markEmailMonitorFailed(
+        monitorEventId,
+        "No client email address was available.",
+      );
     }
 
     // Log the activity

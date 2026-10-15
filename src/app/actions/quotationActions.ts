@@ -11,6 +11,11 @@ import { logActivity } from "@/services/activityLogService";
 import { sanitizeObject } from "@/lib/sanitizeObject";
 import { adminDb } from "@/lib/firebase-admin";
 import { createQuotationAvailabilityEmail } from "@/lib/quotationEmail";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringAdmin";
 
 function normalizeEmail(value?: string | null): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -82,8 +87,16 @@ export async function saveQuotationAction(
       normalizeEmail(quotation.email) || normalizeEmail(inquiry?.email);
     let emailQueued = false;
     let emailError: string | undefined;
+    let emailMonitorEventId: string | null = null;
 
     if (!recipientEmail) {
+      const monitorEventId = await beginEmailMonitorEvent(
+        "Quotation available",
+        "",
+        quotation.referenceNumber,
+      );
+      emailMonitorEventId = monitorEventId;
+      await markEmailMonitorFailed(emailMonitorEventId, "No client email address was available.");
       emailError =
         "Quotation saved, but no client email address was available for the notification.";
     } else if (!adminDb) {
@@ -95,16 +108,23 @@ export async function saveQuotationAction(
     } else {
       const clientName = quotation.name || inquiry?.name || "Client";
       const message = createQuotationAvailabilityEmail(clientName);
+      emailMonitorEventId = await beginEmailMonitorEvent(
+        "Quotation available",
+        recipientEmail,
+        quotation.referenceNumber,
+      );
 
       try {
-        await adminDb.collection("mail").add({
+        const mailDocument = await adminDb.collection("mail").add({
           to: [recipientEmail],
           ...(quotation.inquiryId ? { inquiryId: quotation.inquiryId } : {}),
           message,
         });
+        await markEmailMonitorQueued(emailMonitorEventId, mailDocument.id);
         emailQueued = true;
         console.info(`Quotation notification email queued for ${recipientEmail}`);
       } catch (emailQueueError) {
+        await markEmailMonitorFailed(emailMonitorEventId, emailQueueError);
         console.error(
           `Quotation was saved, but notification email could not be queued for ${recipientEmail}:`,
           emailQueueError,
@@ -158,7 +178,7 @@ export async function saveQuotationAction(
 
     revalidatePath("/admin/quotations");
     revalidatePath("/admin/inquiries");
-    return { success: true, emailQueued, emailError };
+    return { success: true, emailQueued, emailError, emailMonitorEventId };
   } catch (error) {
     console.error("Error saving quotation:", error);
     return { success: false, error: "Failed to save quotation" };

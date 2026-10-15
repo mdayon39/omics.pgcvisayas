@@ -12,6 +12,11 @@ import {
   where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringClient";
 
 export interface ServiceReport {
   id: string;
@@ -163,12 +168,24 @@ export async function markServiceReportReceived(
     };
   });
 
-  if (!receiptResult.shouldNotify || !receiptResult.recipient) {
+  if (!receiptResult.shouldNotify) {
     return { adminEmailNotificationSent: false };
   }
 
+  const monitorEventId = await beginEmailMonitorEvent(
+    "Service report received",
+    receiptResult.recipient,
+    `${pid}:${reportId}`,
+  );
+  if (!receiptResult.recipient) {
+    await markEmailMonitorFailed(
+      monitorEventId,
+      "No admin email address was available for the receipt notification.",
+    );
+    return { adminEmailNotificationSent: false };
+  }
   try {
-    return await runTransaction(db, async (transaction) => {
+    const result = await runTransaction(db, async (transaction) => {
       const reportSnapshot = await transaction.get(reportRef);
       if (!reportSnapshot.exists()) {
         throw new Error("This service report could not be found.");
@@ -287,9 +304,14 @@ Automated notification — please do not reply to this email.`;
         },
       });
 
-      return { adminEmailNotificationSent: true };
+      return { adminEmailNotificationSent: true, mailDocumentId: mailRef.id };
     });
+    if (result.adminEmailNotificationSent && result.mailDocumentId) {
+      await markEmailMonitorQueued(monitorEventId, result.mailDocumentId);
+    }
+    return { adminEmailNotificationSent: result.adminEmailNotificationSent };
   } catch (error) {
+    await markEmailMonitorFailed(monitorEventId, error);
     console.error(
       `Receipt saved for service report ${reportId}, but the admin email could not be queued:`,
       error,

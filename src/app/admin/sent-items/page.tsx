@@ -53,6 +53,7 @@ type EmailCategory =
   | "Service Report Received"
   | "Project Approval and Next Steps"
   | "Password recovery"
+  | "Client broadcast"
   | "Other client email";
 
 type EmailStatus = "Sent" | "Failed" | "Pending";
@@ -336,7 +337,9 @@ function SentItemsContent() {
               clientName,
               recipient: recipient || "Unknown recipient",
               subject,
-              category: categorizeEmail(subject),
+              category: data.broadcastId
+                ? "Client broadcast"
+                : categorizeEmail(subject),
               status: getStatus(data),
               sentAt: getSentAt(data),
               createdAt: toDate(data.createdAt || data.timestamp),
@@ -594,6 +597,9 @@ function SentItemsContent() {
               </SelectItem>
               <SelectItem value="Password recovery">
                 Password recovery
+              </SelectItem>
+              <SelectItem value="Client broadcast">
+                Client broadcast
               </SelectItem>
               <SelectItem value="Other client email">
                 Other client email

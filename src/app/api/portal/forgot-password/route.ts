@@ -9,10 +9,15 @@ import {
   getDocs,
   query,
   where,
-  addDoc,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { adminDb } from "@/lib/firebase-admin";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringAdmin";
 
 const PORTAL_URL = "https://omics.pgcvisayas.upv.edu.ph/portal";
 
@@ -165,14 +170,32 @@ Philippine Genome Center Visayas`;
       </div>
     `;
 
-    await addDoc(collection(db, "mail"), {
-      to: [email],
-      message: {
-        subject: "Client Portal — Password Recovery",
-        text: emailText,
-        html: emailHtml,
-      },
-    });
+    const monitorEventId = await beginEmailMonitorEvent(
+      "Password recovery",
+      email,
+      email,
+    );
+    if (!adminDb) {
+      const queueError = new Error(
+        "Firebase Admin is unavailable for email queueing.",
+      );
+      await markEmailMonitorFailed(monitorEventId, queueError);
+      throw queueError;
+    }
+    try {
+      const mailDocument = await adminDb.collection("mail").add({
+        to: [email],
+        message: {
+          subject: "Client Portal — Password Recovery",
+          text: emailText,
+          html: emailHtml,
+        },
+      });
+      await markEmailMonitorQueued(monitorEventId, mailDocument.id);
+    } catch (queueError) {
+      await markEmailMonitorFailed(monitorEventId, queueError);
+      throw queueError;
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

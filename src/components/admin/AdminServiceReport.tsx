@@ -34,6 +34,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringClient";
 import useAuth from "@/hooks/useAuth";
 import { logActivity } from "@/services/activityLogService";
 import {
@@ -293,7 +298,13 @@ export default function AdminServiceReport({
       });
 
       // Send notification email to client
+      const monitorEventId = await beginEmailMonitorEvent(
+        "Service report available",
+        clientEmail || "",
+        `${projectId}:${file.name}`,
+      );
       if (clientEmail) {
+        let mailQueued = false;
         const recipientName = clientName || "Client";
         const portalUrl = "https://omics.pgcvisayas.upv.edu.ph/portal";
 
@@ -334,7 +345,7 @@ Yours in utilizing OMICS for a better Philippines,
 Philippine Genome Center Visayas`.trim();
 
         try {
-          await addDoc(collection(db, "mail"), {
+          const mailDocument = await addDoc(collection(db, "mail"), {
             to: [clientEmail],
             message: {
               subject: "Service Report Available: PGC Visayas",
@@ -342,6 +353,8 @@ Philippine Genome Center Visayas`.trim();
               html: emailHtml,
             },
           });
+          await markEmailMonitorQueued(monitorEventId, mailDocument.id);
+          mailQueued = true;
 
           // In-app notification
           const notificationUuid =
@@ -359,8 +372,16 @@ Philippine Genome Center Visayas`.trim();
             createdAt: new Date(),
           });
         } catch (emailErr) {
+          if (!mailQueued) {
+            await markEmailMonitorFailed(monitorEventId, emailErr);
+          }
           console.warn("Service report email could not be sent:", emailErr);
         }
+      } else {
+        await markEmailMonitorFailed(
+          monitorEventId,
+          "No client email address was available for the service report notification.",
+        );
       }
 
       toast.success(`"${file.name}" uploaded successfully.`);

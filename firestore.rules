@@ -255,6 +255,33 @@ service cloud.firestore {
         );
     }
 
+    match /emailMonitoringEvents/{eventId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        || (
+          isSignedIn()
+          && request.resource.data.keys().hasOnly([
+            'category', 'recipient', 'sourceId', 'triggeredByUid',
+            'triggeredAt', 'queueStatus'
+          ])
+          && request.resource.data.category == 'Service report received'
+          && request.resource.data.triggeredByUid == userUid()
+          && request.resource.data.recipient is string
+          && request.resource.data.sourceId is string
+          && request.resource.data.queueStatus == 'queueing'
+        );
+      allow update: if isAdmin()
+        || (
+          isSignedIn()
+          && resource.data.category == 'Service report received'
+          && resource.data.triggeredByUid == userUid()
+          && request.resource.data.queueStatus in ['queued', 'failed']
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['queueStatus', 'mailDocumentId', 'error'])
+        );
+      allow delete: if false;
+    }
+
     match /clientAnnouncements/{announcementId} {
       allow get, list: if isAdmin()
         || (

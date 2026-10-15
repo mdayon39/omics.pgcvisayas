@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
-import { addDoc, collection, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { adminDb } from "@/lib/firebase-admin";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringAdmin";
 
 const PORTAL_URL = "https://omics.pgcvisayas.upv.edu.ph/portal";
 
@@ -29,14 +35,23 @@ export async function POST(request: Request) {
     const clientEmail = threadData.clientEmail || "";
     const clientName = threadData.clientName || "Client";
 
+    const isFollowUp = emailType === "follow-up";
+    const monitorEventId = await beginEmailMonitorEvent(
+      "Chat received",
+      clientEmail,
+      threadId,
+    );
     if (!clientEmail) {
+      await markEmailMonitorFailed(
+        monitorEventId,
+        "No client email address was found for the chat thread.",
+      );
       return NextResponse.json(
         { error: "Client email not found" },
         { status: 400 },
       );
     }
 
-    const isFollowUp = emailType === "follow-up";
     const subject = isFollowUp
       ? "Chat Message Update: PGC Visayas"
       : "Chat Message Received: PGC Visayas";
@@ -66,7 +81,13 @@ Philippine Genome Center Visayas`;
       </div>
     `;
 
-    await addDoc(collection(db, "mail"), {
+    if (!adminDb) {
+      const error = new Error("Firebase Admin is unavailable for email queueing.");
+      await markEmailMonitorFailed(monitorEventId, error);
+      throw error;
+    }
+    try {
+      const mailDocument = await adminDb.collection("mail").add({
       to: [clientEmail],
       inquiryId: threadId,
       message: {
@@ -74,7 +95,12 @@ Philippine Genome Center Visayas`;
         text: emailText,
         html: emailHtml,
       },
-    });
+      });
+      await markEmailMonitorQueued(monitorEventId, mailDocument.id);
+    } catch (error) {
+      await markEmailMonitorFailed(monitorEventId, error);
+      throw error;
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -1,0 +1,308 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
+import { AlertCircle, CheckCircle2, Clock3, MailCheck } from "lucide-react";
+import { db } from "@/lib/firebase";
+import {
+  EMAIL_MONITOR_CATEGORIES,
+  type EmailMonitorEvent,
+} from "@/types/EmailMonitoring";
+import { Badge } from "@/components/ui/badge";
+
+type MailRecord = {
+  delivery?: { state?: string; error?: string; endTime?: unknown };
+  status?: string;
+};
+
+type MonitorStatus =
+  | "Sent"
+  | "Pending"
+  | "Stalled"
+  | "Queueing"
+  | "Failed"
+  | "Missing email record";
+
+function toDate(value: unknown): Date {
+  if (value instanceof Date) return value;
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof value.toDate === "function"
+  ) {
+    return value.toDate();
+  }
+  return new Date(0);
+}
+
+function formatDate(date: Date): string {
+  if (!date.getTime()) return "Waiting for timestamp";
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getMonitorStatus(
+  event: EmailMonitorEvent,
+  mail: MailRecord | undefined,
+  now: number,
+): { status: MonitorStatus; error?: string } {
+  if (event.queueStatus === "failed") {
+    return { status: "Failed", error: event.error };
+  }
+
+  if (event.queueStatus === "queueing") {
+    const ageMs = now - event.triggeredAt.getTime();
+    return ageMs > 2 * 60 * 1000
+      ? {
+          status: "Missing email record",
+          error: "The trigger was recorded, but no mail queue record was linked.",
+        }
+      : { status: "Queueing" };
+  }
+
+  if (!event.mailDocumentId || !mail) {
+    return {
+      status: "Missing email record",
+      error: "The trigger was recorded, but its mail queue record is missing.",
+    };
+  }
+
+  const state = String(mail.delivery?.state || mail.status || "").toUpperCase();
+  if (state === "SUCCESS" || state === "SENT") return { status: "Sent" };
+  if (state === "ERROR" || state === "FAILED" || state === "FAILURE") {
+    return {
+      status: "Failed",
+      error: mail.delivery?.error || "The email provider reported a failure.",
+    };
+  }
+  if (now - event.triggeredAt.getTime() > 10 * 60 * 1000) {
+    return {
+      status: "Stalled",
+      error: "The email is still pending with the mail delivery extension.",
+    };
+  }
+  return { status: "Pending" };
+}
+
+function statusClass(status: MonitorStatus): string {
+  if (status === "Sent") return "bg-emerald-100 text-emerald-800";
+  if (
+    status === "Failed" ||
+    status === "Stalled" ||
+    status === "Missing email record"
+  ) {
+    return "bg-red-100 text-red-800";
+  }
+  return "bg-amber-100 text-amber-800";
+}
+
+export function EmailMonitoringPanel() {
+  const [events, setEvents] = useState<EmailMonitorEvent[]>([]);
+  const [mailById, setMailById] = useState<Map<string, MailRecord>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [category, setCategory] = useState<string>("All");
+  const [clock, setClock] = useState(() => Date.now());
+
+  useEffect(() => {
+    const clockInterval = window.setInterval(() => setClock(Date.now()), 30_000);
+    const eventsQuery = query(
+      collection(db, "emailMonitoringEvents"),
+      orderBy("triggeredAt", "desc"),
+      limit(300),
+    );
+    const unsubscribeEvents = onSnapshot(
+      eventsQuery,
+      (snapshot) => {
+        setEvents(
+          snapshot.docs.map((document) => {
+            const data = document.data();
+            return {
+              id: document.id,
+              category: data.category,
+              recipient: data.recipient || "",
+              sourceId: data.sourceId || "",
+              triggeredAt: toDate(data.triggeredAt),
+              queueStatus: data.queueStatus || "queueing",
+              mailDocumentId: data.mailDocumentId,
+              error: data.error,
+            } as EmailMonitorEvent;
+          }),
+        );
+        setLoading(false);
+        setError("");
+      },
+      (snapshotError) => {
+        console.error("Could not load email monitoring events:", snapshotError);
+        setError("Could not load email monitoring events. Check your admin access and try refreshing.");
+        setLoading(false);
+      },
+    );
+
+    const unsubscribeMail = onSnapshot(
+      collection(db, "mail"),
+      (snapshot) => {
+        const nextMail = new Map<string, MailRecord>();
+        snapshot.forEach((document) => nextMail.set(document.id, document.data() as MailRecord));
+        setMailById(nextMail);
+      },
+      (snapshotError) => {
+        console.error("Could not load email delivery states:", snapshotError);
+        setError("Could not load email delivery states. Check your admin access and try refreshing.");
+      },
+    );
+
+    return () => {
+      window.clearInterval(clockInterval);
+      unsubscribeEvents();
+      unsubscribeMail();
+    };
+  }, []);
+
+  const now = clock;
+  const rows = useMemo(
+    () =>
+      events.map((event) => ({
+        ...event,
+        ...getMonitorStatus(
+          event,
+          event.mailDocumentId
+            ? mailById.get(event.mailDocumentId)
+            : undefined,
+          now,
+        ),
+      })),
+    [events, mailById, now],
+  );
+  const visibleRows = rows.filter(
+    (row) => category === "All" || row.category === category,
+  );
+  const attentionCount = rows.filter(
+    (row) =>
+      row.status === "Failed" ||
+      row.status === "Stalled" ||
+      row.status === "Missing email record",
+  ).length;
+  const sentCount = rows.filter((row) => row.status === "Sent").length;
+  const pendingCount = rows.filter(
+    (row) => row.status === "Pending" || row.status === "Queueing",
+  ).length;
+
+  return (
+    <section className="space-y-5">
+      <div>
+        <div className="flex items-center gap-2">
+          <MailCheck className="h-6 w-6 text-slate-700" />
+          <h1 className="text-2xl font-bold">Email Monitoring</h1>
+        </div>
+        <p className="mt-1 text-sm text-slate-600">
+          Monitor notification triggers, mail queue creation, and delivery-provider status in real time.
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard label="Tracked triggers" value={rows.length} />
+        <SummaryCard label="Provider accepted" value={sentCount} icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />} />
+        <SummaryCard label="Pending" value={pendingCount} icon={<Clock3 className="h-4 w-4 text-amber-600" />} />
+        <SummaryCard label="Needs attention" value={attentionCount} icon={<AlertCircle className="h-4 w-4 text-red-600" />} alert={attentionCount > 0} />
+      </div>
+
+      <div className="rounded-lg border bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
+          <div>
+            <h2 className="font-semibold">Notification events</h2>
+            <p className="text-xs text-slate-500">Showing the most recent 300 tracked triggers.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label htmlFor="email-monitor-category" className="text-sm text-slate-600">Category</label>
+            <select
+              id="email-monitor-category"
+              className="h-9 rounded-md border bg-white px-2 text-sm"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+            >
+              <option>All</option>
+              {EMAIL_MONITOR_CATEGORIES.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {error && (
+          <div className="m-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <p className="p-6 text-sm text-slate-500">Loading notification events...</p>
+        ) : visibleRows.length === 0 ? (
+          <p className="p-6 text-sm text-slate-500">No tracked notification triggers yet. Monitoring starts with app versions that write email event records.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Triggered</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Recipient</th>
+                  <th className="px-4 py-3">Source</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {visibleRows.map((row) => (
+                  <tr key={row.id} className={row.status === "Failed" || row.status === "Stalled" || row.status === "Missing email record" ? "bg-red-50/50" : ""}>
+                    <td className="whitespace-nowrap px-4 py-3">{formatDate(row.triggeredAt)}</td>
+                    <td className="px-4 py-3">{row.category}</td>
+                    <td className="px-4 py-3">{row.recipient || "No recipient recorded"}</td>
+                    <td className="px-4 py-3">{row.sourceId || "—"}</td>
+                    <td className="px-4 py-3"><Badge className={statusClass(row.status)}>{row.status}</Badge></td>
+                    <td className="max-w-sm px-4 py-3 text-xs text-slate-600">{row.error || row.mailDocumentId || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-slate-500">
+        “Provider accepted” means the configured mail extension reported success; it does not guarantee inbox placement. Only triggers recorded by the deployed monitoring-enabled app version appear here.
+      </p>
+    </section>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  icon,
+  alert = false,
+}: {
+  label: string;
+  value: number;
+  icon?: React.ReactNode;
+  alert?: boolean;
+}) {
+  return (
+    <div className={`rounded-lg border p-4 ${alert ? "border-red-200 bg-red-50" : "bg-white"}`}>
+      <div className="flex items-center justify-between text-sm text-slate-600">
+        {label}
+        {icon}
+      </div>
+      <div className={`mt-2 text-2xl font-semibold ${alert ? "text-red-700" : "text-slate-900"}`}>{value}</div>
+    </div>
+  );
+}

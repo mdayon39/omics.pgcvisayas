@@ -23,11 +23,20 @@ import {
   Bell,
   UserCheck,
   CalendarDays,
+  MailCheck,
 } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useApprovalNotifications } from "@/hooks/useApprovalNotifications";
 import { useInquiryNotifications } from "@/hooks/useInquiryNotifications";
+import {
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import { useProjectFormNotifications } from "@/app/admin/projects/columns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +45,7 @@ import { cn } from "@/lib/utils";
 import { useTabContext } from "@/contexts/TabContext";
 import type { RolePermissions } from "@/types/Permissions";
 import { CLIENT_ANNOUNCEMENT_ADMIN_EMAILS } from "@/constants/clientAnnouncement";
+import { db } from "@/lib/firebase";
 
 // Map routes to permission modules
 const ROUTE_MODULE_MAP: Record<string, keyof RolePermissions> = {
@@ -43,6 +53,7 @@ const ROUTE_MODULE_MAP: Record<string, keyof RolePermissions> = {
   "/admin/inquiry": "inquiries",
   "/admin/projects": "projects",
   "/admin/clients": "clients",
+  "/admin/broadcast-email": "clients",
   "/admin/quotations": "quotations",
   "/admin/charge-slips": "chargeSlips",
   "/admin/official-receipts": "officialReceipts",
@@ -58,6 +69,7 @@ const ROUTE_MODULE_MAP: Record<string, keyof RolePermissions> = {
   "/admin/admins": "usersPermissions",
   "/admin/activity-logs": "activityLogs",
   "/admin/sent-items": "sentItems",
+  "/admin/email-monitoring": "sentItems",
   "/admin/backup": "usersPermissions", // Backup uses same permissions as user management
 };
 
@@ -68,6 +80,67 @@ export function AdminSidebar() {
   const { canView, canEdit, loading: permissionsLoading } = usePermissions(
     adminInfo?.role,
   );
+  const [emailMonitoringAlertCount, setEmailMonitoringAlertCount] =
+    React.useState(0);
+  const canViewEmailMonitoring = canView("sentItems");
+  React.useEffect(() => {
+    if (permissionsLoading || !canViewEmailMonitoring) {
+      setEmailMonitoringAlertCount(0);
+      return;
+    }
+
+    let latestEvents: Array<Record<string, unknown>> = [];
+    let failedMailCount = 0;
+    const updateCount = () => {
+      const now = Date.now();
+      const triggerFailures = latestEvents.filter((event) => {
+        if (event.queueStatus === "failed" && !event.mailDocumentId) return true;
+        if (event.queueStatus !== "queueing") return false;
+        const triggeredAt = event.triggeredAt as
+          | { toDate?: () => Date }
+          | undefined;
+        const date =
+          typeof triggeredAt?.toDate === "function"
+            ? triggeredAt.toDate()
+            : new Date(0);
+        return now - date.getTime() > 2 * 60 * 1000;
+      }).length;
+      setEmailMonitoringAlertCount(triggerFailures + failedMailCount);
+    };
+    const unsubscribeEvents = onSnapshot(
+      query(
+        collection(db, "emailMonitoringEvents"),
+        orderBy("triggeredAt", "desc"),
+        limit(300),
+      ),
+      (snapshot) => {
+        latestEvents = snapshot.docs.map((document) => document.data());
+        updateCount();
+      },
+      (error) => {
+        console.error("Could not load email monitoring alert count:", error);
+      },
+    );
+    const unsubscribeFailedMail = onSnapshot(
+      query(
+        collection(db, "mail"),
+        where("delivery.state", "in", ["ERROR", "FAILED", "FAILURE"]),
+      ),
+      (snapshot) => {
+        failedMailCount = snapshot.size;
+        updateCount();
+      },
+      (error) => {
+        console.error("Could not load email delivery failures:", error);
+      },
+    );
+    const timer = window.setInterval(updateCount, 30_000);
+    return () => {
+      unsubscribeEvents();
+      unsubscribeFailedMail();
+      window.clearInterval(timer);
+    };
+  }, [canViewEmailMonitoring, permissionsLoading]);
   const { openTab, activeTab, isTabOpen, setActiveTab } = useTabContext();
   const {
     pendingCount,
@@ -153,6 +226,16 @@ export function AdminSidebar() {
           label: "Projects Approval",
           icon: ShieldCheck,
         },
+        {
+          href: "/admin/broadcast-email",
+          label: "Email Broadcast",
+          icon: Send,
+        },
+        {
+          href: "/admin/email-monitoring",
+          label: "Email Monitoring",
+          icon: MailCheck,
+        },
       ],
     },
     {
@@ -230,6 +313,8 @@ export function AdminSidebar() {
               CLIENT_ANNOUNCEMENT_ADMIN_EMAILS.some(
                 (email) => email === adminInfo?.email?.trim().toLowerCase(),
               )
+            : item.href === "/admin/broadcast-email"
+              ? adminInfo?.role === "superadmin"
             : canView(routeModule))
         );
       }),
@@ -330,6 +415,22 @@ export function AdminSidebar() {
                         {inquiryCount}
                       </span>
                     )}
+
+                    {href === "/admin/email-monitoring" &&
+                      emailMonitoringAlertCount > 0 && (
+                        <span
+                          className={cn(
+                            "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5",
+                            isActive(href)
+                              ? "bg-white text-[#166FB5]"
+                              : "bg-red-500 text-white animate-pulse",
+                          )}
+                        >
+                          {emailMonitoringAlertCount > 99
+                            ? "99+"
+                            : emailMonitoringAlertCount}
+                        </span>
+                      )}
 
                     {/* Notification badge for Projects */}
                     {href === "/admin/projects" &&

@@ -707,7 +707,9 @@ function SentItemsContent() {
                 <th className="w-[150px] px-4 py-3">Inquiry ID</th>
                 <th className="w-[200px] px-4 py-3">Client name</th>
                 <th className="w-[220px] px-4 py-3">Recipient</th>
-                <th className="w-[200px] px-4 py-3">Sent by</th>
+                {includeBroadcastEmails && (
+                  <th className="w-[200px] px-4 py-3">Sent by</th>
+                )}
                 <th className="w-[180px] px-4 py-3">Category</th>
                 <th className="px-4 py-3">Subject</th>
                 <th className="w-[150px] px-4 py-3">Status</th>
@@ -814,12 +816,14 @@ function SentItemsContent() {
                         <span className="truncate">{email.recipient}</span>
                       </div>
                     </td>
-                    <td
-                      className="truncate px-4 py-3 text-xs"
-                      title={email.sentBy}
-                    >
-                      {email.sentBy}
-                    </td>
+                    {includeBroadcastEmails && (
+                      <td
+                        className="truncate px-4 py-3 text-xs"
+                        title={email.sentBy}
+                      >
+                        {email.sentBy}
+                      </td>
+                    )}
                     <td className="truncate px-4 py-3" title={email.category}>
                       <Badge variant="outline" className="max-w-full truncate">
                         {email.category}

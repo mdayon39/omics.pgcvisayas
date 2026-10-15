@@ -30,6 +30,7 @@ const RECIPIENT_STATUSES = [
   "Approved Client",
   "In Progress",
 ] as const;
+type RecipientStatus = (typeof RECIPIENT_STATUSES)[number];
 
 type InquiryRecipient = {
   email: string;
@@ -44,6 +45,9 @@ export default function BroadcastEmailPage() {
   const [inquiryRecipients, setInquiryRecipients] = useState<InquiryRecipient[]>([]);
   const [selectedInquiryEmails, setSelectedInquiryEmails] = useState<Set<string>>(
     new Set(),
+  );
+  const [inquiryStatus, setInquiryStatus] = useState<RecipientStatus>(
+    RECIPIENT_STATUSES[0],
   );
   const [loadingInquiryRecipients, setLoadingInquiryRecipients] = useState(false);
   const [emailInput, setEmailInput] = useState("");
@@ -89,7 +93,7 @@ export default function BroadcastEmailPage() {
     try {
       const inquiryQuery = query(
         collection(db, "inquiries"),
-        where("status", "in", [...RECIPIENT_STATUSES]),
+        where("status", "==", inquiryStatus),
       );
       const snapshot = await getDocs(inquiryQuery);
       const recipientsByEmail = new Map<string, InquiryRecipient>();
@@ -124,9 +128,13 @@ export default function BroadcastEmailPage() {
       setInquiryRecipients(recipients);
       setSelectedInquiryEmails(new Set());
       if (recipients.length === 0) {
-        toast.info("No valid email addresses found for those inquiry statuses.");
+        toast.info(
+          `No valid email addresses found for ${inquiryStatus} inquiries.`,
+        );
       } else {
-        toast.success(`Loaded ${recipients.length} eligible client email${recipients.length === 1 ? "" : "s"}.`);
+        toast.success(
+          `Loaded ${recipients.length} client email${recipients.length === 1 ? "" : "s"} with ${inquiryStatus} status.`,
+        );
       }
     } catch (error) {
       console.error("Could not load eligible inquiry recipients:", error);
@@ -261,18 +269,40 @@ export default function BroadcastEmailPage() {
                     Add recipients from inquiries
                   </h3>
                   <p className="text-xs text-slate-600">
-                    Find unique email addresses from inquiries with status
-                    {" "}Ongoing Quotation, Approved Client, or In Progress.
+                    Select one inquiry status at a time, then review its client
+                    email addresses before adding them.
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={loadInquiryRecipients}
-                  disabled={loadingInquiryRecipients}
-                >
-                  {loadingInquiryRecipients ? "Loading…" : "Load eligible clients"}
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Label htmlFor="inquiry-recipient-status" className="text-sm">
+                    Status
+                  </Label>
+                  <select
+                    id="inquiry-recipient-status"
+                    value={inquiryStatus}
+                    onChange={(event) => {
+                      setInquiryStatus(event.target.value as RecipientStatus);
+                      setInquiryRecipients([]);
+                      setSelectedInquiryEmails(new Set());
+                    }}
+                    disabled={loadingInquiryRecipients}
+                    className="h-9 rounded-md border bg-white px-2 text-sm"
+                  >
+                    {RECIPIENT_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={loadInquiryRecipients}
+                    disabled={loadingInquiryRecipients}
+                  >
+                    {loadingInquiryRecipients ? "Loading…" : "Load clients"}
+                  </Button>
+                </div>
               </div>
               {inquiryRecipients.length > 0 && (
                 <div className="space-y-2">
@@ -281,6 +311,15 @@ export default function BroadcastEmailPage() {
                       {selectedInquiryEmails.size} selected · {inquiryRecipients.length} eligible
                     </span>
                     <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedInquiryEmails(new Set())}
+                        disabled={selectedInquiryEmails.size === 0}
+                      >
+                        Reset selection
+                      </Button>
                       <Button
                         type="button"
                         variant="ghost"

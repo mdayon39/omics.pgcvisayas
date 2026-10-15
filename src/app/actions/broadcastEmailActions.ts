@@ -8,12 +8,6 @@ import type { UserRole } from "@/types/Permissions";
 const MAX_BROADCAST_RECIPIENTS = 200;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type BroadcastRecipient = {
-  id: string;
-  name: string;
-  email: string;
-};
-
 function normalizeEmail(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
@@ -51,39 +45,6 @@ async function authorizeBroadcast(
   return { uid: decodedToken.uid, email, role: roleValue as UserRole };
 }
 
-function readRecipients(
-  documents: FirebaseFirestore.DocumentSnapshot[],
-): BroadcastRecipient[] {
-  const recipientsByEmail = new Map<string, BroadcastRecipient>();
-  for (const document of documents) {
-    const data = document.data();
-    if (!data) continue;
-    const email = normalizeEmail(data.email);
-    if (!EMAIL_PATTERN.test(email) || recipientsByEmail.has(email)) {
-      continue;
-    }
-    recipientsByEmail.set(email, {
-      id: document.id,
-      name:
-        typeof data.name === "string" && data.name.trim()
-          ? data.name.trim()
-          : "Valued Client",
-      email,
-    });
-  }
-  return [...recipientsByEmail.values()].sort((left, right) =>
-    left.name.localeCompare(right.name),
-  );
-}
-
-export async function getBroadcastRecipients(
-  idToken: string,
-): Promise<BroadcastRecipient[]> {
-  await authorizeBroadcast(idToken);
-  const snapshot = await adminDb!.collection("inquiries").get();
-  return readRecipients(snapshot.docs);
-}
-
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {
     const entities: Record<string, string> = {
@@ -99,7 +60,7 @@ function escapeHtml(value: string): string {
 
 export async function queueClientBroadcast(
   idToken: string,
-  input: { inquiryIds: string[]; subject: string; body: string },
+  input: { recipientEmails: string[]; subject: string; body: string },
 ): Promise<{ broadcastId: string; queuedCount: number }> {
   const sender = await authorizeBroadcast(idToken);
   if (!adminDb) throw new Error("Email broadcast is unavailable.");
@@ -109,8 +70,14 @@ export async function queueClientBroadcast(
     typeof input?.body === "string"
       ? input.body.trim().replace(/\r\n?/g, "\n")
       : "";
-  const inquiryIds = Array.isArray(input?.inquiryIds)
-    ? [...new Set(input.inquiryIds.filter((id) => typeof id === "string"))]
+  const recipientEmails = Array.isArray(input?.recipientEmails)
+    ? [
+        ...new Set(
+          input.recipientEmails
+            .filter((email): email is string => typeof email === "string")
+            .map(normalizeEmail),
+        ),
+      ]
     : [];
 
   if (!subject || subject.length > 200) {
@@ -120,59 +87,44 @@ export async function queueClientBroadcast(
     throw new Error("Enter a message of 1 to 10,000 characters.");
   }
   if (
-    inquiryIds.length === 0 ||
-    inquiryIds.length > MAX_BROADCAST_RECIPIENTS
+    recipientEmails.length === 0 ||
+    recipientEmails.length > MAX_BROADCAST_RECIPIENTS
   ) {
     throw new Error(
-      `Select between 1 and ${MAX_BROADCAST_RECIPIENTS} inquiry email addresses.`,
+      `Enter between 1 and ${MAX_BROADCAST_RECIPIENTS} email addresses.`,
     );
   }
-  if (inquiryIds.some((id) => !id || id.length > 1_500 || id.includes("/"))) {
-    throw new Error("The selected inquiry list is invalid. Refresh it and try again.");
-  }
-
-  const inquiryReferences = inquiryIds.map((id) =>
-    adminDb!.collection("inquiries").doc(id),
-  );
-  const inquirySnapshots = await adminDb.getAll(...inquiryReferences);
-  if (inquirySnapshots.some((snapshot) => !snapshot.exists)) {
-    throw new Error("The inquiry list changed. Refresh it and try again.");
-  }
-  const recipients = readRecipients(inquirySnapshots);
-  if (recipients.length !== inquiryIds.length) {
-    throw new Error(
-      "One or more selected inquiries have an invalid or duplicate email address. Refresh the inquiry list.",
-    );
+  if (recipientEmails.some((email) => !EMAIL_PATTERN.test(email))) {
+    throw new Error("Enter a valid email address for every recipient.");
   }
 
   const broadcastId = adminDb.collection("emailBroadcasts").doc().id;
   const batch = adminDb.batch();
   batch.set(adminDb.collection("emailBroadcasts").doc(broadcastId), {
     subject,
-    recipientCount: recipients.length,
+    recipientCount: recipientEmails.length,
     createdByUid: sender.uid,
     createdByEmail: sender.email,
     createdAt: new Date(),
   });
 
-  for (const recipient of recipients) {
+  for (const email of recipientEmails) {
     const mailReference = adminDb.collection("mail").doc();
     const eventReference = adminDb.collection("emailMonitoringEvents").doc();
-    const safeName = escapeHtml(recipient.name);
     const safeBody = escapeHtml(body).replace(/\n/g, "<br />");
 
     batch.set(mailReference, {
-      to: [recipient.email],
+      to: [email],
       message: {
         subject,
-        text: `Dear ${recipient.name},\n\n${body}`,
-        html: `<div><p>Dear ${safeName},</p><p>${safeBody}</p></div>`,
+        text: body,
+        html: `<div><p>${safeBody}</p></div>`,
       },
       broadcastId,
     });
     batch.set(eventReference, {
       category: "Client broadcast",
-      recipient: recipient.email,
+      recipient: email,
       sourceId: broadcastId,
       triggeredByUid: sender.uid,
       triggeredAt: new Date(),
@@ -182,5 +134,5 @@ export async function queueClientBroadcast(
   }
 
   await batch.commit();
-  return { broadcastId, queuedCount: recipients.length };
+  return { broadcastId, queuedCount: recipientEmails.length };
 }

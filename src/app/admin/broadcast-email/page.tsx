@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, RefreshCw, Send } from "lucide-react";
+import { Mail, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,100 +20,51 @@ import {
 } from "@/components/ui/alert-dialog";
 import useAuth from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase";
-import {
-  getBroadcastRecipients,
-  queueClientBroadcast,
-} from "@/app/actions/broadcastEmailActions";
+import { queueClientBroadcast } from "@/app/actions/broadcastEmailActions";
 
-type Recipient = { id: string; name: string; email: string };
 const MAX_BROADCAST_RECIPIENTS = 200;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function BroadcastEmailPage() {
   const router = useRouter();
   const { adminInfo, loading: authLoading } = useAuth();
-  const [recipients, setRecipients] = useState<Recipient[]>([]);
-  const [selectedInquiryIds, setSelectedInquiryIds] = useState<Set<string>>(
-    new Set(),
-  );
-  const [search, setSearch] = useState("");
+  const [recipientEmails, setRecipientEmails] = useState<string[]>([]);
+  const [emailInput, setEmailInput] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [confirming, setConfirming] = useState(false);
-
-  const refreshRecipients = useCallback(async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const token = await currentUser.getIdToken();
-      const nextRecipients = await getBroadcastRecipients(token);
-      setRecipients(nextRecipients);
-      setSelectedInquiryIds(new Set());
-    } catch (error) {
-      console.error("Could not load broadcast recipients:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Could not load inquiry email addresses.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (authLoading) return;
     if (adminInfo?.role !== "superadmin") {
       router.replace("/admin/dashboard");
+    }
+  }, [adminInfo?.role, authLoading, router]);
+
+  const addRecipients = () => {
+    const entries = emailInput
+      .split(/[,\s;]+/)
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean);
+    if (entries.length === 0) {
+      toast.error("Enter at least one email address.");
       return;
     }
-    void refreshRecipients();
-  }, [adminInfo?.email, adminInfo?.role, authLoading, refreshRecipients, router]);
-
-  const visibleRecipients = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    if (!normalizedSearch) return recipients;
-    return recipients.filter(
-      (recipient) =>
-        recipient.name.toLowerCase().includes(normalizedSearch) ||
-        recipient.email.includes(normalizedSearch),
-    );
-  }, [recipients, search]);
-
-  const toggleRecipient = (id: string) => {
-    setSelectedInquiryIds((previous) => {
-      const next = new Set(previous);
-      if (next.has(id)) {
-        next.delete(id);
-      } else if (next.size < MAX_BROADCAST_RECIPIENTS) {
-        next.add(id);
-      } else {
-        toast.error(
-          `A broadcast can include at most ${MAX_BROADCAST_RECIPIENTS} email addresses.`,
-        );
-      }
-      return next;
-    });
-  };
-
-  const selectVisible = () => {
-    const next = new Set(selectedInquiryIds);
-    for (const recipient of visibleRecipients) {
-      if (next.size >= MAX_BROADCAST_RECIPIENTS) break;
-      next.add(recipient.id);
+    const invalid = entries.filter((email) => !EMAIL_PATTERN.test(email));
+    if (invalid.length > 0) {
+      toast.error(`Invalid email address: ${invalid[0]}`);
+      return;
     }
-    setSelectedInquiryIds(next);
-    if (
-      next.size === MAX_BROADCAST_RECIPIENTS &&
-      visibleRecipients.some((recipient) => !next.has(recipient.id))
-    ) {
-      toast.info(
-        `Selection is capped at ${MAX_BROADCAST_RECIPIENTS} email addresses.`,
+    const next = [...new Set([...recipientEmails, ...entries])];
+    if (next.length > MAX_BROADCAST_RECIPIENTS) {
+      toast.error(
+        `A broadcast can include at most ${MAX_BROADCAST_RECIPIENTS} email addresses.`,
       );
+      return;
     }
+    setRecipientEmails(next);
+    setEmailInput("");
   };
 
   const sendBroadcast = async () => {
@@ -128,14 +79,14 @@ export default function BroadcastEmailPage() {
     try {
       const token = await currentUser.getIdToken();
       const result = await queueClientBroadcast(token, {
-        inquiryIds: [...selectedInquiryIds],
+        recipientEmails,
         subject,
         body,
       });
       toast.success(
-        `Test email queued for ${result.queuedCount} selected inquiry address.`,
+        `Email queued for ${result.queuedCount} recipient${result.queuedCount === 1 ? "" : "s"}.`,
       );
-      setSelectedInquiryIds(new Set());
+      setRecipientEmails([]);
       setSubject("");
       setBody("");
     } catch (error) {
@@ -162,8 +113,8 @@ export default function BroadcastEmailPage() {
             <h1 className="text-2xl font-bold">Client Email Broadcast</h1>
           </div>
           <p className="mt-1 text-sm text-slate-600">
-            Select email addresses recorded on client inquiries, review the
-            recipient list, and confirm it before queueing the email.
+            Enter recipient addresses, review the list, and confirm it before
+            queueing the email.
           </p>
         </header>
 
@@ -174,7 +125,7 @@ export default function BroadcastEmailPage() {
             private. Use this for relevant service or administrative updates,
             and only contact clients when you have an appropriate basis to do
             so. This is not a consent or unsubscribe management tool. A maximum
-            of {MAX_BROADCAST_RECIPIENTS} addresses can be selected per
+            of {MAX_BROADCAST_RECIPIENTS} addresses can be added per
             broadcast.
           </p>
         </div>
@@ -184,96 +135,56 @@ export default function BroadcastEmailPage() {
             <div>
               <h2 className="font-semibold">Recipients</h2>
               <p className="text-sm text-slate-600">
-                {selectedInquiryIds.size} selected · {recipients.length} unique
-                inquiry email addresses
+                {recipientEmails.length} recipient
+                {recipientEmails.length === 1 ? "" : "s"} added
               </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={selectVisible}
-                disabled={
-                  loading ||
-                  selectedInquiryIds.size >= MAX_BROADCAST_RECIPIENTS
-                }
-              >
-                Select visible
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSelectedInquiryIds(new Set())}
-                disabled={selectedInquiryIds.size === 0}
-              >
-                Clear
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void refreshRecipients()}
-                disabled={loading}
-                aria-label="Refresh inquiry email list"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              </Button>
             </div>
           </div>
 
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search inquiry contacts by name or email"
-            aria-label="Search inquiry contacts"
-          />
-          <div className="max-h-72 overflow-y-auto rounded-md border">
-            {loading ? (
-              <p className="p-4 text-sm text-slate-500">Loading clients…</p>
-            ) : visibleRecipients.length === 0 ? (
-              <p className="p-4 text-sm text-slate-500">
-                No inquiry email addresses with valid email format were found.
-              </p>
-            ) : (
-              visibleRecipients.map((recipient) => (
-                <label
-                  key={recipient.id}
-                  className="flex cursor-pointer items-center gap-3 border-b p-3 last:border-b-0 hover:bg-slate-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedInquiryIds.has(recipient.id)}
-                    onChange={() => toggleRecipient(recipient.id)}
-                    className="h-4 w-4"
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">
-                      {recipient.name}
-                    </span>
-                    <span className="block truncate text-xs text-slate-500">
-                      {recipient.email}
-                    </span>
-                  </span>
-                </label>
-              ))
-            )}
+          <div className="flex gap-2">
+            <Input
+              type="email"
+              value={emailInput}
+              onChange={(event) => setEmailInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addRecipients();
+                }
+              }}
+              placeholder="Enter an email address (or paste comma-separated addresses)"
+              aria-label="Recipient email addresses"
+            />
+            <Button type="button" variant="outline" onClick={addRecipients}>
+              Add
+            </Button>
           </div>
           <div className="rounded-md border bg-slate-50 p-3">
             <h3 className="text-sm font-semibold">Selected email addresses</h3>
-            {selectedInquiryIds.size === 0 ? (
+            {recipientEmails.length === 0 ? (
               <p className="mt-1 text-sm text-slate-500">
-                Select addresses from the inquiry list to add them here.
+                No recipients added yet.
               </p>
             ) : (
-              <ul className="mt-2 space-y-1 text-sm">
-                {recipients
-                  .filter((recipient) =>
-                    selectedInquiryIds.has(recipient.id),
-                  )
-                  .map((recipient) => (
-                    <li key={recipient.id}>
-                      {recipient.name} — <strong>{recipient.email}</strong>
+              <ul className="mt-2 max-h-64 space-y-1 overflow-y-auto text-sm">
+                {recipientEmails.map((email) => (
+                    <li key={email} className="flex items-center justify-between gap-2">
+                      <strong className="break-all">{email}</strong>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Remove ${email}`}
+                        onClick={() =>
+                          setRecipientEmails((previous) =>
+                            previous.filter((item) => item !== email),
+                          )
+                        }
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </li>
-                  ))}
+                ))}
               </ul>
             )}
           </div>
@@ -315,9 +226,8 @@ export default function BroadcastEmailPage() {
             type="button"
             onClick={() => setConfirming(true)}
             disabled={
-              loading ||
               sending ||
-              selectedInquiryIds.size === 0 ||
+              recipientEmails.length === 0 ||
               !subject.trim() ||
               !body.trim()
             }
@@ -325,7 +235,7 @@ export default function BroadcastEmailPage() {
             <Send className="mr-2 h-4 w-4" />
             {sending
               ? "Queueing…"
-              : `Review and send (${selectedInquiryIds.size})`}
+              : `Review and send (${recipientEmails.length})`}
           </Button>
         </div>
 
@@ -334,21 +244,15 @@ export default function BroadcastEmailPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Queue this broadcast?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will queue {selectedInquiryIds.size} individual email
-                {selectedInquiryIds.size === 1 ? "message" : "messages"}. Verify
+                This will queue {recipientEmails.length} individual email
+                {recipientEmails.length === 1 ? "message" : "messages"}. Verify
                 all recipients and the subject before confirming. Queued
                 messages cannot be recalled from this screen.
               </AlertDialogDescription>
               <ul className="max-h-32 overflow-y-auto rounded-md border bg-slate-50 p-3 text-sm">
-                {recipients
-                  .filter((recipient) =>
-                    selectedInquiryIds.has(recipient.id),
-                  )
-                  .map((recipient) => (
-                    <li key={recipient.id}>
-                      {recipient.name} — <strong>{recipient.email}</strong>
-                    </li>
-                  ))}
+                {recipientEmails.map((email) => (
+                  <li key={email}>{email}</li>
+                ))}
               </ul>
               <p className="text-sm font-medium">
                 Subject: {subject.trim()}

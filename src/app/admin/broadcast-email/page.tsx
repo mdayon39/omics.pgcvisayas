@@ -216,14 +216,13 @@ export default function BroadcastEmailPage() {
           </header>
 
           <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
-            <p className="font-semibold">Send responsibly</p>
+            <p className="font-semibold">Before sending</p>
             <p className="mt-1">
-              Each client receives a separate email, so recipient addresses are
-              private. Use this for relevant service or administrative updates,
-              and only contact clients when you have an appropriate basis to do
-              so. This is not a consent or unsubscribe management tool. A
-              separate email is queued for each address. Delivery is subject
-              to your configured email provider's quotas and rate limits.
+              Each recipient receives a separate email and cannot see other
+              recipients' addresses. Verify the recipient list and send only
+              relevant service or administrative updates. This tool does not
+              track consent or manage unsubscribe requests. Delivery is subject
+              to your email provider's quotas and rate limits.
             </p>
           </div>
 

@@ -77,12 +77,14 @@ export async function queueClientBroadcast(
   idToken: string,
   input: { recipientEmails: string[]; subject: string; body: string },
 ): Promise<QueueBroadcastResult> {
+  let stage = "admin authorization";
   try {
     const sender = await authorizeBroadcast(idToken);
     if (!adminDb) {
       throw new BroadcastActionError("Email broadcast is unavailable.");
     }
 
+    stage = "message validation";
     const subject =
       typeof input?.subject === "string" ? input.subject.trim() : "";
     const body =
@@ -123,6 +125,7 @@ export async function queueClientBroadcast(
 
     const broadcastId = adminDb.collection("emailBroadcasts").doc().id;
     const batch = adminDb.batch();
+    stage = "Firestore queue preparation";
     batch.set(adminDb.collection("emailBroadcasts").doc(broadcastId), {
       subject,
       recipientCount: recipientEmails.length,
@@ -156,6 +159,7 @@ export async function queueClientBroadcast(
       });
     }
 
+    stage = "Firestore queue commit";
     await batch.commit();
     return {
       success: true,
@@ -166,11 +170,21 @@ export async function queueClientBroadcast(
     if (error instanceof BroadcastActionError) {
       return { success: false, error: error.message };
     }
-    console.error("Failed to queue client email broadcast:", error);
+    const errorCode =
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (typeof error.code === "string" || typeof error.code === "number")
+        ? String(error.code)
+        : "unknown";
+    console.error("Failed to queue client email broadcast:", {
+      stage,
+      errorCode,
+      error,
+    });
     return {
       success: false,
-      error:
-        "Could not queue the broadcast. Please try again or contact support.",
+      error: `Could not queue the broadcast during ${stage} (error ${errorCode}). No success was reported; check Sent Items before retrying.`,
     };
   }
 }

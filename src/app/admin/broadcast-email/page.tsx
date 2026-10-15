@@ -26,7 +26,7 @@ import {
 } from "@/app/actions/broadcastEmailActions";
 
 type Recipient = { id: string; name: string; email: string };
-const TEST_RECIPIENT_EMAIL = "dayonmerlitojr@gmail.com";
+const MAX_BROADCAST_RECIPIENTS = 200;
 
 export default function BroadcastEmailPage() {
   const router = useRouter();
@@ -88,10 +88,12 @@ export default function BroadcastEmailPage() {
       const next = new Set(previous);
       if (next.has(id)) {
         next.delete(id);
-      } else if (next.size < 1) {
+      } else if (next.size < MAX_BROADCAST_RECIPIENTS) {
         next.add(id);
       } else {
-        toast.error("Only the designated test recipient can be selected.");
+        toast.error(
+          `A broadcast can include at most ${MAX_BROADCAST_RECIPIENTS} email addresses.`,
+        );
       }
       return next;
     });
@@ -99,11 +101,19 @@ export default function BroadcastEmailPage() {
 
   const selectVisible = () => {
     const next = new Set(selectedInquiryIds);
-    const testRecipient = visibleRecipients.find(
-      (recipient) => recipient.email === TEST_RECIPIENT_EMAIL,
-    );
-    if (testRecipient) next.add(testRecipient.id);
+    for (const recipient of visibleRecipients) {
+      if (next.size >= MAX_BROADCAST_RECIPIENTS) break;
+      next.add(recipient.id);
+    }
     setSelectedInquiryIds(next);
+    if (
+      next.size === MAX_BROADCAST_RECIPIENTS &&
+      visibleRecipients.some((recipient) => !next.has(recipient.id))
+    ) {
+      toast.info(
+        `Selection is capped at ${MAX_BROADCAST_RECIPIENTS} email addresses.`,
+      );
+    }
   };
 
   const sendBroadcast = async () => {
@@ -152,8 +162,8 @@ export default function BroadcastEmailPage() {
             <h1 className="text-2xl font-bold">Client Email Broadcast</h1>
           </div>
           <p className="mt-1 text-sm text-slate-600">
-            Select an email address recorded on a client inquiry, add it to the
-            recipient list, and verify it before queueing the email.
+            Select email addresses recorded on client inquiries, review the
+            recipient list, and confirm it before queueing the email.
           </p>
         </header>
 
@@ -163,8 +173,9 @@ export default function BroadcastEmailPage() {
             Each client receives a separate email, so recipient addresses are
             private. Use this for relevant service or administrative updates,
             and only contact clients when you have an appropriate basis to do
-            so. This testing page is restricted to the designated recipient
-            below and is not a consent or unsubscribe management tool.
+            so. This is not a consent or unsubscribe management tool. A maximum
+            of {MAX_BROADCAST_RECIPIENTS} addresses can be selected per
+            broadcast.
           </p>
         </div>
 
@@ -173,7 +184,8 @@ export default function BroadcastEmailPage() {
             <div>
               <h2 className="font-semibold">Recipients</h2>
               <p className="text-sm text-slate-600">
-                {selectedInquiryIds.size} selected · inquiry email list
+                {selectedInquiryIds.size} selected · {recipients.length} unique
+                inquiry email addresses
               </p>
             </div>
             <div className="flex gap-2">
@@ -181,7 +193,10 @@ export default function BroadcastEmailPage() {
                 type="button"
                 variant="outline"
                 onClick={selectVisible}
-                disabled={loading || selectedInquiryIds.size === 1}
+                disabled={
+                  loading ||
+                  selectedInquiryIds.size >= MAX_BROADCAST_RECIPIENTS
+                }
               >
                 Select visible
               </Button>
@@ -216,8 +231,7 @@ export default function BroadcastEmailPage() {
               <p className="p-4 text-sm text-slate-500">Loading clients…</p>
             ) : visibleRecipients.length === 0 ? (
               <p className="p-4 text-sm text-slate-500">
-                The designated test client ({TEST_RECIPIENT_EMAIL}) was not
-                found with a valid email address.
+                No inquiry email addresses with valid email format were found.
               </p>
             ) : (
               visibleRecipients.map((recipient) => (
@@ -247,7 +261,7 @@ export default function BroadcastEmailPage() {
             <h3 className="text-sm font-semibold">Selected email addresses</h3>
             {selectedInquiryIds.size === 0 ? (
               <p className="mt-1 text-sm text-slate-500">
-                Select the test address from the inquiry list to add it here.
+                Select addresses from the inquiry list to add them here.
               </p>
             ) : (
               <ul className="mt-2 space-y-1 text-sm">
@@ -320,10 +334,10 @@ export default function BroadcastEmailPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Queue this broadcast?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will send one individual email to the following address.
-                Please verify the recipient and subject before confirming.
-                Queued messages cannot be
-                recalled from this screen.
+                This will queue {selectedInquiryIds.size} individual email
+                {selectedInquiryIds.size === 1 ? "message" : "messages"}. Verify
+                all recipients and the subject before confirming. Queued
+                messages cannot be recalled from this screen.
               </AlertDialogDescription>
               <ul className="max-h-32 overflow-y-auto rounded-md border bg-slate-50 p-3 text-sm">
                 {recipients

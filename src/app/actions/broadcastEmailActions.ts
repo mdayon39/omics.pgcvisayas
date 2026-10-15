@@ -5,7 +5,7 @@ import type { DecodedIdToken } from "firebase-admin/auth";
 import { adminDb } from "@/lib/firebase-admin";
 import type { UserRole } from "@/types/Permissions";
 
-const TEST_RECIPIENT_EMAIL = "dayonmerlitojr@gmail.com";
+const MAX_BROADCAST_RECIPIENTS = 200;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type BroadcastRecipient = {
@@ -59,11 +59,7 @@ function readRecipients(
     const data = document.data();
     if (!data) continue;
     const email = normalizeEmail(data.email);
-    if (
-      email !== TEST_RECIPIENT_EMAIL ||
-      !EMAIL_PATTERN.test(email) ||
-      recipientsByEmail.has(email)
-    ) {
+    if (!EMAIL_PATTERN.test(email) || recipientsByEmail.has(email)) {
       continue;
     }
     recipientsByEmail.set(email, {
@@ -123,8 +119,13 @@ export async function queueClientBroadcast(
   if (!body || body.length > 10_000) {
     throw new Error("Enter a message of 1 to 10,000 characters.");
   }
-  if (inquiryIds.length !== 1) {
-    throw new Error("Select the test inquiry email to send a broadcast.");
+  if (
+    inquiryIds.length === 0 ||
+    inquiryIds.length > MAX_BROADCAST_RECIPIENTS
+  ) {
+    throw new Error(
+      `Select between 1 and ${MAX_BROADCAST_RECIPIENTS} inquiry email addresses.`,
+    );
   }
   if (inquiryIds.some((id) => !id || id.length > 1_500 || id.includes("/"))) {
     throw new Error("The selected inquiry list is invalid. Refresh it and try again.");
@@ -138,12 +139,9 @@ export async function queueClientBroadcast(
     throw new Error("The inquiry list changed. Refresh it and try again.");
   }
   const recipients = readRecipients(inquirySnapshots);
-  if (
-    recipients.length !== 1 ||
-    recipients[0].email !== TEST_RECIPIENT_EMAIL
-  ) {
+  if (recipients.length !== inquiryIds.length) {
     throw new Error(
-      `Only ${TEST_RECIPIENT_EMAIL} can receive test broadcasts. Refresh the inquiry list.`,
+      "One or more selected inquiries have an invalid or duplicate email address. Refresh the inquiry list.",
     );
   }
 

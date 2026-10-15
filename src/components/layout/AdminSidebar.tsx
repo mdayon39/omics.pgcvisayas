@@ -71,6 +71,8 @@ export function AdminSidebar() {
   const { user, signOut, adminInfo } = useAuth();
   const { canView, canEdit } = usePermissions(adminInfo?.role);
   const hasEmailOperationsAccess = hasAdminEmailOperationsAccess(adminInfo?.email);
+  const isSuperadmin =
+    adminInfo?.role?.toLowerCase().replace(/[-_\s]/g, "") === "superadmin";
   const { openTab, activeTab, isTabOpen, setActiveTab } = useTabContext();
   const {
     pendingCount,
@@ -244,9 +246,9 @@ export function AdminSidebar() {
                 (email) => email === adminInfo?.email?.trim().toLowerCase(),
               )
             : item.href === "/admin/broadcast-email"
-              ? adminInfo?.role === "superadmin" || hasEmailOperationsAccess
+            ? isSuperadmin || hasEmailOperationsAccess
               : item.href === "/admin/email-monitoring"
-                ? canView("sentItems") || hasEmailOperationsAccess
+              ? isSuperadmin
                 : canView(routeModule))
         );
       }),

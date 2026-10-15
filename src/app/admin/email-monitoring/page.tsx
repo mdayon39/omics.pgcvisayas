@@ -3,27 +3,21 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { EmailMonitoringPanel } from "@/components/admin/EmailMonitoringPanel";
-import { hasAdminEmailOperationsAccess } from "@/constants/adminEmailAccess";
 import useAuth from "@/hooks/useAuth";
-import { usePermissions } from "@/hooks/usePermissions";
 
 export default function EmailMonitoringPage() {
   const router = useRouter();
   const { adminInfo, loading: authLoading } = useAuth();
-  const { canView, loading: permissionsLoading } = usePermissions(
-    adminInfo?.role,
-  );
   const hasAccess =
-    hasAdminEmailOperationsAccess(adminInfo?.email) || canView("sentItems");
-  const isLoading = authLoading || permissionsLoading;
+    adminInfo?.role?.toLowerCase().replace(/[-_\s]/g, "") === "superadmin";
 
   useEffect(() => {
-    if (!isLoading && !hasAccess) {
+    if (!authLoading && !hasAccess) {
       router.replace("/admin/dashboard");
     }
-  }, [hasAccess, isLoading, router]);
+  }, [authLoading, hasAccess, router]);
 
-  if (isLoading) {
+  if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">
         Checking email monitoring access…

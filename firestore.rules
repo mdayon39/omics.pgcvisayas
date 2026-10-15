@@ -287,7 +287,7 @@ service cloud.firestore {
     }
 
     match /emailMonitoringEvents/{eventId} {
-      allow read: if isAdmin() || isEmailOperationsAdmin();
+      allow read: if isSuperAdmin();
       allow create: if isAdmin() || isEmailOperationsAdmin()
         || (
           isSignedIn()

@@ -159,6 +159,7 @@ function createBroadcastMessage(subject: string, body: string) {
       "",
       body,
       "",
+      "----------------------------------------",
       "Yours in utilizing OMICS for a better Philippines,",
       "Philippine Genome Center Visayas",
     ].join("\n"),
@@ -203,8 +204,10 @@ function createBroadcastMessage(subject: string, body: string) {
               <td style="padding:12px 36px 28px;">
                 <p style="margin:0 0 18px;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7;">Dear Client,</p>
                 ${bodyParagraphs}
-                <p style="margin:24px 0 6px;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7;">Yours in utilizing OMICS for a better Philippines,</p>
-                <p style="margin:0;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;line-height:1.7;">Philippine Genome Center Visayas</p>
+                <div style="margin-top:24px;padding-top:16px;border-top:1px solid #dbe3ed;">
+                  <p style="margin:0;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;">Yours in utilizing OMICS for a better Philippines,</p>
+                  <p style="margin:0;color:#475569;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;line-height:1.5;">Philippine Genome Center Visayas</p>
+                </div>
               </td>
             </tr>
             <tr>

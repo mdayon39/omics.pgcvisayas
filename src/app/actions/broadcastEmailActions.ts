@@ -56,10 +56,40 @@ async function authorizeBroadcast(
   }
 
   stageState.value = "reading the admin access record from Firestore";
-  let adminSnapshot: FirebaseFirestore.DocumentSnapshot;
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  if (!projectId) {
+    throw new BroadcastActionError(
+      "Firebase project ID is not configured on the server.",
+    );
+  }
+
+  let adminRecord: {
+    fields?: {
+      role?: { stringValue?: string };
+      status?: { stringValue?: string };
+    };
+  };
   try {
-    adminSnapshot = await adminDb.collection("admins").doc(email).get();
+    const documentUrl = new URL(
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/admins/${encodeURIComponent(email)}`,
+    );
+    const response = await fetch(documentUrl, {
+      headers: { Authorization: `Bearer ${idToken}` },
+      cache: "no-store",
+    });
+    if (response.status === 404) {
+      throw new BroadcastActionError(
+        "Your Firebase account does not have an admin access record.",
+      );
+    }
+    if (!response.ok) {
+      throw new Error(`Firestore returned HTTP ${response.status}.`);
+    }
+    adminRecord = await response.json();
   } catch (error) {
+    if (error instanceof BroadcastActionError) throw error;
     const errorCode = getErrorCode(error);
     console.error("Could not read the broadcast sender's admin record:", {
       errorCode: errorCode || "unknown",
@@ -70,23 +100,24 @@ async function authorizeBroadcast(
       errorMessage: error instanceof Error ? error.message : String(error),
     });
     throw new BroadcastActionError(
-      `The server could not read the admin access record from Firestore${errorCode ? ` (Firebase error ${errorCode})` : ""}. Check that production has valid Firebase Admin credentials and the runtime service account has Firestore read access.`,
+      `The server could not read the admin access record from Firestore${errorCode ? ` (Firebase error ${errorCode})` : ""}. Check the user's Firestore permissions and Firebase project configuration.`,
     );
   }
-  if (!adminSnapshot.exists || adminSnapshot.data()?.status === "deactivated") {
+  const adminRole = adminRecord.fields?.role?.stringValue;
+  const adminStatus = adminRecord.fields?.status?.stringValue;
+  if (!adminRole || adminStatus === "deactivated") {
     throw new BroadcastActionError(
       "You do not have permission to send client broadcasts.",
     );
   }
 
-  const roleValue = adminSnapshot.data()?.role;
-  if (roleValue !== "superadmin") {
+  if (adminRole !== "superadmin") {
     throw new BroadcastActionError(
       "Only superadmins can use client email broadcast.",
     );
   }
 
-  return { uid: decodedToken.uid, email, role: roleValue as UserRole };
+  return { uid: decodedToken.uid, email, role: adminRole as UserRole };
 }
 
 function escapeHtml(value: string): string {

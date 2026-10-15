@@ -8,15 +8,36 @@ import {
   orderBy,
   query,
 } from "firebase/firestore";
-import { AlertCircle, CheckCircle2, Clock3, MailCheck } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  Eye,
+  MailCheck,
+} from "lucide-react";
 import { db } from "@/lib/firebase";
 import {
   EMAIL_MONITOR_CATEGORIES,
   type EmailMonitorEvent,
 } from "@/types/EmailMonitoring";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type MailRecord = {
+  to?: string[] | string;
+  senderEmail?: string;
+  message?: {
+    subject?: string;
+    text?: string;
+    html?: string;
+  };
   delivery?: { state?: string; error?: string; endTime?: unknown };
   status?: string;
 };
@@ -51,6 +72,22 @@ function formatDate(date: Date): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function htmlToPlainText(html: string | undefined): string {
+  if (!html) return "";
+  return html
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|h[1-6])>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .trim();
 }
 
 function getMonitorStatus(
@@ -115,6 +152,7 @@ export function EmailMonitoringPanel() {
   const [error, setError] = useState("");
   const [category, setCategory] = useState<string>("All");
   const [clock, setClock] = useState(() => Date.now());
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   useEffect(() => {
     const clockInterval = window.setInterval(() => setClock(Date.now()), 30_000);
@@ -135,6 +173,7 @@ export function EmailMonitoringPanel() {
               recipient: data.recipient || "",
               sourceId: data.sourceId || "",
               triggeredAt: toDate(data.triggeredAt),
+              triggeredByEmail: data.triggeredByEmail,
               queueStatus: data.queueStatus || "queueing",
               mailDocumentId: data.mailDocumentId,
               error: data.error,
@@ -199,6 +238,14 @@ export function EmailMonitoringPanel() {
   const pendingCount = rows.filter(
     (row) => row.status === "Pending" || row.status === "Queueing",
   ).length;
+  const selectedEvent = rows.find((row) => row.id === selectedEventId);
+  const selectedMail = selectedEvent?.mailDocumentId
+    ? mailById.get(selectedEvent.mailDocumentId)
+    : undefined;
+  const selectedMessage = selectedMail?.message;
+  const selectedRecipient = Array.isArray(selectedMail?.to)
+    ? selectedMail.to.join(", ")
+    : selectedMail?.to || selectedEvent?.recipient || "No recipient recorded";
 
   return (
     <section className="space-y-5">
@@ -257,6 +304,7 @@ export function EmailMonitoringPanel() {
                   <th className="px-4 py-3">Triggered</th>
                   <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3">Recipient</th>
+                  <th className="px-4 py-3">Sent by</th>
                   <th className="px-4 py-3">Source</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Details</th>
@@ -268,9 +316,28 @@ export function EmailMonitoringPanel() {
                     <td className="whitespace-nowrap px-4 py-3">{formatDate(row.triggeredAt)}</td>
                     <td className="px-4 py-3">{row.category}</td>
                     <td className="px-4 py-3">{row.recipient || "No recipient recorded"}</td>
+                    <td className="px-4 py-3">
+                      {row.triggeredByEmail ||
+                        (row.mailDocumentId
+                          ? mailById.get(row.mailDocumentId)?.senderEmail
+                          : undefined) ||
+                        "Not recorded"}
+                    </td>
                     <td className="px-4 py-3">{row.sourceId || "—"}</td>
                     <td className="px-4 py-3"><Badge className={statusClass(row.status)}>{row.status}</Badge></td>
-                    <td className="max-w-sm px-4 py-3 text-xs text-slate-600">{row.error || row.mailDocumentId || "—"}</td>
+                    <td className="max-w-sm px-4 py-3 text-xs text-slate-600">
+                      <div>{row.error || row.mailDocumentId || "—"}</div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mt-1 h-7 px-2"
+                        onClick={() => setSelectedEventId(row.id)}
+                      >
+                        <Eye className="mr-1 h-3.5 w-3.5" />
+                        View email
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -281,6 +348,70 @@ export function EmailMonitoringPanel() {
       <p className="text-xs text-slate-500">
         “Provider accepted” means the configured mail extension reported success; it does not guarantee inbox placement. Only triggers recorded by the deployed monitoring-enabled app version appear here.
       </p>
+      <Dialog
+        open={selectedEventId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEventId(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedMessage?.subject || "Email details"}
+            </DialogTitle>
+            <DialogDescription>
+              Review the queued email, recipient, sender, and delivery status.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="space-y-4">
+              <dl className="grid gap-3 rounded-md border bg-slate-50 p-4 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="font-medium text-slate-500">Recipient</dt>
+                  <dd className="break-all text-slate-900">
+                    {selectedRecipient}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-slate-500">Sent by</dt>
+                  <dd className="break-all text-slate-900">
+                    {selectedEvent.triggeredByEmail ||
+                      selectedMail?.senderEmail ||
+                      "Not recorded for this email"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-slate-500">Status</dt>
+                  <dd>
+                    <Badge className={statusClass(selectedEvent.status)}>
+                      {selectedEvent.status}
+                    </Badge>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-slate-500">Triggered</dt>
+                  <dd className="text-slate-900">
+                    {formatDate(selectedEvent.triggeredAt)}
+                  </dd>
+                </div>
+              </dl>
+              {selectedEvent.error && (
+                <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  {selectedEvent.error}
+                </div>
+              )}
+              <div>
+                <h3 className="mb-2 text-sm font-semibold">Message</h3>
+                <div className="max-h-80 overflow-y-auto whitespace-pre-wrap break-words rounded-md border p-4 text-sm leading-6 text-slate-700">
+                  {selectedMessage?.text ||
+                    htmlToPlainText(selectedMessage?.html) ||
+                    "Message content is not available for this email."}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

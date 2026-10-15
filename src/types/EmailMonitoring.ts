@@ -19,6 +19,7 @@ export type EmailMonitorEvent = {
   recipient: string;
   sourceId: string;
   triggeredAt: Date;
+  triggeredByEmail?: string;
   queueStatus: "queueing" | "queued" | "failed";
   mailDocumentId?: string;
   error?: string;

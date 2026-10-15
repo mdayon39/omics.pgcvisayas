@@ -351,6 +351,7 @@ export async function queueClientBroadcast(
       writes.push(
         firestoreDocument(projectId, "mail", mailId, {
           to: [email],
+          senderEmail: sender.email,
           message: { subject, ...message },
           broadcastId,
         }),
@@ -361,6 +362,7 @@ export async function queueClientBroadcast(
           recipient: email,
           sourceId: broadcastId,
           triggeredByUid: sender.uid,
+          triggeredByEmail: sender.email,
           triggeredAt: new Date(),
           queueStatus: "queued",
           mailDocumentId: mailId,

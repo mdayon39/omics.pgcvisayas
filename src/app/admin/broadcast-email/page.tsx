@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Send, X } from "lucide-react";
 import { toast } from "sonner";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,16 +20,28 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import useAuth from "@/hooks/useAuth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { queueClientBroadcast } from "@/app/actions/broadcastEmailActions";
 
 const MAX_BROADCAST_RECIPIENTS = 200;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RECIPIENT_STATUSES = ["Ongoing Quotation", "Approved Client"] as const;
+
+type InquiryRecipient = {
+  email: string;
+  name: string;
+  statuses: string[];
+};
 
 export default function BroadcastEmailPage() {
   const router = useRouter();
   const { adminInfo, loading: authLoading } = useAuth();
   const [recipientEmails, setRecipientEmails] = useState<string[]>([]);
+  const [inquiryRecipients, setInquiryRecipients] = useState<InquiryRecipient[]>([]);
+  const [selectedInquiryEmails, setSelectedInquiryEmails] = useState<Set<string>>(
+    new Set(),
+  );
+  const [loadingInquiryRecipients, setLoadingInquiryRecipients] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -65,6 +78,78 @@ export default function BroadcastEmailPage() {
     }
     setRecipientEmails(next);
     setEmailInput("");
+  };
+
+  const loadInquiryRecipients = async () => {
+    setLoadingInquiryRecipients(true);
+    try {
+      const inquiryQuery = query(
+        collection(db, "inquiries"),
+        where("status", "in", [...RECIPIENT_STATUSES]),
+      );
+      const snapshot = await getDocs(inquiryQuery);
+      const recipientsByEmail = new Map<string, InquiryRecipient>();
+
+      snapshot.docs.forEach((inquiry) => {
+        const data = inquiry.data();
+        const email =
+          typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
+        if (!email || !EMAIL_PATTERN.test(email)) return;
+
+        const recipient = recipientsByEmail.get(email);
+        if (recipient) {
+          if (!recipient.statuses.includes(data.status)) {
+            recipient.statuses.push(data.status);
+          }
+          if (!recipient.name && typeof data.name === "string") {
+            recipient.name = data.name.trim();
+          }
+          return;
+        }
+
+        recipientsByEmail.set(email, {
+          email,
+          name: typeof data.name === "string" ? data.name.trim() : "",
+          statuses: [data.status],
+        });
+      });
+
+      const recipients = [...recipientsByEmail.values()].sort((left, right) =>
+        (left.name || left.email).localeCompare(right.name || right.email),
+      );
+      setInquiryRecipients(recipients);
+      setSelectedInquiryEmails(new Set());
+      if (recipients.length === 0) {
+        toast.info("No valid email addresses found for those inquiry statuses.");
+      } else {
+        toast.success(`Loaded ${recipients.length} eligible client email${recipients.length === 1 ? "" : "s"}.`);
+      }
+    } catch (error) {
+      console.error("Could not load eligible inquiry recipients:", error);
+      toast.error("Could not load eligible inquiry recipients. Check your admin access and try again.");
+    } finally {
+      setLoadingInquiryRecipients(false);
+    }
+  };
+
+  const addSelectedInquiryRecipients = () => {
+    const additions = [...selectedInquiryEmails].filter(
+      (email) => !recipientEmails.includes(email),
+    );
+    const next = [...recipientEmails, ...additions];
+    if (next.length > MAX_BROADCAST_RECIPIENTS) {
+      toast.error(
+        `You can add ${Math.max(0, MAX_BROADCAST_RECIPIENTS - recipientEmails.length)} more recipient${MAX_BROADCAST_RECIPIENTS - recipientEmails.length === 1 ? "" : "s"} at most.`,
+      );
+      return;
+    }
+    if (additions.length === 0) {
+      toast.info("Select at least one new email address.");
+      return;
+    }
+    setRecipientEmails(next);
+    setSelectedInquiryEmails(new Set());
+    toast.success(`${additions.length} recipient${additions.length === 1 ? "" : "s"} added.`);
   };
 
   const sendBroadcast = async () => {
@@ -164,6 +249,97 @@ export default function BroadcastEmailPage() {
               <Button type="button" variant="outline" onClick={addRecipients}>
                 Add
               </Button>
+            </div>
+            <div className="space-y-3 rounded-md border border-blue-100 bg-blue-50/50 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold">
+                    Add recipients from inquiries
+                  </h3>
+                  <p className="text-xs text-slate-600">
+                    Find unique email addresses from inquiries with status
+                    {" "}Ongoing Quotation or Approved Client.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={loadInquiryRecipients}
+                  disabled={loadingInquiryRecipients}
+                >
+                  {loadingInquiryRecipients ? "Loading…" : "Load eligible clients"}
+                </Button>
+              </div>
+              {inquiryRecipients.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="text-slate-600">
+                      {selectedInquiryEmails.size} selected · {inquiryRecipients.length} eligible
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const room = MAX_BROADCAST_RECIPIENTS - recipientEmails.length;
+                          const available = inquiryRecipients
+                            .filter((recipient) => !recipientEmails.includes(recipient.email))
+                            .slice(0, room)
+                            .map((recipient) => recipient.email);
+                          setSelectedInquiryEmails(new Set(available));
+                        }}
+                        disabled={recipientEmails.length >= MAX_BROADCAST_RECIPIENTS}
+                      >
+                        Select available
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={addSelectedInquiryRecipients}
+                        disabled={selectedInquiryEmails.size === 0}
+                      >
+                        Add selected
+                      </Button>
+                    </div>
+                  </div>
+                  <ul className="max-h-56 divide-y overflow-y-auto rounded-md border bg-white">
+                    {inquiryRecipients.map((recipient) => {
+                      const alreadyAdded = recipientEmails.includes(recipient.email);
+                      return (
+                        <li key={recipient.email} className="flex items-center gap-3 p-2.5">
+                          <input
+                            type="checkbox"
+                            checked={alreadyAdded || selectedInquiryEmails.has(recipient.email)}
+                            disabled={alreadyAdded}
+                            aria-label={`Select ${recipient.name || recipient.email}`}
+                            onChange={(event) => {
+                              setSelectedInquiryEmails((current) => {
+                                const next = new Set(current);
+                                if (event.target.checked) next.add(recipient.email);
+                                else next.delete(recipient.email);
+                                return next;
+                              });
+                            }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
+                              {recipient.name || "Name not recorded"}
+                            </p>
+                            <p className="break-all text-xs text-slate-600">{recipient.email}</p>
+                          </div>
+                          <span className="shrink-0 text-right text-[11px] text-slate-500">
+                            {recipient.statuses.join(", ")}
+                          </span>
+                          {alreadyAdded && (
+                            <span className="shrink-0 text-xs text-emerald-700">Added</span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
             </div>
             <div className="rounded-md border bg-slate-50 p-3">
               <h3 className="text-sm font-semibold">

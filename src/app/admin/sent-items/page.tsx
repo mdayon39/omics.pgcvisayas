@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -215,6 +217,7 @@ function SentItemsContent() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<EmailCategory | "all">("all");
   const [status, setStatus] = useState<EmailStatus | "all">("all");
+  const [includeBroadcastEmails, setIncludeBroadcastEmails] = useState(false);
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
   const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(
@@ -368,9 +371,17 @@ function SentItemsContent() {
     return unsubscribe;
   }, []);
 
+  const emailsForDisplay = useMemo(
+    () =>
+      includeBroadcastEmails
+        ? emails
+        : emails.filter((email) => email.category !== "Client broadcast"),
+    [emails, includeBroadcastEmails],
+  );
+
   const filteredEmails = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    return emails.filter((email) => {
+    return emailsForDisplay.filter((email) => {
       const matchesCategory = category === "all" || email.category === category;
       const matchesStatus = status === "all" || email.status === status;
       const matchesSearch =
@@ -378,18 +389,18 @@ function SentItemsContent() {
         email.searchText.includes(normalizedSearch);
       return matchesCategory && matchesStatus && matchesSearch;
     });
-  }, [emails, search, category, status]);
+  }, [emailsForDisplay, search, category, status]);
 
   const counts = {
-    Sent: emails.filter((email) => email.status === "Sent").length,
-    Pending: emails.filter((email) => email.status === "Pending").length,
-    Failed: emails.filter((email) => email.status === "Failed").length,
+    Sent: emailsForDisplay.filter((email) => email.status === "Sent").length,
+    Pending: emailsForDisplay.filter((email) => email.status === "Pending").length,
+    Failed: emailsForDisplay.filter((email) => email.status === "Failed").length,
   };
 
   const clearPendingAndFailed = async () => {
     if (!isSuperadmin) return;
 
-    const removableEmails = emails.filter(
+    const removableEmails = emailsForDisplay.filter(
       (email) => email.status === "Pending" || email.status === "Failed",
     );
 
@@ -417,10 +428,10 @@ function SentItemsContent() {
     }
   };
 
-  const selectableEmails = emails.filter(
+  const selectableEmails = emailsForDisplay.filter(
     (email) => email.status === "Pending" || email.status === "Failed",
   );
-  const selectedEmails = emails.filter((email) =>
+  const selectedEmails = emailsForDisplay.filter((email) =>
     selectedEmailIds.has(email.id),
   );
 
@@ -566,9 +577,13 @@ function SentItemsContent() {
           )}
           <Select
             value={category}
-            onValueChange={(value) =>
-              setCategory(value as EmailCategory | "all")
-            }
+            onValueChange={(value) => {
+              const nextCategory = value as EmailCategory | "all";
+              setCategory(nextCategory);
+              if (nextCategory === "Client broadcast") {
+                setIncludeBroadcastEmails(true);
+              }
+            }}
           >
             <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="Category" />
@@ -598,14 +613,43 @@ function SentItemsContent() {
               <SelectItem value="Password recovery">
                 Password recovery
               </SelectItem>
-              <SelectItem value="Client broadcast">
-                Client broadcast
-              </SelectItem>
+              {includeBroadcastEmails && (
+                <SelectItem value="Client broadcast">
+                  Client broadcast
+                </SelectItem>
+              )}
               <SelectItem value="Other client email">
                 Other client email
               </SelectItem>
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-2 rounded-md border px-3">
+            <Switch
+              id="include-broadcast-emails"
+              checked={includeBroadcastEmails}
+              onCheckedChange={(checked) => {
+                setIncludeBroadcastEmails(checked);
+                if (!checked && category === "Client broadcast") {
+                  setCategory("all");
+                }
+                if (!checked) {
+                  setSelectedEmailIds((current) => {
+                    const next = new Set(current);
+                    emails
+                      .filter((email) => email.category === "Client broadcast")
+                      .forEach((email) => next.delete(email.id));
+                    return next;
+                  });
+                }
+              }}
+            />
+            <Label
+              htmlFor="include-broadcast-emails"
+              className="cursor-pointer whitespace-nowrap text-sm"
+            >
+              Include broadcast emails
+            </Label>
+          </div>
           <Select
             value={status}
             onValueChange={(value) => setStatus(value as EmailStatus | "all")}

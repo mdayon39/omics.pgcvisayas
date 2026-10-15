@@ -18,6 +18,15 @@ function normalizeEmail(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
+function getErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== "object") return undefined;
+  if (!("code" in error)) return undefined;
+  const { code } = error;
+  return typeof code === "string" || typeof code === "number"
+    ? String(code)
+    : undefined;
+}
+
 async function authorizeBroadcast(
   idToken: string,
   stageState: { value: string },
@@ -47,7 +56,23 @@ async function authorizeBroadcast(
   }
 
   stageState.value = "reading the admin access record from Firestore";
-  const adminSnapshot = await adminDb.collection("admins").doc(email).get();
+  let adminSnapshot: FirebaseFirestore.DocumentSnapshot;
+  try {
+    adminSnapshot = await adminDb.collection("admins").doc(email).get();
+  } catch (error) {
+    const errorCode = getErrorCode(error);
+    console.error("Could not read the broadcast sender's admin record:", {
+      errorCode: errorCode || "unknown",
+      errorName:
+        error && typeof error === "object" && "name" in error
+          ? String(error.name)
+          : "unknown",
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    throw new BroadcastActionError(
+      `The server could not read the admin access record from Firestore${errorCode ? ` (Firebase error ${errorCode})` : ""}. Check that production has valid Firebase Admin credentials and the runtime service account has Firestore read access.`,
+    );
+  }
   if (!adminSnapshot.exists || adminSnapshot.data()?.status === "deactivated") {
     throw new BroadcastActionError(
       "You do not have permission to send client broadcasts.",

@@ -139,6 +139,83 @@ function escapeHtml(value: string): string {
   });
 }
 
+function createBroadcastMessage(subject: string, body: string) {
+  const escapedSubject = escapeHtml(subject);
+  const bodyParagraphs = escapeHtml(body)
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.replace(/\n/g, "<br />"))
+    .map(
+      (paragraph) =>
+        `<p style="margin:0 0 18px;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7;">${paragraph}</p>`,
+    )
+    .join("");
+  const previewText = body.replace(/\s+/g, " ").trim().slice(0, 140);
+
+  return {
+    text: [
+      "PHILIPPINE GENOME CENTER VISAYAS",
+      "CLIENT ANNOUNCEMENT",
+      "",
+      subject,
+      "",
+      "Dear Client,",
+      "",
+      body,
+      "",
+      "Regards,",
+      "Philippine Genome Center Visayas",
+      "University of the Philippines Visayas",
+    ].join("\n"),
+    html: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>${escapedSubject}</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#f1f5f9;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;">${escapeHtml(previewText)}</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#f1f5f9;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+            <tr>
+              <td style="height:6px;background-color:#166fb5;font-size:0;line-height:0;">&nbsp;</td>
+            </tr>
+            <tr>
+              <td style="padding:28px 36px 22px;border-bottom:1px solid #e2e8f0;">
+                <p style="margin:0 0 5px;color:#166fb5;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.2px;line-height:1.4;">PHILIPPINE GENOME CENTER VISAYAS</p>
+                <p style="margin:0;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">University of the Philippines Visayas</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px 36px 12px;">
+                <p style="margin:0 0 10px;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;line-height:1.4;">CLIENT ANNOUNCEMENT</p>
+                <h1 style="margin:0;color:#0f172a;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;line-height:1.3;">${escapedSubject}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:12px 36px 28px;">
+                <p style="margin:0 0 18px;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7;">Dear Client,</p>
+                ${bodyParagraphs}
+                <p style="margin:24px 0 0;color:#334155;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7;">Regards,<br /><strong>Philippine Genome Center Visayas</strong><br />University of the Philippines Visayas</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 36px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
+                <p style="margin:0;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;">This announcement was sent by Philippine Genome Center Visayas regarding its services and operations.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`,
+  };
+}
+
 function toFirestoreValue(value: unknown): Record<string, unknown> {
   if (value instanceof Date) {
     return { timestampValue: value.toISOString() };
@@ -261,26 +338,26 @@ export async function queueClientBroadcast(
     for (const email of recipientEmails) {
       const mailId = randomUUID();
       const eventId = randomUUID();
-      const safeBody = escapeHtml(body).replace(/\n/g, "<br />");
+      const message = createBroadcastMessage(subject, body);
 
-      writes.push(firestoreDocument(projectId, "mail", mailId, {
-        to: [email],
-        message: {
-          subject,
-          text: body,
-          html: `<div><p>${safeBody}</p></div>`,
-        },
-        broadcastId,
-      }));
-      writes.push(firestoreDocument(projectId, "emailMonitoringEvents", eventId, {
-        category: "Client broadcast",
-        recipient: email,
-        sourceId: broadcastId,
-        triggeredByUid: sender.uid,
-        triggeredAt: new Date(),
-        queueStatus: "queued",
-        mailDocumentId: mailId,
-      }));
+      writes.push(
+        firestoreDocument(projectId, "mail", mailId, {
+          to: [email],
+          message: { subject, ...message },
+          broadcastId,
+        }),
+      );
+      writes.push(
+        firestoreDocument(projectId, "emailMonitoringEvents", eventId, {
+          category: "Client broadcast",
+          recipient: email,
+          sourceId: broadcastId,
+          triggeredByUid: sender.uid,
+          triggeredAt: new Date(),
+          queueStatus: "queued",
+          mailDocumentId: mailId,
+        }),
+      );
     }
 
     stageState.value = "Firestore queue commit";
@@ -328,8 +405,7 @@ export async function queueClientBroadcast(
       (typeof error.code === "string" || typeof error.code === "number")
         ? String(error.code)
         : "unknown";
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Failed to queue client email broadcast:", {
       stage: stageState.value,
       errorCode,
@@ -337,7 +413,7 @@ export async function queueClientBroadcast(
     });
     return {
       success: false,
-      error:       `Could not queue the broadcast during ${stageState.value} (error ${errorCode}). Check server logs for details. No success was reported; check Sent Items before retrying.`,
+      error: `Could not queue the broadcast during ${stageState.value} (error ${errorCode}). Check server logs for details. No success was reported; check Sent Items before retrying.`,
     };
   }
 }

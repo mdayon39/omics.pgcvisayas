@@ -24,6 +24,7 @@ import {
   limit,
   arrayUnion,
   orderBy,
+  type QuerySnapshot,
 } from "firebase/firestore";
 import { clientFormSchema, ClientFormData } from "@/schemas/clientSchema";
 import { Input } from "@/components/ui/input";
@@ -156,7 +157,6 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
-  CLIENT_ANNOUNCEMENT_VIEWER_EMAILS,
 } from "@/constants/clientAnnouncement";
 import ClientConformeModal from "@/components/forms/ClientConformeModal";
 import UploadReceipt from "@/components/client/UploadReceipt";
@@ -381,57 +381,101 @@ export default function ClientPortalPage() {
 
   useEffect(() => {
     const viewerEmail = user?.email?.trim().toLowerCase();
-    if (
-      !viewerEmail ||
-      !CLIENT_ANNOUNCEMENT_VIEWER_EMAILS.some(
-        (allowedEmail) => allowedEmail === viewerEmail,
-      )
-    ) {
+    if (!viewerEmail) {
       setClientAnnouncements([]);
       return;
     }
 
-    return onSnapshot(
-      query(
-        collection(db, "clientAnnouncements"),
-        where("targetEmail", "==", CLIENT_ANNOUNCEMENT_TARGET_EMAIL),
-        where("isActive", "==", true),
+    const announcementsByQuery = new Map<
+      string,
+      Array<{
+        id: string;
+        title: string;
+        body: string;
+        startAt?: number;
+        endAt?: number;
+      }>
+    >();
+    const updateAnnouncements = () => {
+      const uniqueAnnouncements = new Map<
+        string,
+        {
+          id: string;
+          title: string;
+          body: string;
+          startAt?: number;
+          endAt?: number;
+        }
+      >();
+      announcementsByQuery.forEach((announcements) => {
+        announcements.forEach((announcement) =>
+          uniqueAnnouncements.set(announcement.id, announcement),
+        );
+      });
+      const announcements = [...uniqueAnnouncements.values()].sort(
+        (left, right) => left.title.localeCompare(right.title),
+      );
+      setClientAnnouncements(announcements);
+      setAnnouncementNow(Date.now());
+      setAnnouncementIndex(0);
+      setAnnouncementProgress(0);
+      announcementElapsedRef.current = 0;
+    };
+    const handleSnapshot = (
+      queryKey: string,
+      snapshot: QuerySnapshot,
+    ) => {
+      const announcements = snapshot.docs
+        .map((announcementDoc) => {
+          const data = announcementDoc.data();
+          return {
+            id: announcementDoc.id,
+            title: data.title,
+            body: data.body,
+            isActive: data.isActive === true,
+            startAt:
+              data.startAt instanceof Timestamp
+                ? data.startAt.toMillis()
+                : undefined,
+            endAt:
+              data.endAt instanceof Timestamp
+                ? data.endAt.toMillis()
+                : undefined,
+          };
+        })
+        .filter(
+          (announcement) =>
+            announcement.isActive &&
+            typeof announcement.title === "string" &&
+            typeof announcement.body === "string",
+        );
+      announcementsByQuery.set(queryKey, announcements);
+      updateAnnouncements();
+    };
+    const handleError = (error: Error) => {
+      console.error("Failed to load client portal announcement:", error);
+      toast.error("Could not load client portal announcements.");
+    };
+    const subscriptions = [
+      onSnapshot(
+        query(
+          collection(db, "clientAnnouncements"),
+          where("audience", "==", "all"),
+        ),
+        (snapshot) => handleSnapshot("all", snapshot),
+        handleError,
       ),
-      (snapshot) => {
-        const announcements = snapshot.docs
-          .map((announcementDoc) => {
-            const data = announcementDoc.data();
-            return {
-              id: announcementDoc.id,
-              title: data.title,
-              body: data.body,
-              startAt:
-                data.startAt instanceof Timestamp
-                  ? data.startAt.toMillis()
-                  : undefined,
-              endAt:
-                data.endAt instanceof Timestamp
-                  ? data.endAt.toMillis()
-                  : undefined,
-            };
-          })
-          .filter(
-            (announcement) =>
-              typeof announcement.title === "string" &&
-              typeof announcement.body === "string",
-          )
-          .sort((left, right) => left.title.localeCompare(right.title));
-        setClientAnnouncements(announcements);
-        setAnnouncementNow(Date.now());
-        setAnnouncementIndex(0);
-        setAnnouncementProgress(0);
-        announcementElapsedRef.current = 0;
-      },
-      (error) => {
-        console.error("Failed to load client portal announcement:", error);
-        setClientAnnouncements([]);
-      },
-    );
+      onSnapshot(
+        query(
+          collection(db, "clientAnnouncements"),
+          where("targetEmail", "==", viewerEmail),
+        ),
+        (snapshot) => handleSnapshot("targeted", snapshot),
+        handleError,
+      ),
+    ];
+
+    return () => subscriptions.forEach((unsubscribe) => unsubscribe());
   }, [user?.email]);
 
   useEffect(() => {

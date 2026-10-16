@@ -43,7 +43,6 @@ import {
   CLIENT_ANNOUNCEMENT_ADMIN_EMAILS,
   CLIENT_ANNOUNCEMENT_ID,
   CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
-  CLIENT_ANNOUNCEMENT_VIEWER_EMAILS,
   DEFAULT_CLIENT_ANNOUNCEMENT,
 } from "@/constants/clientAnnouncement";
 import useAuth from "@/hooks/useAuth";
@@ -54,6 +53,7 @@ interface ClientAnnouncement {
   title: string;
   body: string;
   isActive: boolean;
+  audience: "all" | "specific";
   targetEmail: string;
   startAt: Timestamp | undefined;
   endAt: Timestamp | undefined;
@@ -93,6 +93,10 @@ function ClientAnnouncementContent() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [audience, setAudience] = useState<"all" | "specific">("specific");
+  const [targetEmail, setTargetEmail] = useState(
+    CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
+  );
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
   const [isActive, setIsActive] = useState(false);
@@ -128,6 +132,7 @@ function ClientAnnouncementContent() {
               {
                 ...DEFAULT_CLIENT_ANNOUNCEMENT,
                 isActive: true,
+                audience: "specific",
                 targetEmail: CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
                 createdAt: serverTimestamp(),
                 createdBy: adminInfo.email,
@@ -160,7 +165,11 @@ function ClientAnnouncementContent() {
                   title: data.title,
                   body: data.body,
                   isActive: data.isActive === true,
-                  targetEmail: data.targetEmail,
+                  audience: data.audience === "all" ? "all" : "specific",
+                  targetEmail:
+                    typeof data.targetEmail === "string"
+                      ? data.targetEmail
+                      : "",
                   startAt:
                     data.startAt instanceof Timestamp ? data.startAt : undefined,
                   endAt:
@@ -169,9 +178,7 @@ function ClientAnnouncementContent() {
               })
               .filter(
                 (announcement): announcement is ClientAnnouncement =>
-                  announcement !== null &&
-                  announcement.targetEmail ===
-                    CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
+                  announcement !== null,
               )
               .sort((left, right) => left.title.localeCompare(right.title));
             setAnnouncements(items);
@@ -200,6 +207,8 @@ function ClientAnnouncementContent() {
     setEditingId(null);
     setTitle("");
     setBody("");
+    setAudience("specific");
+    setTargetEmail(CLIENT_ANNOUNCEMENT_TARGET_EMAIL);
     setStartAt("");
     setEndAt("");
     setIsActive(false);
@@ -210,6 +219,8 @@ function ClientAnnouncementContent() {
     setEditingId(announcement.id);
     setTitle(announcement.title);
     setBody(announcement.body);
+    setAudience(announcement.audience);
+    setTargetEmail(announcement.targetEmail);
     setStartAt(toDateTimeLocal(announcement.startAt));
     setEndAt(toDateTimeLocal(announcement.endAt));
     setIsActive(announcement.isActive);
@@ -220,6 +231,8 @@ function ClientAnnouncementContent() {
     setEditingId(null);
     setTitle("");
     setBody("");
+    setAudience("specific");
+    setTargetEmail(CLIENT_ANNOUNCEMENT_TARGET_EMAIL);
     setStartAt("");
     setEndAt("");
     setIsActive(false);
@@ -231,6 +244,14 @@ function ClientAnnouncementContent() {
     const cleanBody = body.trim();
     if (!cleanTitle || !cleanBody) {
       toast.error("Enter both an announcement title and message.");
+      return;
+    }
+    const cleanTargetEmail = targetEmail.trim().toLowerCase();
+    if (
+      audience === "specific" &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanTargetEmail)
+    ) {
+      toast.error("Enter a valid client email address.");
       return;
     }
     const startDate = new Date(startAt);
@@ -256,7 +277,8 @@ function ClientAnnouncementContent() {
         title: cleanTitle,
         body: cleanBody,
         isActive,
-        targetEmail: CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
+        audience,
+        targetEmail: audience === "all" ? "" : cleanTargetEmail,
         startAt: Timestamp.fromDate(startDate),
         endAt: Timestamp.fromDate(endDate),
         updatedAt: serverTimestamp(),
@@ -311,8 +333,8 @@ function ClientAnnouncementContent() {
             </h1>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Manage portal announcements for{" "}
-            {CLIENT_ANNOUNCEMENT_VIEWER_EMAILS.join(" and ")}.
+            Choose whether each announcement is visible to all clients or one
+            specific client.
           </p>
         </div>
         <Button
@@ -371,6 +393,11 @@ function ClientAnnouncementContent() {
                         >
                           {announcement.isActive ? "Enabled" : "Disabled"}
                         </span>
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                          {announcement.audience === "all"
+                            ? "All clients"
+                            : announcement.targetEmail || "Specific client"}
+                        </span>
                       </div>
                       <p className="line-clamp-4 whitespace-pre-wrap text-xs leading-relaxed text-slate-600">
                         {announcement.body}
@@ -420,11 +447,41 @@ function ClientAnnouncementContent() {
                 {editingId ? "Edit announcement" : "Create announcement"}
               </CardTitle>
               <CardDescription>
-                Only {CLIENT_ANNOUNCEMENT_VIEWER_EMAILS.join(" and ")} can view
-                these announcements.
+                Choose the client audience for this portal announcement.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="announcement-audience">Audience</Label>
+                <select
+                  id="announcement-audience"
+                  value={audience}
+                  onChange={(event) =>
+                    setAudience(event.target.value as "all" | "specific")
+                  }
+                  disabled={loading || saving}
+                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                >
+                  <option value="all">All clients</option>
+                  <option value="specific">Specific client email</option>
+                </select>
+                {audience === "specific" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="announcement-target-email">
+                      Client email address
+                    </Label>
+                    <Input
+                      id="announcement-target-email"
+                      type="email"
+                      value={targetEmail}
+                      onChange={(event) => setTargetEmail(event.target.value)}
+                      disabled={loading || saving}
+                      placeholder="client@example.com"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="announcement-title">Title</Label>
                 <Input

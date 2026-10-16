@@ -316,16 +316,15 @@ service cloud.firestore {
     match /clientAnnouncements/{announcementId} {
       allow get, list: if isAdmin() || isEmailOperationsAdmin()
         || (
-          isSignedIn()
-          && userEmail() in [
-            'dayonmerlitojr@gmail.com',
-            'carmjavier@gmail.com'
-          ]
-          && resource.data.targetEmail == 'dayonmerlitojr@gmail.com'
+          isClientRole()
+          && (
+            resource.data.audience == 'all'
+            || resource.data.targetEmail == userEmail()
+          )
         );
       allow create: if (isAdmin() || isEmailOperationsAdmin())
         && request.resource.data.keys().hasOnly([
-          'title', 'body', 'isActive', 'targetEmail', 'createdAt',
+          'title', 'body', 'isActive', 'audience', 'targetEmail', 'createdAt',
           'createdBy', 'updatedAt', 'updatedBy', 'startAt', 'endAt'
         ])
         && request.resource.data.title is string
@@ -335,7 +334,15 @@ service cloud.firestore {
         && request.resource.data.body.size() > 0
         && request.resource.data.body.size() <= 4000
         && request.resource.data.isActive is bool
-        && request.resource.data.targetEmail == 'dayonmerlitojr@gmail.com'
+        && request.resource.data.audience in ['all', 'specific']
+        && (
+          (request.resource.data.audience == 'all'
+            && request.resource.data.targetEmail == '')
+          || (request.resource.data.audience == 'specific'
+            && request.resource.data.targetEmail is string
+            && request.resource.data.targetEmail.size() > 0
+            && request.resource.data.targetEmail.size() <= 254)
+        )
         && request.resource.data.updatedAt is timestamp
         && request.resource.data.updatedBy == userEmail()
         && request.resource.data.createdAt is timestamp
@@ -345,7 +352,7 @@ service cloud.firestore {
         && request.resource.data.endAt > request.resource.data.startAt;
       allow update: if (isAdmin() || isEmailOperationsAdmin())
         && request.resource.data.keys().hasOnly([
-          'title', 'body', 'isActive', 'targetEmail', 'createdAt',
+          'title', 'body', 'isActive', 'audience', 'targetEmail', 'createdAt',
           'createdBy', 'updatedAt', 'updatedBy', 'startAt', 'endAt'
         ])
         && request.resource.data.title is string
@@ -355,7 +362,15 @@ service cloud.firestore {
         && request.resource.data.body.size() > 0
         && request.resource.data.body.size() <= 4000
         && request.resource.data.isActive is bool
-        && request.resource.data.targetEmail == 'dayonmerlitojr@gmail.com'
+        && request.resource.data.audience in ['all', 'specific']
+        && (
+          (request.resource.data.audience == 'all'
+            && request.resource.data.targetEmail == '')
+          || (request.resource.data.audience == 'specific'
+            && request.resource.data.targetEmail is string
+            && request.resource.data.targetEmail.size() > 0
+            && request.resource.data.targetEmail.size() <= 254)
+        )
         && request.resource.data.updatedAt is timestamp
         && request.resource.data.updatedBy == userEmail()
         && request.resource.data.startAt is timestamp

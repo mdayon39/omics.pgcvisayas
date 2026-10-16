@@ -470,6 +470,14 @@ export default function ClientPortalPage() {
           collection(db, "clientAnnouncements"),
           where("targetEmail", "==", viewerEmail),
         ),
+        (snapshot) => handleSnapshot("legacy-targeted", snapshot),
+        handleError,
+      ),
+      onSnapshot(
+        query(
+          collection(db, "clientAnnouncements"),
+          where("targetEmails", "array-contains", viewerEmail),
+        ),
         (snapshot) => handleSnapshot("targeted", snapshot),
         handleError,
       ),

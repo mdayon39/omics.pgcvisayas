@@ -54,7 +54,7 @@ interface ClientAnnouncement {
   body: string;
   isActive: boolean;
   audience: "all" | "specific";
-  targetEmail: string;
+  targetEmails: string[];
   startAt: Timestamp | undefined;
   endAt: Timestamp | undefined;
 }
@@ -94,7 +94,7 @@ function ClientAnnouncementContent() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [audience, setAudience] = useState<"all" | "specific">("specific");
-  const [targetEmail, setTargetEmail] = useState(
+  const [targetEmailsInput, setTargetEmailsInput] = useState(
     CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
   );
   const [startAt, setStartAt] = useState("");
@@ -134,6 +134,7 @@ function ClientAnnouncementContent() {
                 isActive: true,
                 audience: "specific",
                 targetEmail: CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
+                targetEmails: [CLIENT_ANNOUNCEMENT_TARGET_EMAIL],
                 createdAt: serverTimestamp(),
                 createdBy: adminInfo.email,
                 updatedAt: serverTimestamp(),
@@ -166,10 +167,15 @@ function ClientAnnouncementContent() {
                   body: data.body,
                   isActive: data.isActive === true,
                   audience: data.audience === "all" ? "all" : "specific",
-                  targetEmail:
-                    typeof data.targetEmail === "string"
-                      ? data.targetEmail
-                      : "",
+                  targetEmails: Array.isArray(data.targetEmails)
+                    ? data.targetEmails.filter(
+                        (email: unknown): email is string =>
+                          typeof email === "string",
+                      )
+                    : typeof data.targetEmail === "string" &&
+                        data.targetEmail
+                      ? [data.targetEmail]
+                      : [],
                   startAt:
                     data.startAt instanceof Timestamp ? data.startAt : undefined,
                   endAt:
@@ -208,7 +214,7 @@ function ClientAnnouncementContent() {
     setTitle("");
     setBody("");
     setAudience("specific");
-    setTargetEmail(CLIENT_ANNOUNCEMENT_TARGET_EMAIL);
+    setTargetEmailsInput(CLIENT_ANNOUNCEMENT_TARGET_EMAIL);
     setStartAt("");
     setEndAt("");
     setIsActive(false);
@@ -220,7 +226,7 @@ function ClientAnnouncementContent() {
     setTitle(announcement.title);
     setBody(announcement.body);
     setAudience(announcement.audience);
-    setTargetEmail(announcement.targetEmail);
+    setTargetEmailsInput(announcement.targetEmails.join(", "));
     setStartAt(toDateTimeLocal(announcement.startAt));
     setEndAt(toDateTimeLocal(announcement.endAt));
     setIsActive(announcement.isActive);
@@ -232,7 +238,7 @@ function ClientAnnouncementContent() {
     setTitle("");
     setBody("");
     setAudience("specific");
-    setTargetEmail(CLIENT_ANNOUNCEMENT_TARGET_EMAIL);
+    setTargetEmailsInput(CLIENT_ANNOUNCEMENT_TARGET_EMAIL);
     setStartAt("");
     setEndAt("");
     setIsActive(false);
@@ -246,12 +252,23 @@ function ClientAnnouncementContent() {
       toast.error("Enter both an announcement title and message.");
       return;
     }
-    const cleanTargetEmail = targetEmail.trim().toLowerCase();
-    if (
-      audience === "specific" &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanTargetEmail)
-    ) {
-      toast.error("Enter a valid client email address.");
+    const cleanTargetEmails = [
+      ...new Set(
+        targetEmailsInput
+          .split(/[,\s;]+/)
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    ];
+    const invalidTargetEmail = cleanTargetEmails.find(
+      (email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+    );
+    if (audience === "specific" && cleanTargetEmails.length === 0) {
+      toast.error("Enter at least one client email address.");
+      return;
+    }
+    if (invalidTargetEmail) {
+      toast.error(`Enter a valid client email address: ${invalidTargetEmail}`);
       return;
     }
     const startDate = new Date(startAt);
@@ -278,7 +295,8 @@ function ClientAnnouncementContent() {
         body: cleanBody,
         isActive,
         audience,
-        targetEmail: audience === "all" ? "" : cleanTargetEmail,
+        targetEmail: audience === "all" ? "" : cleanTargetEmails[0],
+        targetEmails: audience === "all" ? [] : cleanTargetEmails,
         startAt: Timestamp.fromDate(startDate),
         endAt: Timestamp.fromDate(endDate),
         updatedAt: serverTimestamp(),
@@ -396,7 +414,8 @@ function ClientAnnouncementContent() {
                         <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
                           {announcement.audience === "all"
                             ? "All clients"
-                            : announcement.targetEmail || "Specific client"}
+                            : announcement.targetEmails.join(", ") ||
+                              "Specific clients"}
                         </span>
                       </div>
                       <p className="line-clamp-4 whitespace-pre-wrap text-xs leading-relaxed text-slate-600">
@@ -463,21 +482,27 @@ function ClientAnnouncementContent() {
                   className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
                 >
                   <option value="all">All clients</option>
-                  <option value="specific">Specific client email</option>
+                  <option value="specific">Specific client email addresses</option>
                 </select>
                 {audience === "specific" && (
                   <div className="space-y-2">
-                    <Label htmlFor="announcement-target-email">
-                      Client email address
+                    <Label htmlFor="announcement-target-emails">
+                      Client email addresses
                     </Label>
-                    <Input
-                      id="announcement-target-email"
-                      type="email"
-                      value={targetEmail}
-                      onChange={(event) => setTargetEmail(event.target.value)}
+                    <Textarea
+                      id="announcement-target-emails"
+                      value={targetEmailsInput}
+                      onChange={(event) =>
+                        setTargetEmailsInput(event.target.value)
+                      }
                       disabled={loading || saving}
-                      placeholder="client@example.com"
+                      rows={3}
+                      placeholder="client1@example.com, client2@example.com"
                     />
+                    <p className="text-xs text-slate-500">
+                      Enter addresses separated by commas, semicolons, spaces,
+                      or new lines.
+                    </p>
                   </div>
                 )}
               </div>

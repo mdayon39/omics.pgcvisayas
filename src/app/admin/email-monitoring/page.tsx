@@ -29,7 +29,7 @@ export default function EmailMonitoringPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl p-6">
-      <EmailMonitoringPanel isSuperadmin={hasAccess} />
+      <EmailMonitoringPanel />
     </div>
   );
 }

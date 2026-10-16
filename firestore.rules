@@ -310,7 +310,7 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['queueStatus', 'mailDocumentId', 'error'])
         );
-      allow delete: if isSuperAdmin();
+      allow delete: if false;
     }
 
     match /clientAnnouncements/{announcementId} {

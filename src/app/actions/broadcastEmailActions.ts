@@ -2,7 +2,7 @@
 
 import admin from "firebase-admin";
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { adminDb } from "@/lib/firebase-admin";
 import type { UserRole } from "@/types/Permissions";
 import { hasAdminEmailOperationsAccess } from "@/constants/adminEmailAccess";
@@ -13,16 +13,118 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 class BroadcastActionError extends Error {}
 
 type QueueBroadcastResult =
-  | { success: true; broadcastId: string; queuedCount: number }
+  | {
+      success: true;
+      broadcastId: string;
+      queuedCount: number;
+      skippedCount: number;
+    }
   | {
       success: false;
       error: string;
       queuedCount?: number;
       totalCount?: number;
+      queuedEmails?: string[];
     };
 
 function normalizeEmail(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function getBroadcastPreferenceRef(email: string) {
+  if (!adminDb) {
+    throw new BroadcastActionError("Email preferences are unavailable.");
+  }
+  const emailHash = createHash("sha256").update(email).digest("hex");
+  return adminDb.collection("broadcastEmailPreferences").doc(emailHash);
+}
+
+async function ensureBroadcastPreference(email: string) {
+  if (!adminDb) {
+    throw new BroadcastActionError("Email preferences are unavailable.");
+  }
+  const preferenceRef = getBroadcastPreferenceRef(email);
+  return adminDb.runTransaction(async (transaction) => {
+    const preferenceSnapshot = await transaction.get(preferenceRef);
+    const preference = preferenceSnapshot.data();
+    const unsubscribeToken =
+      typeof preference?.unsubscribeToken === "string" &&
+      /^[a-f0-9]{64}$/.test(preference.unsubscribeToken)
+        ? preference.unsubscribeToken
+        : randomBytes(32).toString("hex");
+    const subscribed = preference?.subscribed !== false;
+    const now = admin.firestore.FieldValue.serverTimestamp();
+
+    if (!preferenceSnapshot.exists) {
+      transaction.create(preferenceRef, {
+        subscribed: true,
+        unsubscribeToken,
+        createdAt: now,
+        updatedAt: now,
+      });
+    } else if (preference?.unsubscribeToken !== unsubscribeToken) {
+      transaction.update(preferenceRef, {
+        unsubscribeToken,
+        updatedAt: now,
+      });
+    }
+
+    return { subscribed, unsubscribeToken };
+  });
+}
+
+async function findBroadcastPreferenceByToken(token: string) {
+  if (!adminDb || !/^[a-f0-9]{64}$/.test(token)) return null;
+  const snapshot = await adminDb
+    .collection("broadcastEmailPreferences")
+    .where("unsubscribeToken", "==", token)
+    .limit(1)
+    .get();
+  return snapshot.empty ? null : snapshot.docs[0];
+}
+
+export async function getBroadcastEmailPreference(
+  token: string,
+): Promise<{ success: true; subscribed: boolean } | { success: false }> {
+  if (!adminDb || typeof token !== "string") return { success: false };
+  try {
+    const preference = await findBroadcastPreferenceByToken(token);
+    if (!preference) return { success: false };
+    return {
+      success: true,
+      subscribed: preference.data().subscribed !== false,
+    };
+  } catch (error) {
+    console.error("Could not load broadcast email preference:", error);
+    return { success: false };
+  }
+}
+
+export async function setBroadcastEmailPreference(
+  token: string,
+  subscribed: boolean,
+): Promise<{ success: true; subscribed: boolean } | { success: false }> {
+  if (
+    !adminDb ||
+    typeof token !== "string" ||
+    !/^[a-f0-9]{64}$/.test(token) ||
+    typeof subscribed !== "boolean"
+  ) {
+    return { success: false };
+  }
+
+  try {
+    const preference = await findBroadcastPreferenceByToken(token);
+    if (!preference) return { success: false };
+    await preference.ref.update({
+      subscribed,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { success: true, subscribed };
+  } catch (error) {
+    console.error("Could not update broadcast email preference:", error);
+    return { success: false };
+  }
 }
 
 function getErrorCode(error: unknown): string | undefined {
@@ -161,7 +263,11 @@ function escapeHtml(value: string): string {
   });
 }
 
-function createBroadcastMessage(subject: string, body: string) {
+function createBroadcastMessage(
+  subject: string,
+  body: string,
+  preferenceUrl: string,
+) {
   const escapedSubject = escapeHtml(subject);
   const bodyParagraphs = escapeHtml(body)
     .split(/\n{2,}/)
@@ -184,6 +290,9 @@ function createBroadcastMessage(subject: string, body: string) {
       "----------------------------------------",
       "Yours in utilizing OMICS for a better Philippines,",
       "Philippine Genome Center Visayas",
+      "",
+      "Client Portal: https://omics.pgcvisayas.upv.edu.ph/portal",
+      `Email preferences: ${preferenceUrl}`,
     ].join("\n"),
     html: `<!doctype html>
 <html lang="en">
@@ -234,7 +343,9 @@ function createBroadcastMessage(subject: string, body: string) {
             </tr>
             <tr>
               <td style="padding:18px 36px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
-                <p style="margin:0;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;">This announcement was sent by Philippine Genome Center Visayas regarding its services and operations.</p>
+                <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;"><a href="https://omics.pgcvisayas.upv.edu.ph/portal" style="color:#166fb5;font-weight:700;">Visit the OMICS Client Portal</a></p>
+                <p style="margin:0 0 8px;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;">This announcement was sent by Philippine Genome Center Visayas regarding its services and operations.</p>
+                <p style="margin:0;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;"><a href="${escapeHtml(preferenceUrl)}" style="color:#475569;">Manage broadcast email preferences</a></p>
               </td>
             </tr>
           </table>
@@ -302,6 +413,7 @@ export async function queueClientBroadcast(
   let broadcastId: string | undefined;
   let queuedCount = 0;
   let totalCount = 0;
+  const queuedEmails: string[] = [];
   try {
     const sender = await authorizeBroadcast(idToken, stageState);
     if (!adminDb) {
@@ -345,6 +457,27 @@ export async function queueClientBroadcast(
       );
     }
 
+    stageState.value = "checking broadcast email preferences";
+    const preferences: Array<{
+      email: string;
+      subscribed: boolean;
+      unsubscribeToken: string;
+    }> = [];
+    for (let index = 0; index < recipientEmails.length; index += 20) {
+      preferences.push(
+        ...(await Promise.all(
+          recipientEmails.slice(index, index + 20).map(async (email) => ({
+            email,
+            ...(await ensureBroadcastPreference(email)),
+          })),
+        )),
+      );
+    }
+    const activePreferences = preferences.filter(
+      (preference) => preference.subscribed,
+    );
+    const skippedCount = recipientEmails.length - activePreferences.length;
+
     const projectId =
       process.env.FIREBASE_PROJECT_ID ||
       process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -354,26 +487,36 @@ export async function queueClientBroadcast(
       );
     }
 
+    if (activePreferences.length === 0) {
+      return {
+        success: true,
+        broadcastId: "",
+        queuedCount: 0,
+        skippedCount,
+      };
+    }
+
     broadcastId = randomUUID();
     stageState.value = "Firestore queue preparation";
     const writes = [
       firestoreDocument(projectId, "emailBroadcasts", broadcastId, {
         subject,
-        recipientCount: recipientEmails.length,
+        recipientCount: activePreferences.length,
         createdByUid: sender.uid,
         createdByEmail: sender.email,
         createdAt: new Date(),
       }),
     ];
 
-    for (const email of recipientEmails) {
+    for (const recipient of activePreferences) {
       const mailId = randomUUID();
       const eventId = randomUUID();
-      const message = createBroadcastMessage(subject, body);
+      const preferenceUrl = `https://omics.pgcvisayas.upv.edu.ph/email-preferences/${recipient.unsubscribeToken}`;
+      const message = createBroadcastMessage(subject, body, preferenceUrl);
 
       writes.push(
         firestoreDocument(projectId, "mail", mailId, {
-          to: [email],
+          to: [recipient.email],
           senderEmail: sender.email,
           ...(sender.senderName ? { senderName: sender.senderName } : {}),
           message: { subject, ...message },
@@ -383,7 +526,7 @@ export async function queueClientBroadcast(
       writes.push(
         firestoreDocument(projectId, "emailMonitoringEvents", eventId, {
           category: "Client broadcast",
-          recipient: email,
+          recipient: recipient.email,
           sourceId: broadcastId,
           triggeredByUid: sender.uid,
           triggeredByEmail: sender.email,
@@ -405,6 +548,7 @@ export async function queueClientBroadcast(
       writeOffset += batchSize;
     }
 
+    let recipientOffset = 0;
     for (let batchIndex = 0; batchIndex < writeBatches.length; batchIndex++) {
       stageState.value = `Firestore queue commit ${batchIndex + 1} of ${writeBatches.length}`;
       const batchWrites = writeBatches[batchIndex];
@@ -436,13 +580,21 @@ export async function queueClientBroadcast(
         `Firestore rejected the broadcast queue (${firestoreCode}): ${firestoreMessage}`,
       );
     }
-      queuedCount +=
+    const batchRecipientCount =
         (batchWrites.length - (batchIndex === 0 ? 1 : 0)) / 2;
+    queuedEmails.push(
+      ...activePreferences
+        .slice(recipientOffset, recipientOffset + batchRecipientCount)
+        .map((recipient) => recipient.email),
+    );
+    recipientOffset += batchRecipientCount;
+    queuedCount = queuedEmails.length;
     }
     return {
-      success: true,
-      broadcastId,
-      queuedCount,
+    success: true,
+    broadcastId,
+    queuedCount,
+    skippedCount,
     };
   } catch (error) {
     const partialQueueNotice =
@@ -453,7 +605,9 @@ export async function queueClientBroadcast(
       return {
         success: false,
         error: `${error.message}${partialQueueNotice}`,
-        ...(queuedCount > 0 ? { queuedCount, totalCount } : {}),
+        ...(queuedCount > 0
+          ? { queuedCount, totalCount, queuedEmails: [...queuedEmails] }
+          : {}),
       };
     }
     const errorCode =
@@ -472,7 +626,9 @@ export async function queueClientBroadcast(
     return {
       success: false,
       error: `Could not queue the broadcast during ${stageState.value} (error ${errorCode}).${partialQueueNotice || " Check server logs for details. No success was reported; check Sent Items before retrying."}`,
-      ...(queuedCount > 0 ? { queuedCount, totalCount } : {}),
+      ...(queuedCount > 0
+        ? { queuedCount, totalCount, queuedEmails: [...queuedEmails] }
+        : {}),
     };
   }
 }

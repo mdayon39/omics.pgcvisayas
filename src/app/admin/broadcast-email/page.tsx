@@ -173,23 +173,14 @@ export default function BroadcastEmailPage() {
       });
       if (!result.success) {
         if (result.queuedCount) {
-          const queued = new Set(result.queuedEmails || []);
-          setRecipientEmails((current) =>
-            current.filter((email) => !queued.has(email)),
-          );
+          setRecipientEmails((current) => current.slice(result.queuedCount));
         }
         toast.error(result.error);
         return;
       }
-      if (result.queuedCount === 0) {
-        toast.info(
-          "No emails were queued because all selected recipients opted out of broadcast emails.",
-        );
-      } else {
-        toast.success(
-          `Email queued for ${result.queuedCount} recipient${result.queuedCount === 1 ? "" : "s"}.${result.skippedCount > 0 ? ` Skipped ${result.skippedCount} opted-out recipient${result.skippedCount === 1 ? "" : "s"}.` : ""}`,
-        );
-      }
+      toast.success(
+        `Email queued for ${result.queuedCount} recipient${result.queuedCount === 1 ? "" : "s"}.`,
+      );
       setRecipientEmails([]);
       setSubject("");
       setBody("");
@@ -229,11 +220,9 @@ export default function BroadcastEmailPage() {
             <p className="mt-1">
               Each recipient receives a separate email and cannot see other
               recipients' addresses. Verify the recipient list and send only
-              relevant service or administrative updates. Recipients can
-              disable future broadcast emails using the preference link in
-              each message; messages already queued cannot be recalled.
-              Delivery is subject to your email provider's quotas and rate
-              limits.
+              relevant service or administrative updates. This tool does not
+              track consent or manage unsubscribe requests. Delivery is subject
+              to your email provider's quotas and rate limits.
             </p>
           </div>
 

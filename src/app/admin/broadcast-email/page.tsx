@@ -183,10 +183,16 @@ export default function BroadcastEmailPage() {
         toast.error(result.error);
         return;
       }
+      if (result.queuedCount === 0) {
+        toast.info(
+          `${result.excludedOptOutCount} opted-out recipient${result.excludedOptOutCount === 1 ? " was" : "s were"} skipped. No email was queued.`,
+        );
+        return;
+      }
       toast.success([
         `Email queued for ${result.queuedCount} recipient${result.queuedCount === 1 ? "" : "s"}.`,
         result.excludedOptOutCount > 0
-          ? `${result.excludedOptOutCount} opted-out recipient${result.excludedOptOutCount === 1 ? " was" : "s were"} excluded.`
+          ? `${result.excludedOptOutCount} opted-out recipient${result.excludedOptOutCount === 1 ? " was" : "s were"} skipped.`
           : "",
       ].filter(Boolean).join(" "));
       setRecipientEmails([]);

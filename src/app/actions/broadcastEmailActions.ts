@@ -15,7 +15,7 @@ class BroadcastActionError extends Error {}
 type QueueBroadcastResult =
   | {
       success: true;
-      broadcastId: string;
+      broadcastId?: string;
       queuedCount: number;
       excludedOptOutCount: number;
     }
@@ -397,9 +397,11 @@ export async function queueClientBroadcast(
       (email) => !optedOutRecipientEmails.has(email),
     );
     if (eligibleRecipientEmails.length === 0) {
-      throw new BroadcastActionError(
-        "All selected recipients have opted out of client email broadcasts.",
-      );
+      return {
+        success: true,
+        queuedCount: 0,
+        excludedOptOutCount,
+      };
     }
 
     const projectId =

@@ -304,17 +304,49 @@ function firestoreDocument(
 type FirestoreWrite = ReturnType<typeof firestoreDocument>;
 
 async function getOptedOutRecipientEmails(
+  idToken: string,
   recipientEmails: string[],
 ): Promise<Set<string>> {
-  if (!adminDb) {
-    throw new BroadcastActionError("Email broadcast is unavailable.");
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  if (!projectId) {
+    throw new BroadcastActionError(
+      "Firebase project ID is not configured on the server.",
+    );
   }
 
   const optedOutEmails = new Set<string>();
   const recipientEmailSet = new Set(recipientEmails);
-  let snapshot: FirebaseFirestore.QuerySnapshot;
+  const queryUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents:runQuery`;
+  let response: Response;
   try {
-    snapshot = await adminDb.collection("emailBroadcastPreferences").get();
+    response = await fetch(queryUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: "emailBroadcastPreferences" }],
+          where: {
+            fieldFilter: {
+              field: { fieldPath: "broadcastEmailEnabled" },
+              op: "EQUAL",
+              value: { booleanValue: false },
+            },
+          },
+          select: {
+            fields: [
+              { fieldPath: "email" },
+              { fieldPath: "broadcastEmailEnabled" },
+            ],
+          },
+        },
+      }),
+      cache: "no-store",
+    });
   } catch (error) {
     console.error("Could not read client email broadcast preferences:", {
       errorCode: getErrorCode(error) || "unknown",
@@ -325,13 +357,68 @@ async function getOptedOutRecipientEmails(
       errorMessage: error instanceof Error ? error.message : String(error),
     });
     throw new BroadcastActionError(
-      "Could not check client email preferences. Please try again.",
+      "Could not connect to Firestore to check client email preferences. Please try again.",
     );
   }
-  snapshot.docs.forEach((preference) => {
-    const data = preference.data();
-    if (data.broadcastEmailEnabled !== false) return;
-    const email = normalizeEmail(data.email);
+
+  if (!response.ok) {
+    const responseBody = await response.json().catch(() => null);
+    const firestoreCode =
+      typeof responseBody?.error?.status === "string"
+        ? responseBody.error.status
+        : `HTTP ${response.status}`;
+    const firestoreMessage =
+      typeof responseBody?.error?.message === "string"
+        ? responseBody.error.message
+        : "Firestore rejected the preference query.";
+    console.error("Firestore rejected broadcast preference lookup:", {
+      code: firestoreCode,
+      message: firestoreMessage,
+    });
+    throw new BroadcastActionError(
+      `Could not check client email preferences (${firestoreCode}). Verify Firestore rules allow authorized broadcast admins to read opt-out preferences.`,
+    );
+  }
+
+  const queryResults = (await response.json().catch((error: unknown) => {
+    console.error("Could not parse Firestore broadcast preference results:", {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    throw new BroadcastActionError(
+      "Firestore returned an invalid response while checking client email preferences.",
+    );
+  })) as unknown;
+  if (!Array.isArray(queryResults)) {
+    throw new BroadcastActionError(
+      "Firestore returned an invalid response while checking client email preferences.",
+    );
+  }
+
+  const preferences = queryResults as Array<{
+    document?: {
+      fields?: {
+        email?: { stringValue?: string };
+        broadcastEmailEnabled?: { booleanValue?: boolean };
+      };
+    };
+  }>;
+  preferences.forEach((result) => {
+    const fields = result.document?.fields;
+    if (
+      !fields ||
+      fields.broadcastEmailEnabled?.booleanValue !== false ||
+      typeof fields.email?.stringValue !== "string"
+    ) {
+      throw new BroadcastActionError(
+        "Firestore returned an incomplete client email preference record. No broadcast was queued.",
+      );
+    }
+    const email = normalizeEmail(fields.email?.stringValue);
+    if (!email) {
+      throw new BroadcastActionError(
+        "Firestore returned an incomplete client email preference record. No broadcast was queued.",
+      );
+    }
     if (recipientEmailSet.has(email)) optedOutEmails.add(email);
   });
   return optedOutEmails;
@@ -391,7 +478,7 @@ export async function queueClientBroadcast(
 
     stageState.value = "checking recipient email preferences";
     const optedOutRecipientEmails =
-      await getOptedOutRecipientEmails(recipientEmails);
+      await getOptedOutRecipientEmails(idToken, recipientEmails);
     excludedOptOutCount = optedOutRecipientEmails.size;
     const eligibleRecipientEmails = recipientEmails.filter(
       (email) => !optedOutRecipientEmails.has(email),

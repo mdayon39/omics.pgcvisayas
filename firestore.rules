@@ -208,8 +208,10 @@ service cloud.firestore {
     }
 
     match /emailBroadcastPreferences/{uid} {
-      allow get: if isSignedIn() && uid == userUid();
-      allow list: if false;
+      allow get: if (isSignedIn() && uid == userUid())
+        || isSuperAdmin()
+        || isEmailOperationsAdmin();
+      allow list: if isSuperAdmin() || isEmailOperationsAdmin();
       allow create, update: if isSignedIn()
         && uid == userUid()
         && request.resource.data.keys().hasOnly([

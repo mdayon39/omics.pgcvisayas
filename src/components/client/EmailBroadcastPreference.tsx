@@ -78,15 +78,13 @@ export function EmailBroadcastPreference({
     <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
       <div className="min-w-0">
         <p className="text-xs font-semibold text-slate-700">
-          Client email announcements
+          Receive Email Broadcasts
         </p>
-        <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
-          {loadFailed
-            ? "Preference could not be loaded. Refresh to try again."
-            : enabled
-              ? "Receive service and administrative broadcasts."
-              : "You will not receive client email broadcasts."}
-        </p>
+        {loadFailed && (
+          <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
+            Preference could not be loaded. Refresh to try again.
+          </p>
+        )}
       </div>
       <Switch
         id="client-email-broadcast-preference"

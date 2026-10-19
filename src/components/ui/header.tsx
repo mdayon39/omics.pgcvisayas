@@ -118,7 +118,7 @@ export default function Header({
                     </DropdownMenuItem>
                   )}
 
-                  {menuFlags.clientMenuSettings && (
+                  {(menuFlags.clientMenuSettings || menuContent) && (
                     <>
                       <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
                       <DropdownMenuItem

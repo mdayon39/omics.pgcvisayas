@@ -1,4 +1,7 @@
 // src/components/ui/header.tsx
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { LogOut, User, Settings, Info, Key, ChevronDown, Menu, HelpCircle } from "lucide-react";
@@ -33,6 +36,8 @@ export default function Header({
   extras,
   menuContent,
 }: HeaderProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [settingsExpanded, setSettingsExpanded] = useState(false);
   const menuFlags = menuVisibility ?? {
     clientMenuSettings: true,
     clientMenuChangePassword: true,
@@ -73,7 +78,13 @@ export default function Header({
               {/* Extra slot: FAQs button, notification bell, etc. */}
               {extras}
 
-              <DropdownMenu>
+              <DropdownMenu
+                open={menuOpen}
+                onOpenChange={(open) => {
+                  setMenuOpen(open);
+                  if (!open) setSettingsExpanded(false);
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
@@ -86,17 +97,10 @@ export default function Header({
                 
                 <DropdownMenuContent
                   className={`mt-2 p-1.5 rounded-xl border-slate-200 ${
-                    menuContent ? "w-[300px]" : "w-[200px]"
+                    menuContent && settingsExpanded ? "w-[300px]" : "w-[200px]"
                   }`}
                   align="end"
                 >
-                  {menuFlags.clientMenuSettings && (
-                    <DropdownMenuItem className="flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer text-slate-700 hover:bg-slate-50 transition-colors">
-                      <Settings className="w-4 h-4 text-[#166FB5]" />
-                      <span className="font-medium">Settings</span>
-                    </DropdownMenuItem>
-                  )}
-                  
                   {menuFlags.clientMenuChangePassword && (
                     <DropdownMenuItem
                       onClick={() => window.dispatchEvent(new CustomEvent("open-change-password"))}
@@ -114,13 +118,31 @@ export default function Header({
                     </DropdownMenuItem>
                   )}
 
-                  {menuContent && (
+                  {menuFlags.clientMenuSettings && (
                     <>
                       <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
-                      {menuContent}
+                      <DropdownMenuItem
+                        onSelect={(event) => {
+                          event.preventDefault();
+                          setSettingsExpanded((expanded) => !expanded);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer text-slate-700 hover:bg-slate-50 transition-colors"
+                        aria-expanded={settingsExpanded}
+                      >
+                        <Settings className="w-4 h-4 text-[#166FB5]" />
+                        <span className="font-medium">Settings</span>
+                        <ChevronDown
+                          className={`ml-auto h-4 w-4 transition-transform ${
+                            settingsExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </DropdownMenuItem>
+                      {menuContent && settingsExpanded && (
+                        <div className="px-2 pb-2">{menuContent}</div>
+                      )}
                     </>
                   )}
-                  
+
                   <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
                   
                   <DropdownMenuItem 

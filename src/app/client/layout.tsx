@@ -66,7 +66,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         menuVisibility={configSettings?.portalFeatures ?? DEFAULT_PORTAL_FEATURES}
         menuContent={
           user.uid && user.email ? (
-            <EmailBroadcastPreference uid={user.uid} email={user.email} />
+            <EmailBroadcastPreference
+              uid={user.uid}
+              email={user.email}
+              name={user.displayName?.trim() || user.email}
+            />
           ) : null
         }
         extras={

@@ -215,9 +215,11 @@ service cloud.firestore {
       allow create, update: if isSignedIn()
         && uid == userUid()
         && request.resource.data.keys().hasOnly([
-          'email', 'broadcastEmailEnabled', 'updatedAt'
+          'email', 'name', 'broadcastEmailEnabled', 'updatedAt'
         ])
         && request.resource.data.email == userEmail()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 200
         && request.resource.data.broadcastEmailEnabled == false
         && request.resource.data.updatedAt is timestamp;
       allow delete: if isSignedIn() && uid == userUid();

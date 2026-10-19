@@ -15,9 +15,11 @@ import { db } from "@/lib/firebase";
 export function EmailBroadcastPreference({
   uid,
   email,
+  name,
 }: {
   uid: string;
   email: string;
+  name: string;
 }) {
   const [enabled, setEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,7 @@ export function EmailBroadcastPreference({
       } else {
         await setDoc(preferenceRef, {
           email,
+          name,
           broadcastEmailEnabled: false,
           updatedAt: serverTimestamp(),
         });

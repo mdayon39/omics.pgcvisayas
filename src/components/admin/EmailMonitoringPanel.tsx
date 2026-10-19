@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   collection,
+  doc,
+  getDoc,
   limit,
   onSnapshot,
   orderBy,
@@ -49,6 +51,13 @@ type MonitorStatus =
   | "Queueing"
   | "Failed"
   | "Missing email record";
+
+type BroadcastPreference = {
+  uid: string;
+  email: string;
+  name: string;
+  disabledAt: Date;
+};
 
 function toDate(value: unknown): Date {
   if (value instanceof Date) return value;
@@ -148,6 +157,11 @@ function statusClass(status: MonitorStatus): string {
 export function EmailMonitoringPanel() {
   const [events, setEvents] = useState<EmailMonitorEvent[]>([]);
   const [mailById, setMailById] = useState<Map<string, MailRecord>>(new Map());
+  const [broadcastPreferences, setBroadcastPreferences] = useState<
+    BroadcastPreference[]
+  >([]);
+  const [preferencesLoading, setPreferencesLoading] = useState(true);
+  const [preferencesError, setPreferencesError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [category, setCategory] = useState<string>("All");
@@ -156,6 +170,8 @@ export function EmailMonitoringPanel() {
 
   useEffect(() => {
     const clockInterval = window.setInterval(() => setClock(Date.now()), 30_000);
+    let active = true;
+    let preferenceSnapshotVersion = 0;
     const eventsQuery = query(
       collection(db, "emailMonitoringEvents"),
       orderBy("triggeredAt", "desc"),
@@ -203,10 +219,89 @@ export function EmailMonitoringPanel() {
       },
     );
 
+    const unsubscribePreferences = onSnapshot(
+      collection(db, "emailBroadcastPreferences"),
+      (snapshot) => {
+        const version = ++preferenceSnapshotVersion;
+        const preferences = snapshot.docs
+          .map((document) => {
+            const data = document.data();
+            if (data.broadcastEmailEnabled !== false) return null;
+
+            return {
+              uid: document.id,
+              email: typeof data.email === "string" ? data.email : "",
+              name: typeof data.name === "string" ? data.name.trim() : "",
+              disabledAt: toDate(data.updatedAt),
+            };
+          })
+          .filter(
+            (preference): preference is BroadcastPreference =>
+              preference !== null,
+          )
+          .sort(
+            (left, right) =>
+              right.disabledAt.getTime() - left.disabledAt.getTime(),
+          );
+
+        setBroadcastPreferences(preferences);
+        setPreferencesLoading(false);
+        setPreferencesError("");
+
+        const missingNames = preferences.filter(
+          (preference) => !preference.name,
+        );
+        if (missingNames.length === 0) return;
+
+        void Promise.all(
+          missingNames.map(async (preference) => {
+            try {
+              const profile = await getDoc(doc(db, "users", preference.uid));
+              const data = profile.exists() ? profile.data() : null;
+              const profileName =
+                typeof data?.name === "string"
+                  ? data.name.trim()
+                  : typeof data?.displayName === "string"
+                    ? data.displayName.trim()
+                    : "";
+              return [preference.uid, profileName] as const;
+            } catch (profileError) {
+              console.error(
+                "Could not load client name for broadcast preference:",
+                profileError,
+              );
+              return [preference.uid, ""] as const;
+            }
+          }),
+        ).then((profileNames) => {
+          if (!active || version !== preferenceSnapshotVersion) return;
+          const namesByUid = new Map(profileNames);
+          setBroadcastPreferences((current) =>
+            current.map((preference) => ({
+              ...preference,
+              name: preference.name || namesByUid.get(preference.uid) || "",
+            })),
+          );
+        });
+      },
+      (snapshotError) => {
+        console.error(
+          "Could not load email broadcast preferences:",
+          snapshotError,
+        );
+        setPreferencesError(
+          "Could not load email broadcast preferences. Check your admin access and try refreshing.",
+        );
+        setPreferencesLoading(false);
+      },
+    );
+
     return () => {
+      active = false;
       window.clearInterval(clockInterval);
       unsubscribeEvents();
       unsubscribeMail();
+      unsubscribePreferences();
     };
   }, []);
 
@@ -259,11 +354,66 @@ export function EmailMonitoringPanel() {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <SummaryCard label="Tracked triggers" value={rows.length} />
         <SummaryCard label="Provider accepted" value={sentCount} icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />} />
         <SummaryCard label="Pending" value={pendingCount} icon={<Clock3 className="h-4 w-4 text-amber-600" />} />
         <SummaryCard label="Needs attention" value={attentionCount} icon={<AlertCircle className="h-4 w-4 text-red-600" />} alert={attentionCount > 0} />
+        <SummaryCard label="Opted out of broadcasts" value={broadcastPreferences.length} />
+      </div>
+
+      <div className="rounded-lg border bg-white">
+        <div className="border-b p-4">
+          <h2 className="font-semibold">Broadcast email preferences</h2>
+          <p className="text-xs text-slate-500">
+            {broadcastPreferences.length} client
+            {broadcastPreferences.length === 1 ? " has" : "s have"} disabled
+            email broadcasts.
+          </p>
+        </div>
+
+        {preferencesError ? (
+          <p className="p-6 text-sm text-red-700">{preferencesError}</p>
+        ) : preferencesLoading ? (
+          <p className="p-6 text-sm text-slate-500">
+            Loading broadcast preferences...
+          </p>
+        ) : broadcastPreferences.length === 0 ? (
+          <p className="p-6 text-sm text-slate-500">
+            No clients have disabled email broadcasts.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Client name</th>
+                  <th className="px-4 py-3">Email address</th>
+                  <th className="px-4 py-3">Disabled on</th>
+                  <th className="px-4 py-3">Client UID</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {broadcastPreferences.map((preference) => (
+                  <tr key={preference.uid}>
+                    <td className="px-4 py-3">
+                      {preference.name || "Name not recorded"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {preference.email || "Not recorded"}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {formatDate(preference.disabledAt)}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs">
+                      {preference.uid}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border bg-white">

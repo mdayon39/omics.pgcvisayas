@@ -4,7 +4,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, User, Settings, Info, Key, ChevronDown, Menu, HelpCircle } from "lucide-react";
+import { LogOut, User, Settings, Info, ChevronDown, Menu, HelpCircle } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -127,19 +127,6 @@ export default function Header({
                           }`}
                         />
                       </DropdownMenuItem>
-                      {settingsExpanded && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            window.dispatchEvent(
-                              new CustomEvent("open-change-password"),
-                            )
-                          }
-                          className="flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer text-slate-700 hover:bg-slate-50 transition-colors"
-                        >
-                          <Key className="w-4 h-4 text-purple-600" />
-                          <span className="font-medium">Change Password</span>
-                        </DropdownMenuItem>
-                      )}
                       {menuContent && settingsExpanded && (
                         <div className="px-2 pb-2">{menuContent}</div>
                       )}

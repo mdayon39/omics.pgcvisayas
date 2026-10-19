@@ -127,7 +127,7 @@ export default function Header({
                           }`}
                         />
                       </DropdownMenuItem>
-                      {settingsExpanded && menuFlags.clientMenuChangePassword && (
+                      {settingsExpanded && (
                         <DropdownMenuItem
                           onClick={() =>
                             window.dispatchEvent(

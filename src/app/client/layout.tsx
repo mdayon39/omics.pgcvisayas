@@ -12,6 +12,7 @@ import {
   getConfigurationSettings,
 } from "@/services/configurationSettingsService";
 import { ConfigurationSettings } from "@/types/ConfigurationSettings";
+import { EmailBroadcastPreference } from "@/components/client/EmailBroadcastPreference";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut, loading } = useAuth();
@@ -63,6 +64,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         user={user}
         onLogout={signOut}
         menuVisibility={configSettings?.portalFeatures ?? DEFAULT_PORTAL_FEATURES}
+        menuContent={
+          user.uid && user.email ? (
+            <EmailBroadcastPreference uid={user.uid} email={user.email} />
+          ) : null
+        }
         extras={
           <div className="flex items-center gap-1">
             {/* FAQs shortcut */}

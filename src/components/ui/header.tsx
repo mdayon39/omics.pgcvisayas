@@ -22,6 +22,7 @@ export interface HeaderProps {
   onLogout?: () => void;
   menuVisibility?: PortalFeatureVisibility;
   extras?: React.ReactNode;
+  menuContent?: React.ReactNode;
 }
 
 export default function Header({
@@ -30,6 +31,7 @@ export default function Header({
   showNavigation = true,
   menuVisibility,
   extras,
+  menuContent,
 }: HeaderProps) {
   const menuFlags = menuVisibility ?? {
     clientMenuSettings: true,
@@ -82,7 +84,12 @@ export default function Header({
                   </Button>
                 </DropdownMenuTrigger>
                 
-                <DropdownMenuContent className="w-[200px] mt-2 p-1.5 rounded-xl border-slate-200" align="end">
+                <DropdownMenuContent
+                  className={`mt-2 p-1.5 rounded-xl border-slate-200 ${
+                    menuContent ? "w-[300px]" : "w-[200px]"
+                  }`}
+                  align="end"
+                >
                   {menuFlags.clientMenuSettings && (
                     <DropdownMenuItem className="flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer text-slate-700 hover:bg-slate-50 transition-colors">
                       <Settings className="w-4 h-4 text-[#166FB5]" />
@@ -105,6 +112,13 @@ export default function Header({
                       <Info className="w-4 h-4 text-orange-600" />
                       <span className="font-medium">About</span>
                     </DropdownMenuItem>
+                  )}
+
+                  {menuContent && (
+                    <>
+                      <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
+                      {menuContent}
+                    </>
                   )}
                   
                   <DropdownMenuSeparator className="my-1.5 bg-slate-100" />

@@ -161,7 +161,6 @@ import {
 import ClientConformeModal from "@/components/forms/ClientConformeModal";
 import UploadReceipt from "@/components/client/UploadReceipt";
 import DownloadForms from "@/components/client/DownloadForms";
-import { EmailBroadcastPreference } from "@/components/client/EmailBroadcastPreference";
 
 // ────────────────────────────────────────────────────────────────
 //  Formatting Helpers
@@ -4012,9 +4011,6 @@ export default function ClientPortalPage() {
             </button>
           </div>
         </div>
-        {user?.uid && user.email && (
-          <EmailBroadcastPreference uid={user.uid} email={user.email} />
-        )}
       </div>
 
       {/* Projects Section */}

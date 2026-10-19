@@ -338,10 +338,7 @@ async function getOptedOutRecipientEmails(
             },
           },
           select: {
-            fields: [
-              { fieldPath: "email" },
-              { fieldPath: "broadcastEmailEnabled" },
-            ],
+            fields: [{ fieldPath: "email" }],
           },
         },
       }),
@@ -398,22 +395,20 @@ async function getOptedOutRecipientEmails(
     document?: {
       fields?: {
         email?: { stringValue?: string };
-        broadcastEmailEnabled?: { booleanValue?: boolean };
       };
     };
   }>;
   preferences.forEach((result) => {
-    const fields = result.document?.fields;
-    if (
-      !fields ||
-      fields.broadcastEmailEnabled?.booleanValue !== false ||
-      typeof fields.email?.stringValue !== "string"
-    ) {
+    // runQuery can return metadata-only entries without a document.
+    if (!result.document) return;
+
+    const emailValue = result.document.fields?.email?.stringValue;
+    if (typeof emailValue !== "string") {
       throw new BroadcastActionError(
         "Firestore returned an incomplete client email preference record. No broadcast was queued.",
       );
     }
-    const email = normalizeEmail(fields.email?.stringValue);
+    const email = normalizeEmail(emailValue);
     if (!email) {
       throw new BroadcastActionError(
         "Firestore returned an incomplete client email preference record. No broadcast was queued.",

@@ -128,7 +128,9 @@ export default function Header({
                         />
                       </DropdownMenuItem>
                       {menuContent && settingsExpanded && (
-                        <div className="px-2 pb-2">{menuContent}</div>
+                        <div className="ml-3 border-l border-slate-200 pl-2 pb-2">
+                          {menuContent}
+                        </div>
                       )}
                     </>
                   )}

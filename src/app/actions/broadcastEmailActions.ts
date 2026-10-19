@@ -312,12 +312,26 @@ async function getOptedOutRecipientEmails(
 
   const optedOutEmails = new Set<string>();
   const recipientEmailSet = new Set(recipientEmails);
-  const snapshot = await adminDb
-    .collection("emailBroadcastPreferences")
-    .where("broadcastEmailEnabled", "==", false)
-    .get();
+  let snapshot: FirebaseFirestore.QuerySnapshot;
+  try {
+    snapshot = await adminDb.collection("emailBroadcastPreferences").get();
+  } catch (error) {
+    console.error("Could not read client email broadcast preferences:", {
+      errorCode: getErrorCode(error) || "unknown",
+      errorName:
+        error && typeof error === "object" && "name" in error
+          ? String(error.name)
+          : "unknown",
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    throw new BroadcastActionError(
+      "Could not check client email preferences. Please try again.",
+    );
+  }
   snapshot.docs.forEach((preference) => {
-    const email = normalizeEmail(preference.data().email);
+    const data = preference.data();
+    if (data.broadcastEmailEnabled !== false) return;
+    const email = normalizeEmail(data.email);
     if (recipientEmailSet.has(email)) optedOutEmails.add(email);
   });
   return optedOutEmails;

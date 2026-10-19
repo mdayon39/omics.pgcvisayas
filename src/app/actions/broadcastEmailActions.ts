@@ -13,12 +13,19 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 class BroadcastActionError extends Error {}
 
 type QueueBroadcastResult =
-  | { success: true; broadcastId: string; queuedCount: number }
+  | {
+      success: true;
+      broadcastId: string;
+      queuedCount: number;
+      excludedOptOutCount: number;
+    }
   | {
       success: false;
       error: string;
       queuedCount?: number;
       totalCount?: number;
+      queuedRecipients?: string[];
+      excludedOptOutCount?: number;
     };
 
 function normalizeEmail(value: unknown): string {
@@ -294,14 +301,37 @@ function firestoreDocument(
   };
 }
 
+type FirestoreWrite = ReturnType<typeof firestoreDocument>;
+
+async function getOptedOutRecipientEmails(
+  recipientEmails: string[],
+): Promise<Set<string>> {
+  if (!adminDb) {
+    throw new BroadcastActionError("Email broadcast is unavailable.");
+  }
+
+  const optedOutEmails = new Set<string>();
+  const recipientEmailSet = new Set(recipientEmails);
+  const snapshot = await adminDb
+    .collection("emailBroadcastPreferences")
+    .where("broadcastEmailEnabled", "==", false)
+    .get();
+  snapshot.docs.forEach((preference) => {
+    const email = normalizeEmail(preference.data().email);
+    if (recipientEmailSet.has(email)) optedOutEmails.add(email);
+  });
+  return optedOutEmails;
+}
+
 export async function queueClientBroadcast(
   idToken: string,
   input: { recipientEmails: string[]; subject: string; body: string },
 ): Promise<QueueBroadcastResult> {
   const stageState = { value: "starting admin authorization" };
   let broadcastId: string | undefined;
-  let queuedCount = 0;
   let totalCount = 0;
+  let excludedOptOutCount = 0;
+  const queuedRecipients: string[] = [];
   try {
     const sender = await authorizeBroadcast(idToken, stageState);
     if (!adminDb) {
@@ -345,6 +375,19 @@ export async function queueClientBroadcast(
       );
     }
 
+    stageState.value = "checking recipient email preferences";
+    const optedOutRecipientEmails =
+      await getOptedOutRecipientEmails(recipientEmails);
+    excludedOptOutCount = optedOutRecipientEmails.size;
+    const eligibleRecipientEmails = recipientEmails.filter(
+      (email) => !optedOutRecipientEmails.has(email),
+    );
+    if (eligibleRecipientEmails.length === 0) {
+      throw new BroadcastActionError(
+        "All selected recipients have opted out of client email broadcasts.",
+      );
+    }
+
     const projectId =
       process.env.FIREBASE_PROJECT_ID ||
       process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -356,22 +399,27 @@ export async function queueClientBroadcast(
 
     broadcastId = randomUUID();
     stageState.value = "Firestore queue preparation";
-    const writes = [
+    const firstBatch: FirestoreWrite[] = [
       firestoreDocument(projectId, "emailBroadcasts", broadcastId, {
         subject,
-        recipientCount: recipientEmails.length,
+        recipientCount: eligibleRecipientEmails.length,
         createdByUid: sender.uid,
         createdByEmail: sender.email,
         createdAt: new Date(),
       }),
     ];
+    const writeBatches: Array<{
+      writes: FirestoreWrite[];
+      recipients: string[];
+    }> = [];
+    let currentBatch = { writes: firstBatch, recipients: [] as string[] };
 
-    for (const email of recipientEmails) {
+    for (const email of eligibleRecipientEmails) {
       const mailId = randomUUID();
       const eventId = randomUUID();
       const message = createBroadcastMessage(subject, body);
 
-      writes.push(
+      const recipientWrites = [
         firestoreDocument(projectId, "mail", mailId, {
           to: [email],
           senderEmail: sender.email,
@@ -379,8 +427,6 @@ export async function queueClientBroadcast(
           message: { subject, ...message },
           broadcastId,
         }),
-      );
-      writes.push(
         firestoreDocument(projectId, "emailMonitoringEvents", eventId, {
           category: "Client broadcast",
           recipient: email,
@@ -391,69 +437,76 @@ export async function queueClientBroadcast(
           queueStatus: "queued",
           mailDocumentId: mailId,
         }),
-      );
+      ];
+      if (
+        currentBatch.writes.length + recipientWrites.length >
+        MAX_FIRESTORE_COMMIT_WRITES
+      ) {
+        writeBatches.push(currentBatch);
+        currentBatch = { writes: [], recipients: [] };
+      }
+      currentBatch.writes.push(...recipientWrites);
+      currentBatch.recipients.push(email);
     }
-
-    const writeBatches: (typeof writes)[] = [];
-    let writeOffset = 0;
-    while (writeOffset < writes.length) {
-      const batchSize =
-        writeOffset === 0
-          ? MAX_FIRESTORE_COMMIT_WRITES - 1
-          : MAX_FIRESTORE_COMMIT_WRITES;
-      writeBatches.push(writes.slice(writeOffset, writeOffset + batchSize));
-      writeOffset += batchSize;
-    }
+    if (currentBatch.writes.length > 0) writeBatches.push(currentBatch);
 
     for (let batchIndex = 0; batchIndex < writeBatches.length; batchIndex++) {
       stageState.value = `Firestore queue commit ${batchIndex + 1} of ${writeBatches.length}`;
-      const batchWrites = writeBatches[batchIndex];
-    const commitUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents:commit`;
-    const commitResponse = await fetch(commitUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ writes: batchWrites }),
-      cache: "no-store",
-    });
-    if (!commitResponse.ok) {
-      const responseBody = await commitResponse.json().catch(() => null);
-      const firestoreCode =
-        typeof responseBody?.error?.status === "string"
-          ? responseBody.error.status
-          : `HTTP ${commitResponse.status}`;
-      const firestoreMessage =
-        typeof responseBody?.error?.message === "string"
-          ? responseBody.error.message
-          : "Firestore rejected the write.";
-      console.error("Firestore rejected client broadcast queue:", {
-        code: firestoreCode,
-        message: firestoreMessage,
+      const batchWrites = writeBatches[batchIndex].writes;
+      const commitUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents:commit`;
+      const commitResponse = await fetch(commitUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ writes: batchWrites }),
+        cache: "no-store",
       });
-      throw new BroadcastActionError(
-        `Firestore rejected the broadcast queue (${firestoreCode}): ${firestoreMessage}`,
-      );
-    }
-      queuedCount +=
-        (batchWrites.length - (batchIndex === 0 ? 1 : 0)) / 2;
+      if (!commitResponse.ok) {
+        const responseBody = await commitResponse.json().catch(() => null);
+        const firestoreCode =
+          typeof responseBody?.error?.status === "string"
+            ? responseBody.error.status
+            : `HTTP ${commitResponse.status}`;
+        const firestoreMessage =
+          typeof responseBody?.error?.message === "string"
+            ? responseBody.error.message
+            : "Firestore rejected the write.";
+        console.error("Firestore rejected client broadcast queue:", {
+          code: firestoreCode,
+          message: firestoreMessage,
+        });
+        throw new BroadcastActionError(
+          `Firestore rejected the broadcast queue (${firestoreCode}): ${firestoreMessage}`,
+        );
+      }
+      queuedRecipients.push(...writeBatches[batchIndex].recipients);
     }
     return {
       success: true,
       broadcastId,
-      queuedCount,
+      queuedCount: queuedRecipients.length,
+      excludedOptOutCount,
     };
   } catch (error) {
+    const queuedCount = queuedRecipients.length;
     const partialQueueNotice =
       queuedCount > 0
         ? ` ${queuedCount} of ${totalCount} recipients were queued; check Email Monitoring before retrying.`
         : "";
+    const optOutNotice =
+      excludedOptOutCount > 0
+        ? ` ${excludedOptOutCount} opted-out recipient${excludedOptOutCount === 1 ? " was" : "s were"} excluded.`
+        : "";
     if (error instanceof BroadcastActionError) {
       return {
         success: false,
-        error: `${error.message}${partialQueueNotice}`,
-        ...(queuedCount > 0 ? { queuedCount, totalCount } : {}),
+        error: `${error.message}${partialQueueNotice}${optOutNotice}`,
+        ...(queuedCount > 0
+          ? { queuedCount, totalCount, queuedRecipients }
+          : {}),
+        ...(excludedOptOutCount > 0 ? { excludedOptOutCount } : {}),
       };
     }
     const errorCode =
@@ -471,8 +524,11 @@ export async function queueClientBroadcast(
     });
     return {
       success: false,
-      error: `Could not queue the broadcast during ${stageState.value} (error ${errorCode}).${partialQueueNotice || " Check server logs for details. No success was reported; check Sent Items before retrying."}`,
-      ...(queuedCount > 0 ? { queuedCount, totalCount } : {}),
+      error: `Could not queue the broadcast during ${stageState.value} (error ${errorCode}).${partialQueueNotice || " Check server logs for details. No success was reported; check Sent Items before retrying."}${optOutNotice}`,
+      ...(queuedCount > 0
+        ? { queuedCount, totalCount, queuedRecipients }
+        : {}),
+      ...(excludedOptOutCount > 0 ? { excludedOptOutCount } : {}),
     };
   }
 }

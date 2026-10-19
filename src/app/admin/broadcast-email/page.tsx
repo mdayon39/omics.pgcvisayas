@@ -172,15 +172,23 @@ export default function BroadcastEmailPage() {
         body,
       });
       if (!result.success) {
-        if (result.queuedCount) {
-          setRecipientEmails((current) => current.slice(result.queuedCount));
+        if (result.queuedRecipients?.length) {
+          const queuedSet = new Set(
+            result.queuedRecipients.map((email) => email.toLowerCase()),
+          );
+          setRecipientEmails((current) =>
+            current.filter((email) => !queuedSet.has(email.toLowerCase())),
+          );
         }
         toast.error(result.error);
         return;
       }
-      toast.success(
+      toast.success([
         `Email queued for ${result.queuedCount} recipient${result.queuedCount === 1 ? "" : "s"}.`,
-      );
+        result.excludedOptOutCount > 0
+          ? `${result.excludedOptOutCount} opted-out recipient${result.excludedOptOutCount === 1 ? " was" : "s were"} excluded.`
+          : "",
+      ].filter(Boolean).join(" "));
       setRecipientEmails([]);
       setSubject("");
       setBody("");

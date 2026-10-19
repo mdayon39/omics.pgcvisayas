@@ -191,6 +191,8 @@ function createBroadcastMessage(subject: string, body: string) {
       "----------------------------------------",
       "Yours in utilizing OMICS for a better Philippines,",
       "Philippine Genome Center Visayas",
+      "",
+      "If you no longer wish to receive email broadcasts from PGC Visayas, you may disable Receive Email Broadcasts under Settings in your client portal.",
     ].join("\n"),
     html: `<!doctype html>
 <html lang="en">
@@ -242,6 +244,7 @@ function createBroadcastMessage(subject: string, body: string) {
             <tr>
               <td style="padding:18px 36px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
                 <p style="margin:0;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;">This announcement was sent by Philippine Genome Center Visayas regarding its services and operations.</p>
+                <p style="margin:8px 0 0;color:#64748b;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;">If you no longer wish to receive email broadcasts from PGC Visayas, you may disable <strong>Receive Email Broadcasts</strong> under <strong>Settings</strong> in your client portal.</p>
               </td>
             </tr>
           </table>

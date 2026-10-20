@@ -71,7 +71,7 @@ async function triggerPushNotify(
 async function triggerChatEmailNotification(
   threadId: string,
   adminName: string,
-  emailType: "first-admin" | "follow-up",
+  emailType: "admin-message",
 ): Promise<void> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
@@ -596,92 +596,31 @@ export async function addThreadMessage(
 
     await updateDoc(threadRef, finalUpdate);
 
-    let shouldNotifyClient = false;
-    let shouldSendFollowUpEmail = false;
-    const FOLLOW_UP_INACTIVITY_MS = 3 * 24 * 60 * 60 * 1000;
-    const FOLLOW_UP_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
-
     if (message.senderRole === "admin" && message.type === "text") {
       try {
-        const messages = await getThreadMessages(message.threadId);
-        const clientMessages = messages.filter(
-          (msg) => msg.senderRole === "client" && msg.type !== "system",
-        );
-        const lastClientMessage = clientMessages.sort(
-          (a, b) =>
-            ((b.createdAt as Timestamp)?.toMillis?.() ?? 0) -
-            ((a.createdAt as Timestamp)?.toMillis?.() ?? 0),
-        )[0];
-
-        const presenceRef = doc(db, "presence", `client_${message.threadId}`);
-        const presenceSnap = await getDoc(presenceRef);
-        const lastSeen = presenceSnap.exists()
-          ? ((
-              presenceSnap.data() as {
-                lastSeen?: Timestamp | { toDate?: () => Date };
-              }
-            ).lastSeen ?? null)
-          : null;
-
-        const lastClientActivityAt = lastClientMessage?.createdAt
-          ? (lastClientMessage.createdAt as Timestamp).toDate()
-          : lastSeen && typeof (lastSeen as Timestamp).toDate === "function"
-            ? (lastSeen as Timestamp).toDate()
-            : null;
-
-        const lastClientActivityMs = lastClientActivityAt
-          ? lastClientActivityAt.getTime()
-          : Number.POSITIVE_INFINITY;
-        const nowMs = Date.now();
-        const isClientInactiveThreeDays =
-          Number.isFinite(lastClientActivityMs) &&
-          nowMs - lastClientActivityMs >= FOLLOW_UP_INACTIVITY_MS;
-
-        const notification = await runTransaction(db, async (tx) => {
+        const threadExists = await runTransaction(db, async (tx) => {
           const threadSnap = await tx.get(threadRef);
-          if (!threadSnap.exists()) {
-            return { notifyClient: false, sendFollowUpEmail: false };
-          }
-          const data = threadSnap.data() as {
-            adminTextMessageCount?: number;
-            firstAdminChatEmailSent?: boolean;
-            adminReplyFollowUpEmailSentAt?: Timestamp | null;
-          };
+          if (!threadSnap.exists()) return false;
+          const data = threadSnap.data();
           const currentCount =
             typeof data.adminTextMessageCount === "number"
               ? data.adminTextMessageCount
               : 0;
-          const lastFollowUpSentAt = data.adminReplyFollowUpEmailSentAt
-            ? (data.adminReplyFollowUpEmailSentAt as Timestamp).toDate()
-            : null;
-          const lastFollowUpCooldownElapsed =
-            !lastFollowUpSentAt ||
-            nowMs - lastFollowUpSentAt.getTime() >= FOLLOW_UP_COOLDOWN_MS;
-
-          // Use a dedicated flag so legacy threads (where the automated welcome message
-          // wrongly incremented adminTextMessageCount before the system-type fix) also
-          // receive the notification on the admin's first real human message.
-          shouldNotifyClient = data.firstAdminChatEmailSent !== true;
-          shouldSendFollowUpEmail =
-            isClientInactiveThreeDays &&
-            lastFollowUpCooldownElapsed &&
-            message.senderRole === "admin" &&
-            message.type === "text" &&
-            data.firstAdminChatEmailSent === true;
 
           tx.update(threadRef, {
             adminTextMessageCount: currentCount + 1,
           });
-
-          return {
-            notifyClient: shouldNotifyClient,
-            sendFollowUpEmail: shouldSendFollowUpEmail,
-          };
+          return true;
         });
-        shouldNotifyClient = notification.notifyClient;
-        shouldSendFollowUpEmail = notification.sendFollowUpEmail;
+        if (threadExists) {
+          await triggerChatEmailNotification(
+            message.threadId,
+            message.senderName,
+            "admin-message",
+          );
+        }
       } catch (error) {
-        console.error("Error updating admin message count:", error);
+        console.error("Failed to update admin message count or send chat email:", error);
       }
     }
 
@@ -721,30 +660,6 @@ export async function addThreadMessage(
         message.content,
         targetUnreadCount,
       );
-    }
-
-    if (shouldNotifyClient) {
-      try {
-        await triggerChatEmailNotification(
-          message.threadId,
-          message.senderName,
-          "first-admin",
-        );
-      } catch (error) {
-        console.error("Failed to send first admin chat email:", error);
-      }
-    }
-
-    if (shouldSendFollowUpEmail) {
-      try {
-        await triggerChatEmailNotification(
-          message.threadId,
-          message.senderName,
-          "follow-up",
-        );
-      } catch (error) {
-        console.error("Failed to send follow-up admin chat email:", error);
-      }
     }
 
     return messageRef.id;

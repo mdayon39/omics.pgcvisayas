@@ -70,8 +70,15 @@ export async function POST(request: Request) {
       clientName?: string;
     };
 
-    const clientEmail = threadData.clientEmail || "";
+    let clientEmail = threadData.clientEmail?.trim() || "";
     const clientName = threadData.clientName || "Client";
+    if (!clientEmail) {
+      const inquirySnap = await adminDb
+        .collection("inquiries")
+        .doc(threadId)
+        .get();
+      clientEmail = inquirySnap.data()?.email?.trim() || "";
+    }
 
     const isFollowUp = emailType === "follow-up";
     const monitorEventId = await beginEmailMonitorEvent(

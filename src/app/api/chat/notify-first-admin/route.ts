@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { adminDb } from "@/lib/firebase-admin";
+import admin, { adminDb } from "@/lib/firebase-admin";
+import type { DecodedIdToken } from "firebase-admin/auth";
 import {
   beginEmailMonitorEvent,
   markEmailMonitorFailed,
@@ -21,9 +20,48 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing threadId" }, { status: 400 });
     }
 
-    const threadRef = doc(db, "quotationThreads", threadId);
-    const threadSnap = await getDoc(threadRef);
-    if (!threadSnap.exists()) {
+    if (!adminDb) {
+      throw new Error("Firebase Admin is unavailable for chat email delivery.");
+    }
+
+    const authorization = request.headers.get("authorization") || "";
+    const tokenMatch = authorization.match(/^Bearer\s+(.+)$/i);
+    if (!tokenMatch) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
+    }
+
+    let decodedToken: DecodedIdToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(tokenMatch[1]);
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid authentication token" },
+        { status: 401 },
+      );
+    }
+
+    const adminEmail = decodedToken.email?.trim().toLowerCase();
+    if (!adminEmail || decodedToken.email_verified !== true) {
+      return NextResponse.json(
+        { error: "An authenticated admin is required" },
+        { status: 403 },
+      );
+    }
+
+    const adminSnap = await adminDb.collection("admins").doc(adminEmail).get();
+    if (!adminSnap.exists || adminSnap.data()?.status === "deactivated") {
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 },
+      );
+    }
+
+    const threadRef = adminDb.collection("quotationThreads").doc(threadId);
+    const threadSnap = await threadRef.get();
+    if (!threadSnap.exists) {
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
 
@@ -81,20 +119,24 @@ Philippine Genome Center Visayas`;
       </div>
     `;
 
-    if (!adminDb) {
-      const error = new Error("Firebase Admin is unavailable for email queueing.");
-      await markEmailMonitorFailed(monitorEventId, error);
-      throw error;
-    }
     try {
-      const mailDocument = await adminDb.collection("mail").add({
-      to: [clientEmail],
-      inquiryId: threadId,
-      message: {
-        subject,
-        text: emailText,
-        html: emailHtml,
-      },
+      const mailDocument = adminDb.collection("mail").doc();
+      await adminDb.runTransaction(async (transaction) => {
+        transaction.create(mailDocument, {
+          to: [clientEmail],
+          inquiryId: threadId,
+          message: {
+            subject,
+            text: emailText,
+            html: emailHtml,
+          },
+        });
+        transaction.update(
+          threadRef,
+          isFollowUp
+            ? { adminReplyFollowUpEmailSentAt: new Date() }
+            : { firstAdminChatEmailSent: true },
+        );
       });
       await markEmailMonitorQueued(monitorEventId, mailDocument.id);
     } catch (error) {

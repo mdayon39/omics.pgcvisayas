@@ -68,6 +68,32 @@ async function triggerPushNotify(
   }
 }
 
+async function triggerChatEmailNotification(
+  threadId: string,
+  adminName: string,
+  emailType: "first-admin" | "follow-up",
+): Promise<void> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("Sign in again before sending a chat email notification.");
+  }
+
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch("/api/chat/notify-first-admin", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ threadId, adminName, emailType }),
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Chat email notification request failed (${response.status}): ${await response.text()}`,
+    );
+  }
+}
+
 /**
  * Initialize a quotation thread when an inquiry is submitted
  */
@@ -611,9 +637,11 @@ export async function addThreadMessage(
           Number.isFinite(lastClientActivityMs) &&
           nowMs - lastClientActivityMs >= FOLLOW_UP_INACTIVITY_MS;
 
-        await runTransaction(db, async (tx) => {
+        const notification = await runTransaction(db, async (tx) => {
           const threadSnap = await tx.get(threadRef);
-          if (!threadSnap.exists()) return;
+          if (!threadSnap.exists()) {
+            return { notifyClient: false, sendFollowUpEmail: false };
+          }
           const data = threadSnap.data() as {
             adminTextMessageCount?: number;
             firstAdminChatEmailSent?: boolean;
@@ -643,12 +671,15 @@ export async function addThreadMessage(
 
           tx.update(threadRef, {
             adminTextMessageCount: currentCount + 1,
-            ...(shouldNotifyClient ? { firstAdminChatEmailSent: true } : {}),
-            ...(shouldSendFollowUpEmail
-              ? { adminReplyFollowUpEmailSentAt: serverTimestamp() }
-              : {}),
           });
+
+          return {
+            notifyClient: shouldNotifyClient,
+            sendFollowUpEmail: shouldSendFollowUpEmail,
+          };
         });
+        shouldNotifyClient = notification.notifyClient;
+        shouldSendFollowUpEmail = notification.sendFollowUpEmail;
       } catch (error) {
         console.error("Error updating admin message count:", error);
       }
@@ -694,15 +725,11 @@ export async function addThreadMessage(
 
     if (shouldNotifyClient) {
       try {
-        await fetch("/api/chat/notify-first-admin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            threadId: message.threadId,
-            adminName: message.senderName,
-            emailType: "first-admin",
-          }),
-        });
+        await triggerChatEmailNotification(
+          message.threadId,
+          message.senderName,
+          "first-admin",
+        );
       } catch (error) {
         console.error("Failed to send first admin chat email:", error);
       }
@@ -710,15 +737,11 @@ export async function addThreadMessage(
 
     if (shouldSendFollowUpEmail) {
       try {
-        await fetch("/api/chat/notify-first-admin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            threadId: message.threadId,
-            adminName: message.senderName,
-            emailType: "follow-up",
-          }),
-        });
+        await triggerChatEmailNotification(
+          message.threadId,
+          message.senderName,
+          "follow-up",
+        );
       } catch (error) {
         console.error("Failed to send follow-up admin chat email:", error);
       }

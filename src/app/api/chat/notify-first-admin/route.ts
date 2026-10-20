@@ -44,9 +44,9 @@ export async function POST(request: Request) {
     }
 
     const adminEmail = decodedToken.email?.trim().toLowerCase();
-    if (!adminEmail || decodedToken.email_verified !== true) {
+    if (!adminEmail) {
       return NextResponse.json(
-        { error: "An authenticated admin is required" },
+        { error: "An authenticated admin account is required" },
         { status: 403 },
       );
     }

@@ -14,7 +14,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const threadId = String(body?.threadId || "").trim();
     const adminName = String(body?.adminName || "Admin").trim() || "Admin";
-    const emailType = String(body?.emailType || "first-admin").trim();
 
     if (!threadId) {
       return NextResponse.json({ error: "Missing threadId" }, { status: 400 });
@@ -65,22 +64,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
 
-    const threadData = threadSnap.data() as {
-      clientEmail?: string;
-      clientName?: string;
-    };
-
-    let clientEmail = threadData.clientEmail?.trim() || "";
-    const clientName = threadData.clientName || "Client";
-    if (!clientEmail) {
-      const inquirySnap = await adminDb
-        .collection("inquiries")
-        .doc(threadId)
-        .get();
-      clientEmail = inquirySnap.data()?.email?.trim() || "";
-    }
-
-    const isFollowUp = emailType === "follow-up";
+    const threadData = threadSnap.data() ?? {};
+    const inquirySnap = await adminDb
+      .collection("inquiries")
+      .doc(threadId)
+      .get();
+    const inquiryData = inquirySnap.data() ?? {};
+    const inquiryEmail =
+      typeof inquiryData.email === "string" ? inquiryData.email.trim() : "";
+    const threadEmail =
+      typeof threadData.clientEmail === "string"
+        ? threadData.clientEmail.trim()
+        : "";
+    const isValidEmail = (email: string) =>
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const clientEmail = isValidEmail(inquiryEmail)
+      ? inquiryEmail
+      : isValidEmail(threadEmail)
+        ? threadEmail
+        : "";
+    const clientName =
+      (typeof inquiryData.name === "string" && inquiryData.name.trim()) ||
+      (typeof threadData.clientName === "string" && threadData.clientName.trim()) ||
+      "Client";
     const monitorEventId = await beginEmailMonitorEvent(
       "Chat received",
       clientEmail,
@@ -89,7 +95,7 @@ export async function POST(request: Request) {
     if (!clientEmail) {
       await markEmailMonitorFailed(
         monitorEventId,
-        "No client email address was found for the chat thread.",
+        "No valid client email address was found on the inquiry or chat thread.",
       );
       return NextResponse.json(
         { error: "Client email not found" },
@@ -97,13 +103,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const subject = isFollowUp
-      ? "Chat Message Update: PGC Visayas"
-      : "Chat Message Received: PGC Visayas";
+    const subject = "New Chat Message: PGC Visayas";
 
     const emailText = `Dear ${clientName},
 
-You have received ${isFollowUp ? "a follow-up" : "a new"} message from an Admin (${adminName}) in the chatbox. To view the message, please log in to your Client Portal:
+You have received a new message from an Admin (${adminName}) in the chatbox. To view the message, please log in to your Client Portal:
 ${PORTAL_URL}
 
 Yours in utilizing OMICS for a better Philippines,
@@ -114,7 +118,7 @@ Philippine Genome Center Visayas`;
         <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px;">
           <h2 style="margin-top: 0; color: #1e40af;">${subject}</h2>
           <p>Dear <strong>${clientName}</strong>,</p>
-          <p>You have received ${isFollowUp ? "a follow-up" : "a new"} message from an Admin (${adminName}) in the chatbox. To view the message, please log in to your Client Portal.</p>
+          <p>You have received a new message from an Admin (${adminName}) in the chatbox. To view the message, please log in to your Client Portal.</p>
           <p style="margin: 16px 0;">
             <a href="${PORTAL_URL}" style="background-color: #1e40af; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Open Client Portal</a>
           </p>
@@ -127,31 +131,26 @@ Philippine Genome Center Visayas`;
     `;
 
     try {
-      const mailDocument = adminDb.collection("mail").doc();
-      await adminDb.runTransaction(async (transaction) => {
-        transaction.create(mailDocument, {
-          to: [clientEmail],
-          inquiryId: threadId,
-          message: {
-            subject,
-            text: emailText,
-            html: emailHtml,
-          },
-        });
-        transaction.update(
-          threadRef,
-          isFollowUp
-            ? { adminReplyFollowUpEmailSentAt: new Date() }
-            : { firstAdminChatEmailSent: true },
-        );
+      const mailDocument = await adminDb.collection("mail").add({
+        to: [clientEmail],
+        inquiryId: threadId,
+        message: {
+          subject,
+          text: emailText,
+          html: emailHtml,
+        },
       });
       await markEmailMonitorQueued(monitorEventId, mailDocument.id);
+      return NextResponse.json({
+        ok: true,
+        queued: true,
+        recipient: clientEmail,
+        mailDocumentId: mailDocument.id,
+      });
     } catch (error) {
       await markEmailMonitorFailed(monitorEventId, error);
       throw error;
     }
-
-    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Failed to send chat notification email:", error);
     return NextResponse.json(

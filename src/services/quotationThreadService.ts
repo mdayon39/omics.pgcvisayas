@@ -71,7 +71,6 @@ async function triggerPushNotify(
 async function triggerChatEmailNotification(
   threadId: string,
   adminName: string,
-  emailType: "admin-message",
 ): Promise<void> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
@@ -85,7 +84,7 @@ async function triggerChatEmailNotification(
       "Content-Type": "application/json",
       Authorization: `Bearer ${idToken}`,
     },
-    body: JSON.stringify({ threadId, adminName, emailType }),
+    body: JSON.stringify({ threadId, adminName }),
   });
   if (!response.ok) {
     throw new Error(
@@ -619,7 +618,6 @@ export async function addThreadMessage(
         await triggerChatEmailNotification(
           message.threadId,
           message.senderName,
-          "admin-message",
         );
       } catch (error) {
         console.error("Failed to send admin chat email:", error);

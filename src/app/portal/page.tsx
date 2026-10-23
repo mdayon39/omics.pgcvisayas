@@ -37,19 +37,13 @@ import {
 } from "firebase/firestore";
 import { markInquiryAsLoggedIn } from "@/services/inquiryService";
 import { logActivity } from "@/services/activityLogService";
+import {
+  MASTER_PORTAL_EMAILS,
+  PORTAL_ALLOWED_INQUIRY_STATUSES,
+} from "@/constants/portalAccess";
 
 import { Shield, CheckCircle, AlertTriangle, Mail, Home } from "lucide-react";
 import Link from "next/link";
-
-const MASTER_EMAILS = ["madayon1@up.edu.ph", "merlito.dayon@gmail.com"];
-const ALLOWED_INQUIRY_STATUSES = [
-  "Pending",
-  "Approved Client",
-  "Quotation Only",
-  "Ongoing Quotation",
-  "In Progress",
-  "Service Not Offered",
-] as const;
 
 type PortalInquiryRecord = {
   email?: string;
@@ -182,19 +176,39 @@ export default function ClientVerifyPage() {
         return;
       }
       // Determine the active password and resolve the primary inquiry
-      const isMasterAdmin = googleUser.email
-        ? MASTER_EMAILS.includes(googleUser.email)
-        : false;
+      const normalizedGoogleEmail = googleUser.email.trim().toLowerCase();
+      const isMasterAdmin = MASTER_PORTAL_EMAILS.includes(
+        normalizedGoogleEmail as (typeof MASTER_PORTAL_EMAILS)[number],
+      );
       let resolvedInquiryId: string = inquiryId;
       let inquiry: PortalInquiryRecord | null = null;
 
       if (isMasterAdmin) {
-        // Master admins: direct document lookup, no password restriction
-        const directDoc = await getDoc(doc(db, "inquiries", inquiryId));
-        if (directDoc.exists()) {
-          inquiry = directDoc.data() as PortalInquiryRecord;
-          resolvedInquiryId = directDoc.id;
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) {
+          throw new Error("Your Google sign-in session expired. Please sign in again.");
         }
+        const response = await fetch("/api/portal/master-inquiry", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ inquiryId }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          const message =
+            typeof result?.error === "string"
+              ? result.error
+              : "Could not verify this inquiry.";
+          setVerifyError(message);
+          toast.error(message);
+          setVerifying(false);
+          return;
+        }
+        inquiry = result.inquiry as PortalInquiryRecord;
+        resolvedInquiryId = result.inquiry.id as string;
       } else {
         // UUID is optional on inquiries. Resolve the entered inquiry ID
         // directly, then verify ownership through the signed-in email.
@@ -267,8 +281,8 @@ export default function ClientVerifyPage() {
       // Allow login for Pending, Approved Client (isApproved), Quotation Only, Ongoing Quotation, In Progress, and Service Not Offered
       const isAllowed =
         inquiry.isApproved ||
-        ALLOWED_INQUIRY_STATUSES.includes(
-          (inquiry.status || "") as (typeof ALLOWED_INQUIRY_STATUSES)[number],
+        PORTAL_ALLOWED_INQUIRY_STATUSES.includes(
+          (inquiry.status || "") as (typeof PORTAL_ALLOWED_INQUIRY_STATUSES)[number],
         );
 
       if (!isAllowed) {

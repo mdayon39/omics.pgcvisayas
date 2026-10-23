@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const subject = "Chat Message Received: PGC Visayas";
+    const subject = "Chat Message Update: PGC Visayas";
 
     const emailText = `Dear ${clientName},
 

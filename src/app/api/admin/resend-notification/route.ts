@@ -116,7 +116,7 @@ export async function POST(request: Request) {
         (typeof thread.clientName === "string" && thread.clientName.trim()) ||
         "Client";
 
-      const subject = "Chat Message Received: PGC Visayas";
+      const subject = "Chat Message Update: PGC Visayas";
       const escapedName = escapeHtml(clientName);
       const text = `Dear ${clientName},
 

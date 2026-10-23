@@ -90,6 +90,17 @@ const BIOINFO_SERVICE_TYPE_OPTIONS = [
 
 const BIOINFO_DATA_FORMAT_OPTIONS = ["fastq", "fasta", "others"] as const;
 
+const toSentenceCase = (value: string) => {
+  const normalized = value.trim().toLocaleLowerCase();
+  return normalized.replace(/^./u, (character) => character.toLocaleUpperCase());
+};
+
+const toNameCase = (value: string) =>
+  value
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/(^|[\s'-])\p{L}/gu, (part) => part.toLocaleUpperCase());
+
 /**
  * Main Quotation Request Form Component
  *
@@ -375,9 +386,20 @@ export default function QuotationRequestForm() {
   const handleFormSubmit = (data: InquiryFormData) => {
     if (submissionLocked) return;
 
+    const normalizedData = {
+      ...data,
+      name: toNameCase(data.name),
+      affiliation: toSentenceCase(data.affiliation),
+      designation: toSentenceCase(data.designation),
+    };
+
+    setValue("name", normalizedData.name);
+    setValue("affiliation", normalizedData.affiliation);
+    setValue("designation", normalizedData.designation);
+
     // Keep the request button locked for this form session to prevent duplicates.
     setSubmissionLocked(true);
-    setPendingData(data); // Store data temporarily
+    setPendingData(normalizedData); // Store data temporarily
     setShowConfirmModal(true); // Show confirmation modal
   };
 

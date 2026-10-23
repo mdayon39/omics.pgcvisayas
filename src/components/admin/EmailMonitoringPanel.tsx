@@ -15,9 +15,12 @@ import {
   CheckCircle2,
   Clock3,
   Eye,
+  Loader2,
   MailCheck,
+  Send,
 } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { toast } from "sonner";
+import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
   EMAIL_MONITOR_CATEGORIES,
@@ -167,6 +170,7 @@ export function EmailMonitoringPanel() {
   const [category, setCategory] = useState<string>("All");
   const [clock, setClock] = useState(() => Date.now());
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [resendingEventId, setResendingEventId] = useState<string | null>(null);
 
   useEffect(() => {
     const clockInterval = window.setInterval(() => setClock(Date.now()), 30_000);
@@ -341,6 +345,48 @@ export function EmailMonitoringPanel() {
   const selectedRecipient = Array.isArray(selectedMail?.to)
     ? selectedMail.to.join(", ")
     : selectedMail?.to || selectedEvent?.recipient || "No recipient recorded";
+  const canResendSelectedEvent =
+    selectedEvent?.category === "Chat received" ||
+    selectedEvent?.category === "Quotation available";
+
+  const handleResend = async () => {
+    if (!selectedEvent || !canResendSelectedEvent || resendingEventId) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      toast.error("Sign in again before resending this email.");
+      return;
+    }
+
+    setResendingEventId(selectedEvent.id);
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch("/api/admin/resend-notification", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventId: selectedEvent.id }),
+      });
+      const result = (await response.json()) as {
+        error?: string;
+        recipient?: string;
+      };
+      if (!response.ok) {
+        throw new Error(result.error || "Could not resend the notification.");
+      }
+      toast.success(`Email queued for ${result.recipient || selectedEvent.recipient}.`);
+    } catch (resendError) {
+      console.error("Could not resend monitored notification:", resendError);
+      toast.error(
+        resendError instanceof Error
+          ? resendError.message
+          : "Could not resend the notification.",
+      );
+    } finally {
+      setResendingEventId(null);
+    }
+  };
 
   return (
     <section className="space-y-5">
@@ -558,6 +604,26 @@ export function EmailMonitoringPanel() {
                     "Message content is not available for this email."}
                 </div>
               </div>
+              {canResendSelectedEvent && (
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                    <p className="text-xs text-slate-500">
+                      Queues a new email to the client address currently on the
+                      chat or quotation. Use this to resend a missed notification.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleResend}
+                      disabled={resendingEventId !== null}
+                    >
+                      {resendingEventId === selectedEvent.id ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="mr-2 h-4 w-4" />
+                      )}
+                      Send again
+                    </Button>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

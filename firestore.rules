@@ -171,13 +171,11 @@ service cloud.firestore {
         && getAfter(reportPath).data.status == 'received'
         && getAfter(reportPath).data.receivedBy == userEmail()
         && getAfter(reportPath).data.adminNotificationQueued == true
+        && getAfter(reportPath).data.uploadedByFirstName == data.recipientName
         && exists(adminPath)
         && get(adminPath).data.status != 'deactivated'
         && get(adminPath).data.role in ['admin', 'superadmin']
-        && data.recipientName ==
-          (get(reportPath).data.uploadedByFirstName is string
-            ? get(reportPath).data.uploadedByFirstName
-            : 'Admin');
+        && data.recipientName is string;
     }
 
     // Ownership helper during migration (uid-first, email fallback).
@@ -762,7 +760,7 @@ service cloud.firestore {
                   || resource.data.uploadedBy is string
                 )
                 && request.resource.data.diff(resource.data).affectedKeys()
-                  .hasOnly(['adminNotificationQueued'])
+                  .hasOnly(['adminNotificationQueued', 'uploadedByFirstName'])
               )
             )
           );

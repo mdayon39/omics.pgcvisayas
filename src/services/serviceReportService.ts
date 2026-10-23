@@ -56,6 +56,9 @@ const escapeHtml = (value: string) =>
     return entities[character];
   });
 
+const getFirstName = (name: string | null | undefined) =>
+  name?.trim().split(/\s+/)[0] || "Admin";
+
 export async function getServiceReportsByProjectId(
   pid: string,
 ): Promise<ServiceReport[]> {
@@ -151,7 +154,9 @@ export async function markServiceReportReceived(
           report.status !== "received") &&
         report.adminNotificationQueued !== true,
       recipient,
-      recipientName: report.uploadedByFirstName || "Admin",
+      recipientName: getFirstName(
+        report.uploadedByFirstName || report.uploadedByName,
+      ),
       reportName: report.fileName || "Service report",
       reportUrl: report.fileUrl,
       projectName:
@@ -205,10 +210,15 @@ export async function markServiceReportReceived(
         .toDate()
         .toLocaleString("en-PH", { timeZone: "Asia/Manila" });
       const subject = `Client confirmed service report receipt: ${pid}`;
-      transaction.update(reportRef, { adminNotificationQueued: true });
-
-      const recipientName =
-        report.uploadedByFirstName || receiptResult.recipientName;
+      const recipientName = getFirstName(
+        report.uploadedByFirstName ||
+          report.uploadedByName ||
+          receiptResult.recipientName,
+      );
+      transaction.update(reportRef, {
+        adminNotificationQueued: true,
+        uploadedByFirstName: recipientName,
+      });
       const safeReportUrl = escapeHtml(receiptResult.reportUrl);
       const safeReportName = escapeHtml(receiptResult.reportName);
       const safeProjectId = escapeHtml(pid);

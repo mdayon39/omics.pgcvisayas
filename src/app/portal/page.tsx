@@ -68,6 +68,12 @@ export default function ClientVerifyPage() {
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotErrorModal, setForgotErrorModal] = useState<string | null>(null);
   const router = useRouter();
+  const isMasterPortalAccount = googleUser
+    ? MASTER_PORTAL_EMAILS.includes(
+        googleUser.email.trim().toLowerCase() as
+          (typeof MASTER_PORTAL_EMAILS)[number],
+      )
+    : false;
 
   const handleForgotPassword = async () => {
     if (!googleUser?.email) return;
@@ -490,7 +496,11 @@ export default function ClientVerifyPage() {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setInquiryId(e.target.value.trim())
                         }
-                        placeholder="Enter your unique password"
+                        placeholder={
+                          isMasterPortalAccount
+                            ? "Enter the client's Inquiry ID"
+                            : "Enter your unique password"
+                        }
                         autoComplete="current-password"
                         aria-describedby="password-help"
                         maxLength={80}
@@ -507,7 +517,9 @@ export default function ClientVerifyPage() {
                     </div>
                     <p className="text-[9px] text-slate-400 leading-tight">
                       <span id="password-help">
-                        Check the email sent by PGC Visayas for your password.
+                        {isMasterPortalAccount
+                          ? "For master access, enter the client's Inquiry ID as the password."
+                          : "Check the email sent by PGC Visayas for your password."}
                       </span>
                     </p>
                   </div>

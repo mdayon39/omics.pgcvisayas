@@ -21,6 +21,10 @@ function normalizeEmail(value?: string | null): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 async function resolveUidFromUsersByEmail(
   email?: string | null,
 ): Promise<string | null> {
@@ -83,8 +87,37 @@ export async function saveQuotationAction(
       }
     }
 
-    const recipientEmail =
-      normalizeEmail(quotation.email) || normalizeEmail(inquiry?.email);
+    let linkedInquiryEmail = normalizeEmail(inquiry?.email);
+    let linkedInquiryName = inquiry?.name;
+    if (adminDb && quotation.inquiryId) {
+      try {
+        const inquirySnapshot = await adminDb
+          .collection("inquiries")
+          .doc(quotation.inquiryId)
+          .get();
+        if (inquirySnapshot.exists) {
+          const inquiryData = inquirySnapshot.data();
+          linkedInquiryEmail =
+            normalizeEmail(inquiryData?.email) || linkedInquiryEmail;
+          linkedInquiryName =
+            typeof inquiryData?.name === "string"
+              ? inquiryData.name
+              : linkedInquiryName;
+        }
+      } catch (inquiryLookupError) {
+        console.warn(
+          `Could not verify the client email for quotation ${quotation.referenceNumber}:`,
+          inquiryLookupError,
+        );
+      }
+    }
+
+    const quotationEmail = normalizeEmail(quotation.email);
+    const recipientEmail = isValidEmail(linkedInquiryEmail)
+      ? linkedInquiryEmail
+      : isValidEmail(quotationEmail)
+        ? quotationEmail
+        : "";
     let emailQueued = false;
     let emailError: string | undefined;
     let emailMonitorEventId: string | null = null;
@@ -106,7 +139,7 @@ export async function saveQuotationAction(
       emailError =
         "Quotation saved, but the notification email could not be queued. Please contact support.";
     } else {
-      const clientName = quotation.name || inquiry?.name || "Client";
+      const clientName = quotation.name || linkedInquiryName || "Client";
       const message = createQuotationAvailabilityEmail(clientName);
       emailMonitorEventId = await beginEmailMonitorEvent(
         "Quotation available",

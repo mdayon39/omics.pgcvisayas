@@ -136,37 +136,80 @@ async function queueProjectApprovalEmail(input: {
   const portalUrl = "https://omics.pgcvisayas.upv.edu.ph/portal";
   const emailText = `Dear ${clientName},
 
-Your project, "${projectName}" (Project ID: ${input.projectPid}), has been approved.
+Thank you for confirming your intent to avail of our services. Your project, "${projectName}" (Project ID: ${input.projectPid}), has been approved, and we're pleased to have you on board!
 
-Next steps:
-1. Open your client portal: ${portalUrl}
-2. Go to your approved project under "My Projects".
-3. Review the Sample Submission Requirements.
-4. Download and complete the Sample Submission Form, then upload it through the portal.
+To proceed, kindly complete the Sample Submission Form directly through your client portal for the samples you will be submitting:
 
-Once we receive your submission, we will coordinate with you regarding sample drop-off or shipping.
+1. Navigate to your approved project under the "My Projects" section.
+2. Make sure to read the Sample Submission Requirements.
+3. Download the Sample Submission Form and fill it out with your sample details.
+4. Attach the completed sample submission form and click "Upload" to submit.
 
-For assistance, contact sequencing.pgc.upvisayas@up.edu.ph.
+Once your submission is received, we will coordinate with you regarding the physical drop-off or shipping of your samples.
+
+You may access your client portal here: ${portalUrl}
+
+If you encounter any issues accessing the portal or have questions about the submission requirements, please do not hesitate to reach out to us via email at sequencing.pgc.upvisayas@up.edu.ph or check our FAQs: https://omics.pgcvisayas.upv.edu.ph/faqs.
+
+We look forward to working with you!
 
 Yours in utilizing OMICS for a better Philippines,
 Philippine Genome Center Visayas`;
   const emailHtml = `
-    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#334155;line-height:1.6">
-      <h1 style="color:#1e40af">PGC Visayas</h1>
-      <h2>Project Approval and Next Steps</h2>
-      <p>Dear <strong>${escapeHtml(clientName)}</strong>,</p>
-      <p>Your project, <strong>&ldquo;${escapeHtml(projectName)}&rdquo;</strong>
-      (Project ID: <code>${escapeHtml(input.projectPid)}</code>), has been approved.</p>
-      <h3>Next Steps</h3>
-      <ol>
-        <li>Open your <a href="${portalUrl}">client portal</a>.</li>
-        <li>Go to your approved project under <strong>My Projects</strong>.</li>
-        <li>Review the Sample Submission Requirements.</li>
-        <li>Download and complete the Sample Submission Form, then upload it through the portal.</li>
-      </ol>
-      <p>Once we receive your submission, we will coordinate with you regarding sample drop-off or shipping.</p>
-      <p>For assistance, contact <a href="mailto:sequencing.pgc.upvisayas@up.edu.ph">sequencing.pgc.upvisayas@up.edu.ph</a>.</p>
-      <p>Yours in utilizing OMICS for a better Philippines,<br /><strong>Philippine Genome Center Visayas</strong></p>
+    <div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:600px;margin:0 auto;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)">
+      <div style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);padding:30px 20px;text-align:center">
+        <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:700;letter-spacing:-0.025em">PGC Visayas</h1>
+        <p style="color:rgba(255,255,255,0.9);margin:8px 0 0;font-size:14px">Project Approval and Next Steps</p>
+      </div>
+
+      <div style="padding:32px 24px;color:#334155;line-height:1.6">
+        <p style="margin:0 0 20px;font-size:16px">Dear <strong>${escapeHtml(clientName)}</strong>,</p>
+        <p style="margin:0 0 20px">
+          Thank you for confirming your intent to avail of our services. Your project,
+          <strong>&ldquo;${escapeHtml(projectName)}&rdquo;</strong> (Project ID:
+          <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px">${escapeHtml(input.projectPid)}</code>),
+          has been <strong style="color:#16a34a">approved</strong>, and we&rsquo;re pleased to have you on board!
+        </p>
+
+        <div style="background-color:#f0fdf4;border-left:4px solid #16a34a;border-radius:4px;padding:20px 20px 8px;margin-bottom:24px">
+          <h3 style="margin:0 0 14px;font-size:15px;color:#15803d;text-transform:uppercase;letter-spacing:0.05em">Next Steps</h3>
+          <p style="margin:0 0 12px">
+            To proceed, kindly complete the <strong>Sample Submission Form</strong> directly through your client portal
+            for the samples you will be submitting:
+          </p>
+          <ol style="margin:0 0 12px;padding-left:20px;line-height:1.9">
+            <li>Navigate to your approved project under the <strong>&ldquo;My Projects&rdquo;</strong> section.</li>
+            <li>Make sure to read the <strong>Sample Submission Requirements</strong>.</li>
+            <li>Download the <strong>Sample Submission Form</strong> and fill it out with your sample details.</li>
+            <li>Attach the completed sample submission form and click <strong>&ldquo;Upload&rdquo;</strong> to submit.</li>
+          </ol>
+          <p style="margin:0 0 12px">
+            Once your submission is received, we will coordinate with you regarding the
+            physical drop-off or shipping of your samples.
+          </p>
+        </div>
+
+        <p style="margin:0 0 20px">
+          You may access your client portal here:&nbsp;
+          <a href="${portalUrl}" style="color:#2563eb;font-weight:600;text-decoration:none">${portalUrl}</a>
+        </p>
+        <p style="margin:0 0 20px">
+          If you encounter any issues accessing the portal or have questions about the submission
+          requirements, please do not hesitate to reach out to us via email at
+          <a href="mailto:sequencing.pgc.upvisayas@up.edu.ph" style="color:#2563eb;text-decoration:none">sequencing.pgc.upvisayas@up.edu.ph</a>
+          or check our <a href="https://omics.pgcvisayas.upv.edu.ph/faqs" style="color:#2563eb;text-decoration:none">FAQs</a>.<br /><br />
+          We look forward to working with you!
+        </p>
+
+        <div style="border-top:1px solid #f1f5f9;padding-top:24px">
+          <p style="margin:0;color:#64748b;font-size:14px">Yours in utilizing OMICS for a better Philippines,</p>
+          <p style="margin:4px 0 0;color:#1e40af;font-weight:700;font-size:16px">Philippine Genome Center Visayas</p>
+        </div>
+      </div>
+
+      <div style="background-color:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9">
+        <p style="margin:0;color:#94a3b8;font-size:12px">This is an automated message. Please do not reply directly to this email.</p>
+      </div>
     </div>`;
 
   const monitorEventId = await beginEmailMonitorEvent(

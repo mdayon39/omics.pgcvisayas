@@ -271,7 +271,7 @@ export default function ClientVerifyPage() {
           (inquiry.status || "") as (typeof PORTAL_ALLOWED_INQUIRY_STATUSES)[number],
         );
 
-      if (!isAllowed) {
+      if (!isAllowed && !isMasterAdmin) {
         const message =
           "This inquiry is not currently eligible for portal access.";
         setVerifyError(message);

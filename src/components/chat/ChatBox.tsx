@@ -544,7 +544,12 @@ export default function ChatBox({
               ),
             }
           : {}),
-      } as Omit<ThreadMessage, "id" | "createdAt">);
+      } as Omit<ThreadMessage, "id" | "createdAt">, (emailError) => {
+        console.error("Chat message was sent, but its client email failed:", emailError);
+        toast.error(
+          "Message sent, but the client notification email could not be queued. Check Email Monitoring.",
+        );
+      });
       setMentionedAdmins([]);
 
       if (selectedMentions.length > 0) {

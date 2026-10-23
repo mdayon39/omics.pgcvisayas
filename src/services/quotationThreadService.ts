@@ -28,6 +28,12 @@ import {
 } from "firebase/firestore";
 import { ref, deleteObject } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
+import { createChatMessageEmail } from "@/lib/chatEmail";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringClient";
 import {
   QuotationThread,
   QuotationVersion,
@@ -72,24 +78,41 @@ async function triggerChatEmailNotification(
   threadId: string,
   adminName: string,
 ): Promise<void> {
-  const currentUser = auth.currentUser;
-  if (!currentUser) {
-    throw new Error("Sign in again before sending a chat email notification.");
+  const thread = await getQuotationThread(threadId);
+  const inquirySnapshot = await getDoc(doc(db, "inquiries", threadId));
+  const inquiryData = inquirySnapshot.exists() ? inquirySnapshot.data() : {};
+  const clientEmail =
+    (typeof inquiryData.email === "string" && inquiryData.email.trim()) ||
+    thread?.clientEmail?.trim() ||
+    "";
+  const clientName =
+    (typeof inquiryData.name === "string" && inquiryData.name.trim()) ||
+    thread?.clientName?.trim() ||
+    "Client";
+  const monitorEventId = await beginEmailMonitorEvent(
+    "Chat received",
+    clientEmail,
+    threadId,
+  );
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
+    const error = new Error(
+      "No valid client email address was found on the inquiry or chat thread.",
+    );
+    await markEmailMonitorFailed(monitorEventId, error);
+    throw error;
   }
 
-  const idToken = await currentUser.getIdToken();
-  const response = await fetch("/api/chat/notify-first-admin", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({ threadId, adminName }),
-  });
-  if (!response.ok) {
-    throw new Error(
-      `Chat email notification request failed (${response.status}): ${await response.text()}`,
-    );
+  try {
+    const mailDocument = await addDoc(collection(db, "mail"), {
+      to: [clientEmail],
+      inquiryId: threadId,
+      message: createChatMessageEmail(clientName, adminName),
+    });
+    await markEmailMonitorQueued(monitorEventId, mailDocument.id);
+  } catch (error) {
+    await markEmailMonitorFailed(monitorEventId, error);
+    throw error;
   }
 }
 
@@ -536,6 +559,7 @@ export async function sendQuotationToClient(
  */
 export async function addThreadMessage(
   message: Omit<ThreadMessage, "id" | "createdAt">,
+  onChatEmailError?: (error: unknown) => void,
 ): Promise<string> {
   try {
     const messageData = {
@@ -621,6 +645,7 @@ export async function addThreadMessage(
         );
       } catch (error) {
         console.error("Failed to send admin chat email:", error);
+        onChatEmailError?.(error);
       }
     }
 

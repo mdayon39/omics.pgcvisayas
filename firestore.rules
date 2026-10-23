@@ -453,8 +453,8 @@ service cloud.firestore {
           || hasOwnedUuid(request.resource.data.uuid)
         );
 
-      allow get: if canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email)
-        || isMasterPortalAccount();
+      allow get: if isMasterPortalAccount()
+        || canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
       allow list: if canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
 
       allow update, delete: if isSignedIn()

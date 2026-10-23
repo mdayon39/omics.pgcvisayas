@@ -314,9 +314,20 @@ export default function ClientVerifyPage() {
       }
 
       router.push(`/client/client-info?${params.toString()}`);
-    } catch {
-      const message =
-        "Login failed. Please check your password and Google account.";
+    } catch (error) {
+      console.error("Client portal login verification failed:", error);
+      const firestoreErrorCode =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        typeof error.code === "string"
+          ? error.code
+          : "";
+      const message = firestoreErrorCode === "permission-denied"
+        ? "The portal could not read this inquiry. The latest Firestore rules must be deployed before master email login can work."
+        : error instanceof Error
+          ? `Login failed: ${error.message}`
+          : "Login failed. Please check your password and Google account.";
       setVerifyError(message);
       toast.error(message);
     } finally {

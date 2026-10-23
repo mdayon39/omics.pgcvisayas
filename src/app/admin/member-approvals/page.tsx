@@ -29,13 +29,24 @@ import {
   getClientRequestsByInquiry,
   ClientRequest,
 } from "@/services/clientRequestService";
-import { sendProjectApprovalEmail } from "@/app/actions/inquiryActions";
 import { ApprovalStatus } from "@/types/MemberApproval";
 import useAuth from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { collection, getDoc, getDocs, query, where } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { resolveClientUuid } from "@/services/clientUuidService";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringClient";
 import {
   Users,
   CheckCircle2,
@@ -95,6 +106,89 @@ interface CombinedApproval {
     fundingInstitution: string;
   };
   clientRequests?: ClientRequest[];
+}
+
+async function queueProjectApprovalEmail(input: {
+  recipient: string;
+  clientName: string;
+  projectName: string;
+  projectPid: string;
+  inquiryId: string;
+}): Promise<void> {
+  const recipient = input.recipient.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+    throw new Error("The primary member does not have a valid email address.");
+  }
+
+  const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, (character) => {
+      const entities: Record<string, string> = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return entities[character];
+    });
+  const clientName = input.clientName.trim() || "Client";
+  const projectName = input.projectName.trim() || "your project";
+  const portalUrl = "https://omics.pgcvisayas.upv.edu.ph/portal";
+  const emailText = `Dear ${clientName},
+
+Your project, "${projectName}" (Project ID: ${input.projectPid}), has been approved.
+
+Next steps:
+1. Open your client portal: ${portalUrl}
+2. Go to your approved project under "My Projects".
+3. Review the Sample Submission Requirements.
+4. Download and complete the Sample Submission Form, then upload it through the portal.
+
+Once we receive your submission, we will coordinate with you regarding sample drop-off or shipping.
+
+For assistance, contact sequencing.pgc.upvisayas@up.edu.ph.
+
+Yours in utilizing OMICS for a better Philippines,
+Philippine Genome Center Visayas`;
+  const emailHtml = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#334155;line-height:1.6">
+      <h1 style="color:#1e40af">PGC Visayas</h1>
+      <h2>Project Approval and Next Steps</h2>
+      <p>Dear <strong>${escapeHtml(clientName)}</strong>,</p>
+      <p>Your project, <strong>&ldquo;${escapeHtml(projectName)}&rdquo;</strong>
+      (Project ID: <code>${escapeHtml(input.projectPid)}</code>), has been approved.</p>
+      <h3>Next Steps</h3>
+      <ol>
+        <li>Open your <a href="${portalUrl}">client portal</a>.</li>
+        <li>Go to your approved project under <strong>My Projects</strong>.</li>
+        <li>Review the Sample Submission Requirements.</li>
+        <li>Download and complete the Sample Submission Form, then upload it through the portal.</li>
+      </ol>
+      <p>Once we receive your submission, we will coordinate with you regarding sample drop-off or shipping.</p>
+      <p>For assistance, contact <a href="mailto:sequencing.pgc.upvisayas@up.edu.ph">sequencing.pgc.upvisayas@up.edu.ph</a>.</p>
+      <p>Yours in utilizing OMICS for a better Philippines,<br /><strong>Philippine Genome Center Visayas</strong></p>
+    </div>`;
+
+  const monitorEventId = await beginEmailMonitorEvent(
+    "Project approval and next steps",
+    recipient,
+    input.projectPid,
+  );
+  try {
+    const mailDocument = await addDoc(collection(db, "mail"), {
+      to: [recipient],
+      inquiryId: input.inquiryId,
+      message: {
+        subject: `Project Approval and Next Steps: ${projectName}`,
+        text: emailText,
+        html: emailHtml,
+      },
+    });
+    await markEmailMonitorQueued(monitorEventId, mailDocument.id);
+  } catch (error) {
+    await markEmailMonitorFailed(monitorEventId, error);
+    throw error;
+  }
 }
 
 export default function MemberApprovalsPage() {
@@ -770,21 +864,19 @@ export default function MemberApprovalsPage() {
       const primaryMember =
         approval.clientRequests.find((clientReq) => clientReq.isPrimary) ||
         approval.clientRequests[0];
-      const emailResult = await sendProjectApprovalEmail(
-        primaryMember?.email || approval.submittedBy,
-        primaryMember?.name || approval.submittedByName || approval.submittedBy,
-        approval.projectTitle,
-        pid,
-        approval.inquiryId,
-      );
-      if (!emailResult.success) {
-        throw new Error(
-          "error" in emailResult
-            ? emailResult.error
-            : "The approval email could not be queued.",
-        );
+      if (!primaryMember?.email) {
+        throw new Error("The approved project has no primary member email.");
       }
-      toast.success(`Approval email queued for ${emailResult.recipient}.`);
+      await queueProjectApprovalEmail({
+        recipient: primaryMember.email,
+        clientName: primaryMember.name || approval.submittedByName || "",
+        projectName: approval.projectTitle,
+        projectPid: pid,
+        inquiryId: approval.inquiryId,
+      });
+      toast.success(
+        `Project approval email queued for ${primaryMember.email.trim().toLowerCase()}.`,
+      );
     } catch (emailError) {
       console.error("Failed to send approval email:", emailError);
       toast.error(

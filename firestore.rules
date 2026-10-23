@@ -15,6 +15,14 @@ service cloud.firestore {
       return request.auth.token.email;
     }
 
+    function isMasterPortalAccount() {
+      return isSignedIn()
+        && userEmail() in [
+          'madayon1@up.edu.ph',
+          'merlito.dayon@gmail.com'
+        ];
+    }
+
     function adminByEmail() {
       return isSignedIn()
         && userEmail() != null
@@ -445,7 +453,9 @@ service cloud.firestore {
           || hasOwnedUuid(request.resource.data.uuid)
         );
 
-      allow read: if canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
+      allow get: if canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email)
+        || isMasterPortalAccount();
+      allow list: if canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
 
       allow update, delete: if isSignedIn()
         && isClientOrAdmin()

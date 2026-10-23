@@ -190,31 +190,11 @@ export default function ClientVerifyPage() {
       let inquiry: PortalInquiryRecord | null = null;
 
       if (isMasterAdmin) {
-        const idToken = await auth.currentUser?.getIdToken();
-        if (!idToken) {
-          throw new Error("Your Google sign-in session expired. Please sign in again.");
+        const inquirySnapshot = await getDoc(doc(db, "inquiries", inquiryId));
+        if (inquirySnapshot.exists()) {
+          inquiry = inquirySnapshot.data() as PortalInquiryRecord;
+          resolvedInquiryId = inquirySnapshot.id;
         }
-        const response = await fetch("/api/portal/master-inquiry", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({ inquiryId }),
-        });
-        const result = await response.json();
-        if (!response.ok) {
-          const message =
-            typeof result?.error === "string"
-              ? result.error
-              : "Could not verify this inquiry.";
-          setVerifyError(message);
-          toast.error(message);
-          setVerifying(false);
-          return;
-        }
-        inquiry = result.inquiry as PortalInquiryRecord;
-        resolvedInquiryId = result.inquiry.id as string;
       } else {
         // UUID is optional on inquiries. Resolve the entered inquiry ID
         // directly, then verify ownership through the signed-in email.

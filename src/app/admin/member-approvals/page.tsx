@@ -108,6 +108,9 @@ export default function MemberApprovalsPage() {
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [reviewNotes, setReviewNotes] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [processingAction, setProcessingAction] = useState<
+    "approve" | "reject" | null
+  >(null);
   const [sortBy, setSortBy] = useState<"date" | "title" | "status">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -442,6 +445,7 @@ export default function MemberApprovalsPage() {
   const handleApprove = async () => {
     if (!selectedApproval?.id) return;
     setProcessing(true);
+    setProcessingAction("approve");
 
     try {
       if (selectedApproval.type === "member") {
@@ -475,6 +479,7 @@ export default function MemberApprovalsPage() {
       toast.error(`Failed to approve: ${errorMessage}`);
     } finally {
       setProcessing(false);
+      setProcessingAction(null);
     }
   };
 
@@ -759,11 +764,15 @@ export default function MemberApprovalsPage() {
       // Non-critical error, don't throw
     }
 
-    // Send approval email to the primary member (project submitter)
+    // Use the primary member's submitted contact details, not the requester
+    // metadata, which may contain a display name instead of an email address.
     try {
+      const primaryMember =
+        approval.clientRequests.find((clientReq) => clientReq.isPrimary) ||
+        approval.clientRequests[0];
       const emailResult = await sendProjectApprovalEmail(
-        approval.submittedBy,
-        approval.submittedByName || approval.submittedBy,
+        primaryMember?.email || approval.submittedBy,
+        primaryMember?.name || approval.submittedByName || approval.submittedBy,
         approval.projectTitle,
         pid,
         approval.inquiryId,
@@ -799,6 +808,7 @@ export default function MemberApprovalsPage() {
       return;
     }
     setProcessing(true);
+    setProcessingAction("reject");
 
     try {
       if (selectedApproval.type === "member") {
@@ -883,6 +893,7 @@ export default function MemberApprovalsPage() {
       toast.error("Failed to cancel submission");
     } finally {
       setProcessing(false);
+      setProcessingAction(null);
     }
   };
 
@@ -1664,7 +1675,7 @@ export default function MemberApprovalsPage() {
                   disabled={processing}
                   className="bg-red-600 hover:bg-red-700"
                 >
-                  {processing ? (
+                  {processingAction === "reject" ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <XCircle className="h-4 w-4 mr-2" />
@@ -1676,7 +1687,7 @@ export default function MemberApprovalsPage() {
                   disabled={processing}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  {processing ? (
+                  {processingAction === "approve" ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <CheckCircle2 className="h-4 w-4 mr-2" />

@@ -1870,10 +1870,10 @@ export async function sendProjectApprovalEmail(
     }
 
     const providedEmail = clientEmail.trim().toLowerCase();
-    const recipientEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inquiryEmail)
-      ? inquiryEmail
-      : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(providedEmail)
-        ? providedEmail
+    const recipientEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(providedEmail)
+      ? providedEmail
+      : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inquiryEmail)
+        ? inquiryEmail
         : "";
     if (!recipientEmail) {
       throw new Error("No valid client email address is available.");

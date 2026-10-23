@@ -8,18 +8,6 @@ import {
 } from "@/services/chargeSlipService";
 import { ChargeSlipRecord } from "@/types/ChargeSlipRecord";
 import { logActivity } from "@/services/activityLogService";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { resolveClientUuid } from "@/services/clientUuidService";
-import { adminDb } from "@/lib/firebase-admin";
-import {
-  beginEmailMonitorEvent,
-  markEmailMonitorFailed,
-  markEmailMonitorQueued,
-} from "@/services/emailMonitoringAdmin";
-
-const MODE_OF_PAYMENT_URL =
-  "https://firebasestorage.googleapis.com/v0/b/pgc-genomebase.firebasestorage.app/o/documents%2FMode%20of%20Payment_PGCV-MP-v005.pdf?alt=media&token=bb3d7fdf-77db-430c-9b3a-6b56724bca84";
 
 export async function saveChargeSlipAction(
   slip: ChargeSlipRecord,
@@ -27,108 +15,6 @@ export async function saveChargeSlipAction(
 ) {
   try {
     const result = await saveChargeSlip(slip);
-
-    // Send email notification to client about billing availability
-    const recipientEmail = slip.clientInfo?.email || slip.client?.email || "";
-    if (recipientEmail) {
-      const monitorEventId = await beginEmailMonitorEvent(
-        "Charge slip",
-        recipientEmail,
-        slip.referenceNumber || slip.id || "unknown",
-      );
-      let mailQueued = false;
-      try {
-        if (!adminDb) {
-          throw new Error("Firebase Admin is unavailable for email queueing.");
-        }
-        const clientName =
-          slip.clientInfo?.name || slip.client?.name || "Valued Client";
-
-        const clientEmailHtml = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; color: #334155; line-height: 1.6;">
-            <div style="background-color: #f1f5f9; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <h2 style="color: #1e3a8a; margin-top: 0;">Billing/Invoice: PGC Visayas</h2>
-              <p>Dear ${clientName},</p>
-              <p>Good day. Your billing is now available in your client portal. Kindly review the details and proceed with payment at your convenience. For payment instructions, please refer to our <a href="${MODE_OF_PAYMENT_URL}" style="color: #1e3a8a; font-weight: 600; text-decoration: underline;">Mode of Payment</a>.</p>
-              
-              <div style="background-color: #ffffff; padding: 15px; border-radius: 6px; border-left: 4px solid #1e3a8a; margin: 15px 0;">
-                <h3 style="margin-top: 0; color: #1e3a8a; font-size: 14px; margin-bottom: 8px;">Next Steps</h3>
-                <p style="margin-bottom: 12px; font-size: 14px;">View your billing details and complete payment by following the instructions detailed on the <a href="${MODE_OF_PAYMENT_URL}" style="color: #1e3a8a; font-weight: 600; text-decoration: underline;">Mode of Payment</a>.</p>
-                <p style="margin: 0;"><a href="https://omics.pgcvisayas.upv.edu.ph/portal" style="background-color: #1e3a8a; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: 600; font-size: 13px;">Access Client Portal</a></p>
-              </div>
-
-              <p>Once payment has been completed, please upload the official receipt requested from the UPV Cash Office through the portal for verification. <strong>Kindly note that results will be released upon confirmation of payment.</strong></p>
-              
-              <p>If you have any questions regarding the billing or encounter any issues with the portal, please feel free to reach out. We look forward to working with you.</p>
-              
-              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-              <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">Yours in utilizing OMICS for a better Philippines,<br /><strong>Philippine Genome Center Visayas</strong></p>
-            </div>
-          </div>
-        `;
-
-        const clientEmailText = `
-Billing/Invoice: PGC Visayas
-
-Dear ${clientName},
-
-Good day. Your billing is now available in your client portal. Kindly review the details and proceed with payment at your convenience. For payment instructions, please refer to our Mode of Payment: ${MODE_OF_PAYMENT_URL}
-
-To view your billing details and complete payment by following the instructions detailed on the Mode of Payment (${MODE_OF_PAYMENT_URL}), please access your Client Portal: https://omics.pgcvisayas.upv.edu.ph/portal
-
-Once payment has been completed, please upload the official receipt requested from the UPV Cash Office through the portal for verification. Kindly note that results will be released upon confirmation of payment.
-
-If you have any questions regarding the billing or encounter any issues with the portal, please feel free to reach out. We look forward to working with you.
-
-Yours in utilizing OMICS for a better Philippines,
-Philippine Genome Center Visayas
-        `.trim();
-
-        const mailDocument = await adminDb.collection("mail").add({
-          to: [recipientEmail],
-          message: {
-            subject: "Billing/Invoice: PGC Visayas",
-            text: clientEmailText,
-            html: clientEmailHtml,
-          },
-        });
-        await markEmailMonitorQueued(monitorEventId, mailDocument.id);
-        mailQueued = true;
-        console.log(
-          `✅ Billing notification email sent to ${slip.clientInfo.email}`,
-        );
-
-        // In-app notification
-        const notificationUuid = await resolveClientUuid(
-          undefined,
-          recipientEmail,
-        );
-        await addDoc(collection(db, "clientNotifications"), {
-          recipientEmail,
-          ...(notificationUuid ? { uuid: notificationUuid } : {}),
-          type: "chargeSlip",
-          title: "New Charge Slip Available",
-          body: "Your billing is now available in the client portal. Please review and proceed with payment.",
-          read: false,
-          createdAt: new Date(),
-        });
-      } catch (emailError) {
-        if (!mailQueued) {
-          await markEmailMonitorFailed(monitorEventId, emailError);
-        }
-        console.warn("Could not send billing notification email:", emailError);
-      }
-    } else {
-      const monitorEventId = await beginEmailMonitorEvent(
-        "Charge slip",
-        "",
-        slip.referenceNumber || slip.id || "unknown",
-      );
-      await markEmailMonitorFailed(
-        monitorEventId,
-        "No client email address was available.",
-      );
-    }
 
     // Log the activity
     await logActivity({

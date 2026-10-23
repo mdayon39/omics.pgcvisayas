@@ -18,6 +18,7 @@ import { getClientById, getProjectById } from "@/services/clientProjectService";
 import { getInquiryById } from "@/services/inquiryService";
 import { generateNextChargeSlipNumber } from "@/services/chargeSlipService";
 import { saveChargeSlipAction } from "@/app/actions/chargeSlipActions";
+import { sendChargeSlipNotification } from "@/services/chargeSlipEmailService";
 
 import { SelectedService as StrictSelectedService } from "@/types/SelectedService";
 import { ServiceItem } from "@/types/ServiceItem";
@@ -489,12 +490,21 @@ function ChargeSlipBuilderInner({
         throw new Error(result.error || "Failed to save charge slip");
       }
 
+      const emailResult = await sendChargeSlipNotification(record);
+
       // Invalidate charge slip history to refresh the list
       queryClient.invalidateQueries({
         queryKey: ["chargeSlipHistory", effectiveProjectId],
       });
 
-      toast.success("Charge slip saved successfully!");
+      if (emailResult.queued) {
+        toast.success("Charge slip saved and billing email queued.");
+      } else {
+        toast.success("Charge slip saved successfully!");
+        toast.error(
+          `Charge slip saved, but the billing email could not be queued: ${emailResult.error}`,
+        );
+      }
       setOpenPreview(false);
       onSubmit?.(record);
     } catch (error) {

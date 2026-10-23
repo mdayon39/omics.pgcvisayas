@@ -3,6 +3,7 @@
 
 import { pdf } from "@react-pdf/renderer";
 import { saveChargeSlipAction } from "@/app/actions/chargeSlipActions";
+import { sendChargeSlipNotification } from "@/services/chargeSlipEmailService";
 import { ChargeSlipPDF } from "./ChargeSlipPDF";
 import { SelectedService } from "@/types/SelectedService";
 import { Client } from "@/types/Client";
@@ -97,6 +98,7 @@ export default function ChargeSlipPDFActions({
       });
 
       if (result.success) {
+        const emailResult = await sendChargeSlipNotification(sanitized);
         const blob = await pdf(
           <ChargeSlipPDF
             services={services}
@@ -125,7 +127,14 @@ export default function ChargeSlipPDFActions({
         link.click();
         URL.revokeObjectURL(url);
 
-        toast.success("Charge slip saved and downloaded successfully!");
+        if (emailResult.queued) {
+          toast.success("Charge slip saved, downloaded, and billing email queued.");
+        } else {
+          toast.success("Charge slip saved and downloaded successfully!");
+          toast.error(
+            `Charge slip saved, but the billing email could not be queued: ${emailResult.error}`,
+          );
+        }
         router.push("/admin/charge-slips");
       } else {
         toast.error(result.error || "Failed to save charge slip");

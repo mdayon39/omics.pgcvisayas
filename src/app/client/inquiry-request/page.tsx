@@ -65,6 +65,10 @@ import { db } from "@/lib/firebase";
 import { doc, collection, addDoc } from "firebase/firestore";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import {
+  normalizePersonName,
+  normalizeTitleCase,
+} from "@/lib/inquiryTextFormatting";
 import { toast } from "sonner";
 import useAuth from "@/hooks/useAuth";
 import ConfirmationModalLayout from "@/components/modal/ConfirmationModalLayout";
@@ -89,17 +93,6 @@ const BIOINFO_SERVICE_TYPE_OPTIONS = [
 ] as const;
 
 const BIOINFO_DATA_FORMAT_OPTIONS = ["fastq", "fasta", "others"] as const;
-
-const toSentenceCase = (value: string) => {
-  const normalized = value.trim().toLocaleLowerCase();
-  return normalized.replace(/^./u, (character) => character.toLocaleUpperCase());
-};
-
-const toNameCase = (value: string) =>
-  value
-    .trim()
-    .toLocaleLowerCase()
-    .replace(/(^|[\s'-])\p{L}/gu, (part) => part.toLocaleUpperCase());
 
 /**
  * Main Quotation Request Form Component
@@ -388,9 +381,9 @@ export default function QuotationRequestForm() {
 
     const normalizedData = {
       ...data,
-      name: toNameCase(data.name),
-      affiliation: toSentenceCase(data.affiliation),
-      designation: toSentenceCase(data.designation),
+      name: normalizePersonName(data.name),
+      affiliation: normalizeTitleCase(data.affiliation),
+      designation: normalizeTitleCase(data.designation),
     };
 
     setValue("name", normalizedData.name);

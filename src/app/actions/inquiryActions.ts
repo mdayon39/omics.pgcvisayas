@@ -45,6 +45,10 @@ import {
   markEmailMonitorFailed,
   markEmailMonitorQueued,
 } from "@/services/emailMonitoringAdmin";
+import {
+  normalizePersonName,
+  normalizeTitleCase,
+} from "@/lib/inquiryTextFormatting";
 
 async function addMailDocument(data: Record<string, unknown>) {
   if (adminDb) {
@@ -629,6 +633,13 @@ export async function createInquiryAction(
   },
 ) {
   try {
+    inquiryData = {
+      ...inquiryData,
+      name: normalizePersonName(inquiryData.name),
+      affiliation: normalizeTitleCase(inquiryData.affiliation),
+      designation: normalizeTitleCase(inquiryData.designation),
+    };
+
     // Check Firebase configuration first
     if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
       console.error("Firebase project ID not found in environment variables");

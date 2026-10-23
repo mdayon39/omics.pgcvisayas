@@ -1849,15 +1849,57 @@ export async function sendProjectApprovalEmail(
 ) {
   let monitorEventId: string | null = null;
   try {
-    monitorEventId = await beginEmailMonitorEvent(
-      "Project approval and next steps",
-      clientEmail,
-      projectPid,
-    );
     if (!adminDb) {
       throw new Error("Firebase Admin is unavailable for email queueing.");
     }
+
+    let inquiryEmail = "";
+    let resolvedClientName = clientName.trim();
+    const inquirySnapshot = inquiryId
+      ? await adminDb.collection("inquiries").doc(inquiryId).get()
+      : null;
+    if (inquirySnapshot?.exists) {
+      const inquiryData = inquirySnapshot.data() ?? {};
+      inquiryEmail =
+        typeof inquiryData.email === "string"
+          ? inquiryData.email.trim().toLowerCase()
+          : "";
+      if (!resolvedClientName && typeof inquiryData.name === "string") {
+        resolvedClientName = inquiryData.name.trim();
+      }
+    }
+
+    const providedEmail = clientEmail.trim().toLowerCase();
+    const recipientEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inquiryEmail)
+      ? inquiryEmail
+      : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(providedEmail)
+        ? providedEmail
+        : "";
+    if (!recipientEmail) {
+      throw new Error("No valid client email address is available.");
+    }
+
+    resolvedClientName ||= "Client";
+    monitorEventId = await beginEmailMonitorEvent(
+      "Project approval and next steps",
+      recipientEmail,
+      projectPid,
+    );
     const portalUrl = "https://omics.pgcvisayas.upv.edu.ph/portal";
+    const escapeHtml = (value: string) =>
+      value.replace(/[&<>"']/g, (character) => {
+        const entities: Record<string, string> = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        };
+        return entities[character];
+      });
+    const safeClientName = escapeHtml(resolvedClientName);
+    const safeProjectName = escapeHtml(projectName);
+    const safeProjectPid = escapeHtml(projectPid);
 
     const emailHtml = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
@@ -1868,11 +1910,11 @@ export async function sendProjectApprovalEmail(
         </div>
 
         <div style="padding: 32px 24px; color: #334155; line-height: 1.6;">
-          <p style="margin: 0 0 20px 0; font-size: 16px;">Dear <strong>${clientName}</strong>,</p>
+          <p style="margin: 0 0 20px 0; font-size: 16px;">Dear <strong>${safeClientName}</strong>,</p>
 
           <p style="margin: 0 0 20px 0;">
             Thank you for confirming your intent to avail of our services. Your project,
-            <strong>&ldquo;${projectName}&rdquo;</strong> (Project ID: <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px;">${projectPid}</code>),
+            <strong>&ldquo;${safeProjectName}&rdquo;</strong> (Project ID: <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px;">${safeProjectPid}</code>),
             has been <strong style="color: #16a34a;">approved</strong>, and we&rsquo;re pleased to have you on board!
           </p>
 
@@ -1921,7 +1963,7 @@ export async function sendProjectApprovalEmail(
       </div>
     `;
 
-    const emailText = `Dear ${clientName},
+    const emailText = `Dear ${resolvedClientName},
 
 Thank you for confirming your intent to avail of our services. Your project, "${projectName}" (Project ID: ${projectPid}), has been approved, and we're pleased to have you on board!
 
@@ -1944,7 +1986,7 @@ Yours in utilizing OMICS for a better Philippines,
 Philippine Genome Center Visayas`.trim();
 
     const mailDocRef = await adminDb.collection("mail").add({
-      to: clientEmail,
+      to: [recipientEmail],
       message: {
         subject: `Project Approval and Next Steps: ${projectName}`,
         text: emailText,
@@ -1959,7 +2001,7 @@ Philippine Genome Center Visayas`.trim();
     });
     await markEmailMonitorQueued(monitorEventId, mailDocRef.id);
 
-    return { success: true };
+    return { success: true, recipient: recipientEmail };
   } catch (error) {
     await markEmailMonitorFailed(monitorEventId, error);
     console.error("Error sending project approval email:", error);

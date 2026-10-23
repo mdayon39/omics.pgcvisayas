@@ -761,20 +761,28 @@ export default function MemberApprovalsPage() {
 
     // Send approval email to the primary member (project submitter)
     try {
-      const { sendProjectApprovalEmail } = await import(
-        "@/app/actions/inquiryActions"
-      );
-      await sendProjectApprovalEmail(
+      const emailResult = await sendProjectApprovalEmail(
         approval.submittedBy,
         approval.submittedByName || approval.submittedBy,
         approval.projectTitle,
         pid,
         approval.inquiryId,
       );
-      console.log("✅ Approval email sent to", approval.submittedBy);
+      if (!emailResult.success) {
+        throw new Error(
+          "error" in emailResult
+            ? emailResult.error
+            : "The approval email could not be queued.",
+        );
+      }
+      toast.success(`Approval email queued for ${emailResult.recipient}.`);
     } catch (emailError) {
       console.error("Failed to send approval email:", emailError);
-      // Non-critical — approval itself succeeded; don't block the flow
+      toast.error(
+        `Project approved, but the client email could not be queued: ${
+          emailError instanceof Error ? emailError.message : "Unknown error"
+        }`,
+      );
     }
 
     // Success message

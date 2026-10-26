@@ -10,5 +10,10 @@ export function normalizeTitleCase(value: string): string {
       /(^|[\s'-])(\p{L})/gu,
       (_, separator: string, letter: string) =>
         separator + letter.toLocaleUpperCase(),
+    )
+    .replace(
+      /([\s'-])(Of|The)\b/giu,
+      (_, separator: string, word: string) =>
+        `${separator}${word.toLocaleLowerCase()}`,
     );
 }

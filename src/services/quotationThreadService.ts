@@ -620,32 +620,42 @@ export async function addThreadMessage(
     await updateDoc(threadRef, finalUpdate);
 
     if (message.senderRole === "admin" && message.type === "text") {
+      let shouldSendChatEmail = false;
       try {
-        await runTransaction(db, async (tx) => {
+        shouldSendChatEmail = await runTransaction(db, async (tx) => {
           const threadSnap = await tx.get(threadRef);
-          if (!threadSnap.exists()) return;
+          if (!threadSnap.exists()) return false;
           const data = threadSnap.data();
           const currentCount =
             typeof data.adminTextMessageCount === "number"
               ? data.adminTextMessageCount
               : 0;
+          const isFirstAdminMessage =
+            currentCount === 0 && data.firstAdminChatEmailSent !== true;
 
           tx.update(threadRef, {
             adminTextMessageCount: currentCount + 1,
+            ...(isFirstAdminMessage || currentCount > 0
+              ? { firstAdminChatEmailSent: true }
+              : {}),
           });
+
+          return isFirstAdminMessage;
         });
       } catch (error) {
         console.error("Failed to update admin message count:", error);
       }
 
-      try {
-        await triggerChatEmailNotification(
-          message.threadId,
-          message.senderName,
-        );
-      } catch (error) {
-        console.error("Failed to send admin chat email:", error);
-        onChatEmailError?.(error);
+      if (shouldSendChatEmail) {
+        try {
+          await triggerChatEmailNotification(
+            message.threadId,
+            message.senderName,
+          );
+        } catch (error) {
+          console.error("Failed to send admin chat email:", error);
+          onChatEmailError?.(error);
+        }
       }
     }
 

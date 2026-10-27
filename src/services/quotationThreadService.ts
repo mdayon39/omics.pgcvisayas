@@ -46,10 +46,12 @@ import {
   QuotationItem,
 } from "@/types/QuotationThread";
 import { resolveClientUuid } from "@/services/clientUuidService";
+import { toPresenceKey } from "@/services/presenceService";
 
 const THREADS_COLLECTION = "quotationThreads";
 const MESSAGES_COLLECTION = "threadMessages";
 const QUOTATIONS_COLLECTION = "quotations";
+const CLIENT_INACTIVITY_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000;
 
 async function triggerPushNotify(
   threadId: string,
@@ -625,22 +627,44 @@ export async function addThreadMessage(
         shouldSendChatEmail = await runTransaction(db, async (tx) => {
           const threadSnap = await tx.get(threadRef);
           if (!threadSnap.exists()) return false;
+          const presenceRef = doc(
+            db,
+            "presence",
+            toPresenceKey(`client_${message.threadId}`),
+          );
+          const presenceSnap = await tx.get(presenceRef);
           const data = threadSnap.data();
           const currentCount =
             typeof data.adminTextMessageCount === "number"
               ? data.adminTextMessageCount
               : 0;
-          const isFirstAdminMessage =
-            currentCount === 0 && data.firstAdminChatEmailSent !== true;
+          const presenceData = presenceSnap.exists()
+            ? presenceSnap.data()
+            : null;
+          const lastSeen =
+            presenceData?.lastSeen instanceof Timestamp
+              ? presenceData.lastSeen.toMillis()
+              : null;
+          const lastFollowUpSent =
+            data.adminReplyFollowUpEmailSentAt instanceof Timestamp
+              ? data.adminReplyFollowUpEmailSentAt.toMillis()
+              : null;
+          const isInactive =
+            lastSeen === null ||
+            Date.now() - lastSeen >= CLIENT_INACTIVITY_THRESHOLD_MS;
+          const followUpAlreadySent =
+            lastFollowUpSent !== null &&
+            (lastSeen === null || lastFollowUpSent >= lastSeen);
+          const shouldNotifyClient = isInactive && !followUpAlreadySent;
 
           tx.update(threadRef, {
             adminTextMessageCount: currentCount + 1,
-            ...(isFirstAdminMessage || currentCount > 0
-              ? { firstAdminChatEmailSent: true }
+            ...(shouldNotifyClient
+              ? { adminReplyFollowUpEmailSentAt: serverTimestamp() }
               : {}),
           });
 
-          return isFirstAdminMessage;
+          return shouldNotifyClient;
         });
       } catch (error) {
         console.error("Failed to update admin message count:", error);

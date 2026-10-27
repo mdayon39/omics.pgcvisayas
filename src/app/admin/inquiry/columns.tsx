@@ -203,7 +203,7 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
   {
     accessorKey: "createdAt",
     header: "Date",
-    size: 70, // Compressed
+    size: 130,
     cell: ({ row }) => {
       const createdAt = row.original.createdAt;
 
@@ -218,14 +218,18 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
         return <span className="text-red-500 text-[10px]">Invalid</span>;
       }
 
-      // Format date for display (MM-DD-YYYY format)
+      // Format date and time for display in the viewer's local timezone.
       const year = date.getFullYear();
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const day = date.getDate().toString().padStart(2, '0');
+      const time = date.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      });
       
       return (
         <span className="text-slate-500 font-medium tabular-nums text-[11px]">
-          {`${month}-${day}-${year}`}
+          {`${month}-${day}-${year} ${time}`}
         </span>
       );
     },

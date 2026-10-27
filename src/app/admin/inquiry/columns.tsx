@@ -143,7 +143,7 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
   {
     accessorKey: "id",
     header: "Inquiry ID",
-    size: 110, // Increased size to display the complete inquiry ID
+    size: 150,
     cell: ({ row }) => {
       const inquiry = row.original;
 
@@ -203,7 +203,7 @@ export const columns = (statusCatalog: CatalogItem[] = []): ColumnDef<Inquiry>[]
   {
     accessorKey: "createdAt",
     header: "Date",
-    size: 130,
+    size: 110,
     cell: ({ row }) => {
       const createdAt = row.original.createdAt;
 

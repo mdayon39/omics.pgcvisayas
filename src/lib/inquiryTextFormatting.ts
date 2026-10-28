@@ -12,7 +12,7 @@ export function normalizeTitleCase(value: string): string {
         separator + letter.toLocaleUpperCase(),
     )
     .replace(
-      /([\s'-])(Of|The)\b/giu,
+      /([\s'-])(Of|The|And)\b/giu,
       (_, separator: string, word: string) =>
         `${separator}${word.toLocaleLowerCase()}`,
     );

@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import admin, { adminDb } from "@/lib/firebase-admin";
 import type { DecodedIdToken } from "firebase-admin/auth";
+import { createChatMessageEmail } from "@/lib/chatEmail";
 import {
   beginEmailMonitorEvent,
   markEmailMonitorFailed,
   markEmailMonitorQueued,
 } from "@/services/emailMonitoringAdmin";
-
-const PORTAL_URL = "https://omics.pgcvisayas.upv.edu.ph/portal";
 
 export async function POST(request: Request) {
   try {
@@ -103,42 +102,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const subject = "Chat Message Update: PGC Visayas";
-
-    const emailText = `Dear ${clientName},
-
-You have received a new message from an Admin (${adminName}) in the chatbox. To view the message, please log in to your Client Portal:
-${PORTAL_URL}
-
-Yours in utilizing OMICS for a better Philippines,
-Philippine Genome Center Visayas`;
-
-    const emailHtml = `
-      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; color: #334155; line-height: 1.6;">
-        <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px;">
-          <h2 style="margin-top: 0; color: #1e40af;">${subject}</h2>
-          <p>Dear <strong>${clientName}</strong>,</p>
-          <p>You have received a new message from an Admin (${adminName}) in the chatbox. To view the message, please log in to your Client Portal.</p>
-          <p style="margin: 16px 0;">
-            <a href="${PORTAL_URL}" style="background-color: #1e40af; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Open Client Portal</a>
-          </p>
-          <p style="margin-top: 24px;">Yours in utilizing OMICS for a better Philippines,<br/>Philippine Genome Center Visayas</p>
-        </div>
-        <div style="margin-top: 12px; font-size: 12px; color: #94a3b8; text-align: center;">
-          This is an automated message. Please do not reply directly to this email.
-        </div>
-      </div>
-    `;
-
     try {
       const mailDocument = await adminDb.collection("mail").add({
         to: [clientEmail],
         inquiryId: threadId,
-        message: {
-          subject,
-          text: emailText,
-          html: emailHtml,
-        },
+        message: createChatMessageEmail(clientName, adminName),
       });
       await markEmailMonitorQueued(monitorEventId, mailDocument.id);
       return NextResponse.json({

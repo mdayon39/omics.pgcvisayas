@@ -28,12 +28,6 @@ import {
 } from "firebase/firestore";
 import { ref, deleteObject } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
-import { createChatMessageEmail } from "@/lib/chatEmail";
-import {
-  beginEmailMonitorEvent,
-  markEmailMonitorFailed,
-  markEmailMonitorQueued,
-} from "@/services/emailMonitoringClient";
 import {
   QuotationThread,
   QuotationVersion,
@@ -80,41 +74,23 @@ async function triggerChatEmailNotification(
   threadId: string,
   adminName: string,
 ): Promise<void> {
-  const thread = await getQuotationThread(threadId);
-  const inquirySnapshot = await getDoc(doc(db, "inquiries", threadId));
-  const inquiryData = inquirySnapshot.exists() ? inquirySnapshot.data() : {};
-  const clientEmail =
-    (typeof inquiryData.email === "string" && inquiryData.email.trim()) ||
-    thread?.clientEmail?.trim() ||
-    "";
-  const clientName =
-    (typeof inquiryData.name === "string" && inquiryData.name.trim()) ||
-    thread?.clientName?.trim() ||
-    "Client";
-  const monitorEventId = await beginEmailMonitorEvent(
-    "Chat received",
-    clientEmail,
-    threadId,
-  );
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
-    const error = new Error(
-      "No valid client email address was found on the inquiry or chat thread.",
-    );
-    await markEmailMonitorFailed(monitorEventId, error);
-    throw error;
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("An authenticated admin is required to send a chat email.");
   }
 
-  try {
-    const mailDocument = await addDoc(collection(db, "mail"), {
-      to: [clientEmail],
-      inquiryId: threadId,
-      message: createChatMessageEmail(clientName, adminName),
-    });
-    await markEmailMonitorQueued(monitorEventId, mailDocument.id);
-  } catch (error) {
-    await markEmailMonitorFailed(monitorEventId, error);
-    throw error;
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch("/api/chat/notify-first-admin", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ threadId, adminName }),
+  });
+  const result = (await response.json()) as { error?: string };
+  if (!response.ok) {
+    throw new Error(result.error || "Failed to queue chat notification email.");
   }
 }
 
@@ -622,11 +598,25 @@ export async function addThreadMessage(
     await updateDoc(threadRef, finalUpdate);
 
     if (message.senderRole === "admin" && message.type === "text") {
-      let shouldSendChatEmail = false;
+      let emailReservation: {
+        shouldSend: boolean;
+        isFirstMessage: boolean;
+        previousFollowUpSent: Timestamp | null;
+      } = {
+        shouldSend: false,
+        isFirstMessage: false,
+        previousFollowUpSent: null,
+      };
       try {
-        shouldSendChatEmail = await runTransaction(db, async (tx) => {
+        emailReservation = await runTransaction(db, async (tx) => {
           const threadSnap = await tx.get(threadRef);
-          if (!threadSnap.exists()) return false;
+          if (!threadSnap.exists()) {
+            return {
+              shouldSend: false,
+              isFirstMessage: false,
+              previousFollowUpSent: null,
+            };
+          }
           const presenceRef = doc(
             db,
             "presence",
@@ -649,28 +639,39 @@ export async function addThreadMessage(
             data.adminReplyFollowUpEmailSentAt instanceof Timestamp
               ? data.adminReplyFollowUpEmailSentAt.toMillis()
               : null;
+          const isFirstAdminMessage = data.firstAdminChatEmailSent !== true;
           const isInactive =
             lastSeen === null ||
             Date.now() - lastSeen >= CLIENT_INACTIVITY_THRESHOLD_MS;
           const followUpAlreadySent =
             lastFollowUpSent !== null &&
             (lastSeen === null || lastFollowUpSent >= lastSeen);
-          const shouldNotifyClient = isInactive && !followUpAlreadySent;
+          const shouldNotifyClient =
+            isFirstAdminMessage || (isInactive && !followUpAlreadySent);
 
           tx.update(threadRef, {
             adminTextMessageCount: currentCount + 1,
-            ...(shouldNotifyClient
+            ...(isFirstAdminMessage ? { firstAdminChatEmailSent: true } : {}),
+            ...(shouldNotifyClient && !isFirstAdminMessage
               ? { adminReplyFollowUpEmailSentAt: serverTimestamp() }
               : {}),
           });
 
-          return shouldNotifyClient;
+          return {
+            shouldSend: shouldNotifyClient,
+            isFirstMessage: isFirstAdminMessage,
+            previousFollowUpSent:
+              lastFollowUpSent === null
+                ? null
+                : Timestamp.fromMillis(lastFollowUpSent),
+          };
         });
       } catch (error) {
         console.error("Failed to update admin message count:", error);
+        onChatEmailError?.(error);
       }
 
-      if (shouldSendChatEmail) {
+      if (emailReservation.shouldSend) {
         try {
           await triggerChatEmailNotification(
             message.threadId,
@@ -678,6 +679,21 @@ export async function addThreadMessage(
           );
         } catch (error) {
           console.error("Failed to send admin chat email:", error);
+          try {
+            await updateDoc(threadRef, {
+              ...(emailReservation.isFirstMessage
+                ? { firstAdminChatEmailSent: false }
+                : {
+                    adminReplyFollowUpEmailSentAt:
+                      emailReservation.previousFollowUpSent ?? deleteField(),
+                  }),
+            });
+          } catch (rollbackError) {
+            console.error(
+              "Failed to release chat email notification reservation:",
+              rollbackError,
+            );
+          }
           onChatEmailError?.(error);
         }
       }

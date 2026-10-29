@@ -147,8 +147,10 @@ export async function POST(request: Request) {
       const reservationIsActive =
         reservationAt !== null &&
         Date.now() - reservationAt < CHAT_EMAIL_RESERVATION_TTL_MS;
+      const staleLegacyReservation =
+        isFirstMessage && currentThread.firstAdminChatEmailSent === true;
       const shouldSend =
-        !reservationIsActive &&
+        (!reservationIsActive || staleLegacyReservation) &&
         (isFirstMessage || (isInactive && !followUpAlreadySent));
 
       const update: Record<string, unknown> = {

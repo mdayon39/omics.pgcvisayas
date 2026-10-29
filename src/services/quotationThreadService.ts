@@ -28,6 +28,12 @@ import {
 } from "firebase/firestore";
 import { ref, deleteObject } from "firebase/storage";
 import { auth, db, storage } from "@/lib/firebase";
+import { createChatMessageEmail } from "@/lib/chatEmail";
+import {
+  beginEmailMonitorEvent,
+  markEmailMonitorFailed,
+  markEmailMonitorQueued,
+} from "@/services/emailMonitoringClient";
 import {
   QuotationThread,
   QuotationVersion,
@@ -44,6 +50,7 @@ import { resolveClientUuid } from "@/services/clientUuidService";
 const THREADS_COLLECTION = "quotationThreads";
 const MESSAGES_COLLECTION = "threadMessages";
 const QUOTATIONS_COLLECTION = "quotations";
+const CHAT_EMAIL_RESERVATION_TTL_MS = 5 * 60 * 1000;
 
 async function triggerPushNotify(
   threadId: string,
@@ -89,12 +96,118 @@ async function triggerChatEmailNotification(
   const result = (await response.json()) as {
     error?: string;
     details?: string;
+    queued?: boolean;
   };
   if (!response.ok) {
-    const message = result.error || "Failed to queue chat notification email.";
-    throw new Error(
-      result.details ? `${message}: ${result.details}` : message,
-    );
+    try {
+      await queueFirstAdminChatEmailFromClient(threadId, adminName);
+      return;
+    } catch (fallbackError) {
+      console.error("Client-side chat email fallback failed:", fallbackError);
+      const message = result.error || "Failed to queue chat notification email.";
+      const serverDetails = result.details
+        ? ` Server: ${result.details}.`
+        : "";
+      const fallbackDetails =
+        fallbackError instanceof Error ? ` Fallback: ${fallbackError.message}` : "";
+      throw new Error(`${message}.${serverDetails}${fallbackDetails}`);
+    }
+  }
+}
+
+async function queueFirstAdminChatEmailFromClient(
+  threadId: string,
+  adminName: string,
+): Promise<void> {
+  const threadRef = doc(db, THREADS_COLLECTION, threadId);
+  const reservation = await runTransaction(db, async (transaction) => {
+    const threadSnapshot = await transaction.get(threadRef);
+    if (!threadSnapshot.exists()) {
+      throw new Error("Chat thread was not found.");
+    }
+
+    const thread = threadSnapshot.data();
+    if (thread.firstAdminChatEmailQueuedAt instanceof Timestamp) {
+      return { shouldQueue: false };
+    }
+
+    const staleLegacyReservation = thread.firstAdminChatEmailSent === true;
+    const reservationAt =
+      thread.chatEmailReservationAt instanceof Timestamp
+        ? thread.chatEmailReservationAt.toMillis()
+        : null;
+    const reservationIsActive =
+      reservationAt !== null &&
+      Date.now() - reservationAt < CHAT_EMAIL_RESERVATION_TTL_MS;
+    if (reservationIsActive && !staleLegacyReservation) {
+      throw new Error("A first-chat email is already being queued.");
+    }
+
+    const update: Record<string, unknown> = {
+      adminTextMessageCount:
+        (typeof thread.adminTextMessageCount === "number"
+          ? thread.adminTextMessageCount
+          : 0) + 1,
+      chatEmailReservationAt: serverTimestamp(),
+    };
+    if (staleLegacyReservation) {
+      update.firstAdminChatEmailSent = false;
+    }
+    transaction.update(threadRef, update);
+    return { shouldQueue: true };
+  });
+
+  if (!reservation.shouldQueue) return;
+
+  const [threadSnapshot, inquirySnapshot] = await Promise.all([
+    getDoc(threadRef),
+    getDoc(doc(db, "inquiries", threadId)),
+  ]);
+  const thread = threadSnapshot.data() ?? {};
+  const inquiry = inquirySnapshot.data() ?? {};
+  const inquiryEmail =
+    typeof inquiry.email === "string" ? inquiry.email.trim() : "";
+  const threadEmail =
+    typeof thread.clientEmail === "string" ? thread.clientEmail.trim() : "";
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const clientEmail = emailPattern.test(inquiryEmail)
+    ? inquiryEmail
+    : emailPattern.test(threadEmail)
+      ? threadEmail
+      : "";
+  const clientName =
+    (typeof inquiry.name === "string" && inquiry.name.trim()) ||
+    (typeof thread.clientName === "string" && thread.clientName.trim()) ||
+    "Client";
+  const monitorEventId = await beginEmailMonitorEvent(
+    "Chat received",
+    clientEmail,
+    threadId,
+  );
+
+  try {
+    if (!clientEmail) {
+      throw new Error("No valid client email address was found.");
+    }
+    const mailDocument = await addDoc(collection(db, "mail"), {
+      to: [clientEmail],
+      inquiryId: threadId,
+      message: createChatMessageEmail(clientName, adminName),
+    });
+    await markEmailMonitorQueued(monitorEventId, mailDocument.id);
+    await updateDoc(threadRef, {
+      chatEmailReservationAt: deleteField(),
+      firstAdminChatEmailSent: true,
+      firstAdminChatEmailQueuedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    await markEmailMonitorFailed(monitorEventId, error);
+    await updateDoc(threadRef, {
+      chatEmailReservationAt: deleteField(),
+    }).catch((releaseError) => {
+      console.error("Failed to release client chat email reservation:", releaseError);
+    });
+    throw error;
   }
 }
 

@@ -8,6 +8,22 @@ import {
   markEmailMonitorQueued,
 } from "@/services/emailMonitoringAdmin";
 
+const CLIENT_INACTIVITY_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000;
+const CHAT_EMAIL_RESERVATION_TTL_MS = 5 * 60 * 1000;
+
+function timestampToMillis(value: unknown): number | null {
+  if (
+    value &&
+    typeof value === "object" &&
+    "toMillis" in value &&
+    typeof value.toMillis === "function"
+  ) {
+    return value.toMillis();
+  }
+  if (value instanceof Date) return value.getTime();
+  return null;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -41,7 +57,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const adminEmail = decodedToken.email?.trim().toLowerCase();
+    const adminEmail = decodedToken.email?.trim();
     if (!adminEmail) {
       return NextResponse.json(
         { error: "An authenticated admin account is required" },
@@ -49,7 +65,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const adminSnap = await adminDb.collection("admins").doc(adminEmail).get();
+    let adminSnap = await adminDb.collection("admins").doc(adminEmail).get();
+    if (!adminSnap.exists && adminEmail !== adminEmail.toLowerCase()) {
+      adminSnap = await adminDb
+        .collection("admins")
+        .doc(adminEmail.toLowerCase())
+        .get();
+    }
     if (!adminSnap.exists || adminSnap.data()?.status === "deactivated") {
       return NextResponse.json(
         { error: "Admin access required" },
@@ -58,16 +80,15 @@ export async function POST(request: Request) {
     }
 
     const threadRef = adminDb.collection("quotationThreads").doc(threadId);
-    const threadSnap = await threadRef.get();
+    const [threadSnap, inquirySnap] = await Promise.all([
+      threadRef.get(),
+      adminDb.collection("inquiries").doc(threadId).get(),
+    ]);
     if (!threadSnap.exists) {
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }
 
     const threadData = threadSnap.data() ?? {};
-    const inquirySnap = await adminDb
-      .collection("inquiries")
-      .doc(threadId)
-      .get();
     const inquiryData = inquirySnap.data() ?? {};
     const inquiryEmail =
       typeof inquiryData.email === "string" ? inquiryData.email.trim() : "";
@@ -86,22 +107,74 @@ export async function POST(request: Request) {
       (typeof inquiryData.name === "string" && inquiryData.name.trim()) ||
       (typeof threadData.clientName === "string" && threadData.clientName.trim()) ||
       "Client";
-    const monitorEventId = await beginEmailMonitorEvent(
-      "Chat received",
-      clientEmail,
-      threadId,
-    );
     if (!clientEmail) {
-      await markEmailMonitorFailed(
-        monitorEventId,
-        "No valid client email address was found on the inquiry or chat thread.",
-      );
       return NextResponse.json(
         { error: "Client email not found" },
         { status: 400 },
       );
     }
 
+    const presenceRef = adminDb
+      .collection("presence")
+      .doc(`client_${threadId}`.replace(/[.@#$/[\]]/g, "_"));
+    const reservation = await adminDb.runTransaction(async (transaction) => {
+      const [currentThreadSnap, presenceSnap] = await Promise.all([
+        transaction.get(threadRef),
+        transaction.get(presenceRef),
+      ]);
+      if (!currentThreadSnap.exists) {
+        return { shouldSend: false, isFirstMessage: false };
+      }
+
+      const currentThread = currentThreadSnap.data() ?? {};
+      const presenceData = presenceSnap.exists ? presenceSnap.data() : null;
+      const lastSeen = timestampToMillis(presenceData?.lastSeen);
+      const lastFollowUpSent = timestampToMillis(
+        currentThread.adminReplyFollowUpEmailSentAt,
+      );
+      const firstEmailQueued =
+        timestampToMillis(currentThread.firstAdminChatEmailQueuedAt) !== null;
+      const isFirstMessage = !firstEmailQueued;
+      const isInactive =
+        lastSeen === null ||
+        Date.now() - lastSeen >= CLIENT_INACTIVITY_THRESHOLD_MS;
+      const followUpAlreadySent =
+        lastFollowUpSent !== null &&
+        (lastSeen === null || lastFollowUpSent >= lastSeen);
+      const reservationAt = timestampToMillis(
+        currentThread.chatEmailReservationAt,
+      );
+      const reservationIsActive =
+        reservationAt !== null &&
+        Date.now() - reservationAt < CHAT_EMAIL_RESERVATION_TTL_MS;
+      const shouldSend =
+        !reservationIsActive &&
+        (isFirstMessage || (isInactive && !followUpAlreadySent));
+
+      const update: Record<string, unknown> = {
+        adminTextMessageCount:
+          (typeof currentThread.adminTextMessageCount === "number"
+            ? currentThread.adminTextMessageCount
+            : 0) + 1,
+      };
+      if (shouldSend) {
+        update.chatEmailReservationAt =
+          admin.firestore.FieldValue.serverTimestamp();
+      }
+      transaction.update(threadRef, update);
+
+      return { shouldSend, isFirstMessage };
+    });
+
+    if (!reservation.shouldSend) {
+      return NextResponse.json({ ok: true, queued: false });
+    }
+
+    const monitorEventId = await beginEmailMonitorEvent(
+      "Chat received",
+      clientEmail,
+      threadId,
+    );
     try {
       const mailDocument = await adminDb.collection("mail").add({
         to: [clientEmail],
@@ -109,6 +182,26 @@ export async function POST(request: Request) {
         message: createChatMessageEmail(clientName, adminName),
       });
       await markEmailMonitorQueued(monitorEventId, mailDocument.id);
+      try {
+        await threadRef.update({
+          chatEmailReservationAt: admin.firestore.FieldValue.delete(),
+          ...(reservation.isFirstMessage
+            ? {
+                firstAdminChatEmailSent: true,
+                firstAdminChatEmailQueuedAt:
+                  admin.firestore.FieldValue.serverTimestamp(),
+              }
+            : {
+                adminReplyFollowUpEmailSentAt:
+                  admin.firestore.FieldValue.serverTimestamp(),
+              }),
+        });
+      } catch (stateError) {
+        console.error(
+          "Chat email was queued but its thread state could not be updated:",
+          stateError,
+        );
+      }
       return NextResponse.json({
         ok: true,
         queued: true,
@@ -117,6 +210,16 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       await markEmailMonitorFailed(monitorEventId, error);
+      try {
+        await threadRef.update({
+          chatEmailReservationAt: admin.firestore.FieldValue.delete(),
+        });
+      } catch (releaseError) {
+        console.error(
+          "Failed to release chat email reservation:",
+          releaseError,
+        );
+      }
       throw error;
     }
   } catch (error) {

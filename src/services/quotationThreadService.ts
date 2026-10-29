@@ -40,13 +40,10 @@ import {
   QuotationItem,
 } from "@/types/QuotationThread";
 import { resolveClientUuid } from "@/services/clientUuidService";
-import { toPresenceKey } from "@/services/presenceService";
 
 const THREADS_COLLECTION = "quotationThreads";
 const MESSAGES_COLLECTION = "threadMessages";
 const QUOTATIONS_COLLECTION = "quotations";
-const CLIENT_INACTIVITY_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000;
-const CHAT_EMAIL_RESERVATION_TTL_MS = 5 * 60 * 1000;
 
 async function triggerPushNotify(
   threadId: string,
@@ -599,111 +596,14 @@ export async function addThreadMessage(
     await updateDoc(threadRef, finalUpdate);
 
     if (message.senderRole === "admin" && message.type === "text") {
-      let emailReservation: {
-        shouldSend: boolean;
-        isFirstMessage: boolean;
-      } = {
-        shouldSend: false,
-        isFirstMessage: false,
-      };
       try {
-        emailReservation = await runTransaction(db, async (tx) => {
-          const threadSnap = await tx.get(threadRef);
-          if (!threadSnap.exists()) {
-            return {
-              shouldSend: false,
-              isFirstMessage: false,
-            };
-          }
-          const presenceRef = doc(
-            db,
-            "presence",
-            toPresenceKey(`client_${message.threadId}`),
-          );
-          const presenceSnap = await tx.get(presenceRef);
-          const data = threadSnap.data();
-          const currentCount =
-            typeof data.adminTextMessageCount === "number"
-              ? data.adminTextMessageCount
-              : 0;
-          const presenceData = presenceSnap.exists()
-            ? presenceSnap.data()
-            : null;
-          const lastSeen =
-            presenceData?.lastSeen instanceof Timestamp
-              ? presenceData.lastSeen.toMillis()
-              : null;
-          const lastFollowUpSent =
-            data.adminReplyFollowUpEmailSentAt instanceof Timestamp
-              ? data.adminReplyFollowUpEmailSentAt.toMillis()
-              : null;
-          const firstEmailQueued =
-            data.firstAdminChatEmailQueuedAt instanceof Timestamp;
-          const isFirstAdminMessage = !firstEmailQueued;
-          const isInactive =
-            lastSeen === null ||
-            Date.now() - lastSeen >= CLIENT_INACTIVITY_THRESHOLD_MS;
-          const followUpAlreadySent =
-            lastFollowUpSent !== null &&
-            (lastSeen === null || lastFollowUpSent >= lastSeen);
-          const reservationAt =
-            data.chatEmailReservationAt instanceof Timestamp
-              ? data.chatEmailReservationAt.toMillis()
-              : null;
-          const reservationIsActive =
-            reservationAt !== null &&
-            Date.now() - reservationAt < CHAT_EMAIL_RESERVATION_TTL_MS;
-          const shouldNotifyClient =
-            !reservationIsActive &&
-            (isFirstAdminMessage || (isInactive && !followUpAlreadySent));
-
-          const threadUpdate: Record<string, unknown> = {
-            adminTextMessageCount: currentCount + 1,
-          };
-          if (shouldNotifyClient) {
-            threadUpdate.chatEmailReservationAt = serverTimestamp();
-          }
-          tx.update(threadRef, threadUpdate);
-
-          return {
-            shouldSend: shouldNotifyClient,
-            isFirstMessage: isFirstAdminMessage,
-          };
-        });
+        await triggerChatEmailNotification(
+          message.threadId,
+          message.senderName,
+        );
       } catch (error) {
-        console.error("Failed to update admin message count:", error);
+        console.error("Failed to send admin chat email:", error);
         onChatEmailError?.(error);
-      }
-
-      if (emailReservation.shouldSend) {
-        try {
-          await triggerChatEmailNotification(
-            message.threadId,
-            message.senderName,
-          );
-          await updateDoc(threadRef, {
-            chatEmailReservationAt: deleteField(),
-            ...(emailReservation.isFirstMessage
-              ? {
-                  firstAdminChatEmailSent: true,
-                  firstAdminChatEmailQueuedAt: serverTimestamp(),
-                }
-              : { adminReplyFollowUpEmailSentAt: serverTimestamp() }),
-          });
-        } catch (error) {
-          console.error("Failed to send admin chat email:", error);
-          try {
-            await updateDoc(threadRef, {
-              chatEmailReservationAt: deleteField(),
-            });
-          } catch (rollbackError) {
-            console.error(
-              "Failed to release chat email notification reservation:",
-              rollbackError,
-            );
-          }
-          onChatEmailError?.(error);
-        }
       }
     }
 

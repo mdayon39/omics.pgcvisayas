@@ -148,6 +148,10 @@ export interface QuotationThread {
   adminTextMessageCount?: number;
   /** Set to true once the one-time first-admin-message email has been sent. */
   firstAdminChatEmailSent?: boolean;
+  /** Set only after the first-admin-message email is successfully queued. */
+  firstAdminChatEmailQueuedAt?: Timestamp;
+  /** Temporary lease preventing duplicate concurrent chat email queueing. */
+  chatEmailReservationAt?: Timestamp;
   /** Last time a chat reminder was queued during a client inactivity period. */
   adminReplyFollowUpEmailSentAt?: Timestamp | null;
 

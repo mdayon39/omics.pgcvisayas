@@ -46,6 +46,7 @@ const THREADS_COLLECTION = "quotationThreads";
 const MESSAGES_COLLECTION = "threadMessages";
 const QUOTATIONS_COLLECTION = "quotations";
 const CLIENT_INACTIVITY_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000;
+const CHAT_EMAIL_RESERVATION_TTL_MS = 5 * 60 * 1000;
 
 async function triggerPushNotify(
   threadId: string,
@@ -601,11 +602,9 @@ export async function addThreadMessage(
       let emailReservation: {
         shouldSend: boolean;
         isFirstMessage: boolean;
-        previousFollowUpSent: Timestamp | null;
       } = {
         shouldSend: false,
         isFirstMessage: false,
-        previousFollowUpSent: null,
       };
       try {
         emailReservation = await runTransaction(db, async (tx) => {
@@ -614,7 +613,6 @@ export async function addThreadMessage(
             return {
               shouldSend: false,
               isFirstMessage: false,
-              previousFollowUpSent: null,
             };
           }
           const presenceRef = doc(
@@ -639,31 +637,37 @@ export async function addThreadMessage(
             data.adminReplyFollowUpEmailSentAt instanceof Timestamp
               ? data.adminReplyFollowUpEmailSentAt.toMillis()
               : null;
-          const isFirstAdminMessage = data.firstAdminChatEmailSent !== true;
+          const firstEmailQueued =
+            data.firstAdminChatEmailQueuedAt instanceof Timestamp;
+          const isFirstAdminMessage = !firstEmailQueued;
           const isInactive =
             lastSeen === null ||
             Date.now() - lastSeen >= CLIENT_INACTIVITY_THRESHOLD_MS;
           const followUpAlreadySent =
             lastFollowUpSent !== null &&
             (lastSeen === null || lastFollowUpSent >= lastSeen);
+          const reservationAt =
+            data.chatEmailReservationAt instanceof Timestamp
+              ? data.chatEmailReservationAt.toMillis()
+              : null;
+          const reservationIsActive =
+            reservationAt !== null &&
+            Date.now() - reservationAt < CHAT_EMAIL_RESERVATION_TTL_MS;
           const shouldNotifyClient =
-            isFirstAdminMessage || (isInactive && !followUpAlreadySent);
+            !reservationIsActive &&
+            (isFirstAdminMessage || (isInactive && !followUpAlreadySent));
 
-          tx.update(threadRef, {
+          const threadUpdate: Record<string, unknown> = {
             adminTextMessageCount: currentCount + 1,
-            ...(isFirstAdminMessage ? { firstAdminChatEmailSent: true } : {}),
-            ...(shouldNotifyClient && !isFirstAdminMessage
-              ? { adminReplyFollowUpEmailSentAt: serverTimestamp() }
-              : {}),
-          });
+          };
+          if (shouldNotifyClient) {
+            threadUpdate.chatEmailReservationAt = serverTimestamp();
+          }
+          tx.update(threadRef, threadUpdate);
 
           return {
             shouldSend: shouldNotifyClient,
             isFirstMessage: isFirstAdminMessage,
-            previousFollowUpSent:
-              lastFollowUpSent === null
-                ? null
-                : Timestamp.fromMillis(lastFollowUpSent),
           };
         });
       } catch (error) {
@@ -677,16 +681,20 @@ export async function addThreadMessage(
             message.threadId,
             message.senderName,
           );
+          await updateDoc(threadRef, {
+            chatEmailReservationAt: deleteField(),
+            ...(emailReservation.isFirstMessage
+              ? {
+                  firstAdminChatEmailSent: true,
+                  firstAdminChatEmailQueuedAt: serverTimestamp(),
+                }
+              : { adminReplyFollowUpEmailSentAt: serverTimestamp() }),
+          });
         } catch (error) {
           console.error("Failed to send admin chat email:", error);
           try {
             await updateDoc(threadRef, {
-              ...(emailReservation.isFirstMessage
-                ? { firstAdminChatEmailSent: false }
-                : {
-                    adminReplyFollowUpEmailSentAt:
-                      emailReservation.previousFollowUpSent ?? deleteField(),
-                  }),
+              chatEmailReservationAt: deleteField(),
             });
           } catch (rollbackError) {
             console.error(

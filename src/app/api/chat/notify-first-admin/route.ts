@@ -25,6 +25,7 @@ function timestampToMillis(value: unknown): number | null {
 }
 
 export async function POST(request: Request) {
+  let authenticatedAdmin = false;
   try {
     const body = await request.json();
     const threadId = String(body?.threadId || "").trim();
@@ -65,12 +66,22 @@ export async function POST(request: Request) {
       );
     }
 
-    let adminSnap = await adminDb.collection("admins").doc(adminEmail).get();
-    if (!adminSnap.exists && adminEmail !== adminEmail.toLowerCase()) {
-      adminSnap = await adminDb
-        .collection("admins")
-        .doc(adminEmail.toLowerCase())
-        .get();
+    const adminsCollection = adminDb.collection("admins");
+    let adminSnap = await adminsCollection.doc(adminEmail).get();
+    if (!adminSnap.exists) {
+      adminSnap = await adminsCollection.doc(adminEmail.toLowerCase()).get();
+    }
+    if (!adminSnap.exists) {
+      const adminsSnapshot = await adminsCollection.get();
+      const matchingAdmin = adminsSnapshot.docs.find((adminDoc) => {
+        const data = adminDoc.data();
+        return (
+          adminDoc.id.trim().toLowerCase() === adminEmail.toLowerCase() ||
+          (typeof data.email === "string" &&
+            data.email.trim().toLowerCase() === adminEmail.toLowerCase())
+        );
+      });
+      if (matchingAdmin) adminSnap = matchingAdmin;
     }
     if (!adminSnap.exists || adminSnap.data()?.status === "deactivated") {
       return NextResponse.json(
@@ -78,6 +89,7 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
+    authenticatedAdmin = true;
 
     const threadRef = adminDb.collection("quotationThreads").doc(threadId);
     const [threadSnap, inquirySnap] = await Promise.all([
@@ -162,6 +174,9 @@ export async function POST(request: Request) {
       if (shouldSend) {
         update.chatEmailReservationAt =
           admin.firestore.FieldValue.serverTimestamp();
+        if (staleLegacyReservation) {
+          update.firstAdminChatEmailSent = false;
+        }
       }
       transaction.update(threadRef, update);
 
@@ -227,7 +242,15 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Failed to send chat notification email:", error);
     return NextResponse.json(
-      { error: "Failed to send email" },
+      {
+        error: "Failed to queue Chat Received email",
+        ...(authenticatedAdmin
+          ? {
+              details:
+                error instanceof Error ? error.message : String(error),
+            }
+          : {}),
+      },
       { status: 500 },
     );
   }

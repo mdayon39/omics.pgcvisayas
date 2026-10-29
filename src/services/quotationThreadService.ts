@@ -86,9 +86,15 @@ async function triggerChatEmailNotification(
     },
     body: JSON.stringify({ threadId, adminName }),
   });
-  const result = (await response.json()) as { error?: string };
+  const result = (await response.json()) as {
+    error?: string;
+    details?: string;
+  };
   if (!response.ok) {
-    throw new Error(result.error || "Failed to queue chat notification email.");
+    const message = result.error || "Failed to queue chat notification email.";
+    throw new Error(
+      result.details ? `${message}: ${result.details}` : message,
+    );
   }
 }
 

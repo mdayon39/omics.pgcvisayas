@@ -546,8 +546,10 @@ export default function ChatBox({
           : {}),
       } as Omit<ThreadMessage, "id" | "createdAt">, (emailError) => {
         console.error("Chat message was sent, but its client email failed:", emailError);
+        const emailErrorMessage =
+          emailError instanceof Error ? ` ${emailError.message}` : "";
         toast.error(
-          "Message sent, but the client notification email could not be queued. Check Email Monitoring.",
+          `Message sent, but the client notification email could not be queued.${emailErrorMessage}`,
         );
       });
       setMentionedAdmins([]);

@@ -18,6 +18,7 @@ import {
   Loader2,
   MailCheck,
   Send,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { auth, db } from "@/lib/firebase";
@@ -171,6 +172,10 @@ export function EmailMonitoringPanel() {
   const [clock, setClock] = useState(() => Date.now());
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [resendingEventId, setResendingEventId] = useState<string | null>(null);
+  const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [deletingEvents, setDeletingEvents] = useState(false);
 
   useEffect(() => {
     const clockInterval = window.setInterval(() => setClock(Date.now()), 30_000);
@@ -184,22 +189,28 @@ export function EmailMonitoringPanel() {
     const unsubscribeEvents = onSnapshot(
       eventsQuery,
       (snapshot) => {
-        setEvents(
-          snapshot.docs.map((document) => {
-            const data = document.data();
-            return {
-              id: document.id,
-              category: data.category,
-              recipient: data.recipient || "",
-              sourceId: data.sourceId || "",
-              triggeredAt: toDate(data.triggeredAt),
-              triggeredByEmail: data.triggeredByEmail,
-              queueStatus: data.queueStatus || "queueing",
-              mailDocumentId: data.mailDocumentId,
-              error: data.error,
-            } as EmailMonitorEvent;
-          }),
-        );
+        const nextEvents = snapshot.docs.map((document) => {
+          const data = document.data();
+          return {
+            id: document.id,
+            category: data.category,
+            recipient: data.recipient || "",
+            sourceId: data.sourceId || "",
+            triggeredAt: toDate(data.triggeredAt),
+            triggeredByEmail: data.triggeredByEmail,
+            queueStatus: data.queueStatus || "queueing",
+            mailDocumentId: data.mailDocumentId,
+            error: data.error,
+          } as EmailMonitorEvent;
+        });
+        const eventIds = new Set(nextEvents.map((event) => event.id));
+        setEvents(nextEvents);
+        setSelectedEventIds((current) => {
+          const next = new Set(
+            [...current].filter((eventId) => eventIds.has(eventId)),
+          );
+          return next.size === current.size ? current : next;
+        });
         setLoading(false);
         setError("");
       },
@@ -327,6 +338,9 @@ export function EmailMonitoringPanel() {
   const visibleRows = rows.filter(
     (row) => category === "All" || row.category === category,
   );
+  const allVisibleRowsSelected =
+    visibleRows.length > 0 &&
+    visibleRows.every((row) => selectedEventIds.has(row.id));
   const attentionCount = rows.filter(
     (row) =>
       row.status === "Failed" ||
@@ -348,6 +362,90 @@ export function EmailMonitoringPanel() {
   const canResendSelectedEvent =
     selectedEvent?.category === "Chat received" ||
     selectedEvent?.category === "Quotation available";
+
+  const toggleEventSelection = (eventId: string, checked: boolean) => {
+    setSelectedEventIds((current) => {
+      const next = new Set(current);
+      if (checked) {
+        next.add(eventId);
+      } else {
+        next.delete(eventId);
+      }
+      return next;
+    });
+  };
+
+  const toggleVisibleSelection = (checked: boolean) => {
+    setSelectedEventIds((current) => {
+      const next = new Set(current);
+      for (const row of visibleRows) {
+        if (checked) {
+          next.add(row.id);
+        } else {
+          next.delete(row.id);
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    const eventIds = [...selectedEventIds];
+    if (eventIds.length === 0 || deletingEvents) return;
+
+    const countLabel = `${eventIds.length} selected notification event${eventIds.length === 1 ? "" : "s"}`;
+    if (
+      !window.confirm(
+        `Delete ${countLabel}? This removes monitoring records only; queued emails are not affected.`,
+      )
+    ) {
+      return;
+    }
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      toast.error("Sign in again before deleting notification events.");
+      return;
+    }
+
+    setDeletingEvents(true);
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch("/api/admin/email-monitoring/delete-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventIds }),
+      });
+      const result = (await response.json()) as {
+        error?: string;
+        deletedCount?: number;
+      };
+      if (!response.ok) {
+        throw new Error(result.error || "Could not delete notification events.");
+      }
+
+      setSelectedEventIds(new Set());
+      if (selectedEventId && eventIds.includes(selectedEventId)) {
+        setSelectedEventId(null);
+      }
+      const deletedCount = result.deletedCount ?? eventIds.length;
+      toast.success(
+        `Deleted ${deletedCount} notification event${deletedCount === 1 ? "" : "s"}.`,
+      );
+    } catch (deleteError) {
+      console.error("Could not delete selected notification events:", deleteError);
+      toast.error(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Could not delete notification events.",
+      );
+    } finally {
+      setDeletingEvents(false);
+    }
+  };
 
   const handleResend = async () => {
     if (!selectedEvent || !canResendSelectedEvent || resendingEventId) return;
@@ -468,17 +566,40 @@ export function EmailMonitoringPanel() {
             <h2 className="font-semibold">Notification events</h2>
             <p className="text-xs text-slate-500">Showing the most recent 300 tracked triggers.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="email-monitor-category" className="text-sm text-slate-600">Category</label>
-            <select
-              id="email-monitor-category"
-              className="h-9 rounded-md border bg-white px-2 text-sm"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-            >
-              <option>All</option>
-              {EMAIL_MONITOR_CATEGORIES.map((item) => <option key={item}>{item}</option>)}
-            </select>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label htmlFor="email-monitor-category" className="text-sm text-slate-600">Category</label>
+              <select
+                id="email-monitor-category"
+                className="h-9 rounded-md border bg-white px-2 text-sm"
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+              >
+                <option>All</option>
+                {EMAIL_MONITOR_CATEGORIES.map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedEventIds.size > 0 && (
+                <span className="text-sm text-slate-600">
+                  {selectedEventIds.size} selected
+                </span>
+              )}
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={selectedEventIds.size === 0 || deletingEvents}
+                onClick={handleDeleteSelected}
+              >
+                {deletingEvents ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Delete selected
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -494,9 +615,20 @@ export function EmailMonitoringPanel() {
           <p className="p-6 text-sm text-slate-500">No tracked notification triggers yet. Monitoring starts with app versions that write email event records.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="w-full min-w-[820px] text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                 <tr>
+                  <th className="w-12 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all visible notification events"
+                      className="h-4 w-4 rounded border-slate-300 accent-slate-900"
+                      checked={allVisibleRowsSelected}
+                      onChange={(event) =>
+                        toggleVisibleSelection(event.target.checked)
+                      }
+                    />
+                  </th>
                   <th className="px-4 py-3">Triggered</th>
                   <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3">Recipient</th>
@@ -510,6 +642,17 @@ export function EmailMonitoringPanel() {
               <tbody className="divide-y">
                 {visibleRows.map((row) => (
                   <tr key={row.id} className={row.status === "Failed" || row.status === "Stalled" || row.status === "Missing email record" ? "bg-red-50/50" : ""}>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select notification event for ${row.recipient || "recipient"}`}
+                        className="h-4 w-4 rounded border-slate-300 accent-slate-900"
+                        checked={selectedEventIds.has(row.id)}
+                        onChange={(event) =>
+                          toggleEventSelection(row.id, event.target.checked)
+                        }
+                      />
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3">{formatDate(row.triggeredAt)}</td>
                     <td className="px-4 py-3">{row.category}</td>
                     <td className="px-4 py-3">{row.recipient || "No recipient recorded"}</td>

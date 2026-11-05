@@ -381,6 +381,7 @@ export function ChargeSlipPDF({
             else if (name.includes("CAMILLE") && name.includes("MUEDA")) signatureSrc = "/assets/signature_mueda.png";
             else if (name.includes("JASMINE") && name.includes("VELO")) signatureSrc = "/assets/signature_velo.png";
             else if (name.includes("KARL") && name.includes("TENIZO")) signatureSrc = "/assets/signature_tenizo.png";
+            else if (name.includes("DIANNE") && name.includes("PENUELA")) signatureSrc = "/assets/signature_penuela.png";
             else if (name.includes("MERLITO") && name.includes("DAYON")) signatureSrc = "/assets/signature_dayon.png";
             else if (name.includes("MICAH") && name.includes("LOJERA")) signatureSrc = "/assets/signature_lojera.png";
 

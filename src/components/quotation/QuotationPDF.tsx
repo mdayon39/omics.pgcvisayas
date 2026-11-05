@@ -144,6 +144,7 @@ function getSignatureAssetByName(name: string): string | null {
     "MICAH LOJERA": "/assets/signature_lojera.png",
     "JASMINE VELO": "/assets/signature_velo.png",
     "KARL TENIZO": "/assets/signature_tenizo.png",
+    "DIANNE FRANCES A PENUELA": "/assets/signature_penuela.png",
     "MERLITO DAYON": "/assets/signature_dayon.png",
     "MERLITO A DAYON": "/assets/signature_dayon.png",
     "MERLITO A DAYON JR": "/assets/signature_dayon.png",
@@ -170,6 +171,8 @@ function getSignatureAssetByName(name: string): string | null {
     return "/assets/signature_velo.png";
   if (normalized.includes("KARL") && normalized.includes("TENIZO"))
     return "/assets/signature_tenizo.png";
+  if (normalized.includes("DIANNE") && normalized.includes("PENUELA"))
+    return "/assets/signature_penuela.png";
   if (
     (normalized.includes("MERLITO") && normalized.includes("DAYON")) ||
     (normalized.includes("MERLITO A") && normalized.includes("DAYON")) ||

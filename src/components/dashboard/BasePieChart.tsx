@@ -10,7 +10,6 @@ import {
   Pie,
   Cell,
   ResponsiveContainer,
-  Tooltip,
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
@@ -80,17 +79,6 @@ export function BasePieChart<T extends string>({
                       />
                     ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{
-                    border: "1px solid #E4E7EC",
-                    borderRadius: "8px",
-                    backgroundColor: "#FFFFFF",
-                    boxShadow: "0 4px 12px rgb(15 23 42 / 0.08)",
-                    fontSize: "13px",
-                    padding: "8px 10px",
-                  }}
-                  formatter={(value: number, name: T) => [value, name]}
-                />
               </RechartsPieChart>
             </ResponsiveContainer>
           )}

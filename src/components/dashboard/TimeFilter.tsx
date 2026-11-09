@@ -177,7 +177,7 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
                     { length: 10 },
                     (_, i) => new Date().getFullYear() - i,
                   )
-                    .filter((y) => y !== 2017 && y !== 2018)
+                    .filter((y) => y < 2015 || y > 2017)
                     .map((y) => (
                       <DropdownMenuItem
                         key={y}

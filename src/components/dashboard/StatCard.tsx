@@ -1,11 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Card,
-  CardContent,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { DASHBOARD_COLORS } from "./dashboardColors";
 
 interface StatCardProps {
@@ -22,21 +18,20 @@ const COLORS = [
 ];
 
 export function StatCard({ title, value, colorIndex = 0 }: StatCardProps) {
-  // Use modulo to cycle through colors safely
   const color = COLORS[colorIndex % COLORS.length];
-  
+
   return (
-    <Card className="rounded-lg border h-full">
-      <CardContent className="p-4 flex flex-col justify-center items-center h-full">
-        <div 
-          className="text-2xl font-bold"
-          style={{ color }}
-        >
-          {value}
-        </div>
-        <CardTitle className="text-sm text-muted-foreground font-normal pt-1 text-center">
+    <Card
+      className="h-full overflow-hidden rounded-xl border border-[#E4E7EC] bg-white shadow-sm"
+      style={{ borderLeftWidth: 4, borderLeftColor: color }}
+    >
+      <CardContent className="flex h-full min-h-[112px] flex-col justify-center px-5 py-4">
+        <CardTitle className="text-[13px] font-medium leading-5 text-[#667085]">
           {title}
         </CardTitle>
+        <div className="mt-1 text-[30px] font-semibold leading-tight tracking-tight tabular-nums text-[#1B2330]">
+          {value}
+        </div>
       </CardContent>
     </Card>
   );

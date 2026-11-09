@@ -17,27 +17,34 @@ export function DashboardContent({
   filteredClients,
   totalIncome,
   timeRange,
-  customRange
+  customRange,
 }: DashboardContentProps) {
   return (
     <>
       {/* Stat Cards Section */}
-      <div className="gap-4 mb-4">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-            <StatCard title="Total Approved Clients" value={filteredClients.length} colorIndex={0} />
-            <StatCard title="Total Projects (Pending/Ongoing/Completed)" value={totalProjects} colorIndex={1} />
-            <StatCard
-              title="Total Income"
-              value={totalIncome.toLocaleString("en-PH", {
-                style: "currency",
-                currency: "PHP",
-              })}
-              colorIndex={2}
-            />
-          </div>
-        </div>
-        {/* Bar Chart Section */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          title="Total approved clients"
+          value={filteredClients.length}
+          colorIndex={0}
+        />
+        <StatCard
+          title="Total projects (pending, ongoing, completed)"
+          value={totalProjects}
+          colorIndex={1}
+        />
+        <StatCard
+          title="Total income"
+          value={totalIncome.toLocaleString("en-PH", {
+            style: "currency",
+            currency: "PHP",
+          })}
+          colorIndex={2}
+        />
+      </div>
+
+      {/* Monthly comparison chart */}
+      <section aria-label="Client and project trends">
         <div className="h-[400px]">
           <StatBarChart
             projectsData={filteredProjects}
@@ -46,14 +53,22 @@ export function DashboardContent({
             customRange={customRange}
           />
         </div>
-      </div>
+      </section>
 
       {/* Pie Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <ServiceRequestedChart projects={filteredProjects} />
-        <SendingInstitutionChart projects={filteredProjects} />
-        <FundingCategoryChart projects={filteredProjects} />
-      </div>
+      <section aria-labelledby="dashboard-breakdown-heading">
+        <h2
+          id="dashboard-breakdown-heading"
+          className="mb-3 text-base font-semibold tracking-tight text-[#1B2330]"
+        >
+          Breakdown
+        </h2>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <ServiceRequestedChart projects={filteredProjects} />
+          <SendingInstitutionChart projects={filteredProjects} />
+          <FundingCategoryChart projects={filteredProjects} />
+        </div>
+      </section>
     </>
   );
 }

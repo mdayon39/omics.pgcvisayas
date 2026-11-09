@@ -48,7 +48,6 @@ export function FundingCategoryChart({ projects }: { projects: Project[] }) {
       colors={CATEGORY_COLORS}
       data={data}
       emptyMessage="No data available"
-      legendWrapperStyle={{ justifyContent: 'center', paddingBottom: '28px' }}
     />
   );
 }

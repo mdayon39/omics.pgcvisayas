@@ -13,8 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Check } from "lucide-react";
-import { TimeFilterProps, TimeRange, CustomRange } from "@/types/TimeFilter";
-
+import { TimeFilterProps, TimeRange } from "@/types/TimeFilter";
 
 export function TimeFilter({ onFilterChange }: TimeFilterProps) {
   // State for selected time range and custom range values
@@ -25,8 +24,18 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
 
   // Month names for dropdowns
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   // Labels for each time range option
@@ -36,7 +45,7 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
     weekly: "Weekly",
     monthly: "Monthly",
     yearly: "Yearly",
-    custom: "Custom"
+    custom: "Custom",
   };
 
   // Effect: Apply filter on mount and when custom range changes
@@ -82,15 +91,21 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
   };
 
   return (
-    <div className="w-full flex justify-end">
-      <div className="flex flex-col sm:flex-row items-end gap-2 w-full">
+    <div className="flex w-full justify-end">
+      <div className="flex w-full flex-wrap items-end justify-end gap-2 sm:gap-3">
         {/* Time range dropdown (non-custom) */}
         {timeRange !== "custom" ? (
-          <div className="w-full sm:w-[160px]">
+          <div className="flex w-full flex-col gap-1 sm:w-[140px]">
+            <label className="px-1 text-xs font-medium text-[#667085]">
+              Timeline
+            </label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full px-4 py-2 rounded border bg-white text-center">
-                  Timeline: {timeRangeLabels[timeRange]}
+                <Button
+                  variant="outline"
+                  className="h-9 w-full justify-between rounded-lg border-[#E4E7EC] bg-white px-3 text-left font-normal text-[#1B2330] shadow-none hover:border-[#98A2B3]"
+                >
+                  {timeRangeLabels[timeRange]}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[160px]" align="end">
@@ -101,7 +116,9 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
                     onClick={() => handleTimeRangeSelect(value as TimeRange)}
                   >
                     <span>{label}</span>
-                    {timeRange === value && <Check className="h-4 w-4 text-primary" />}
+                    {timeRange === value && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -109,13 +126,19 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
           </div>
         ) : (
           // Custom range dropdowns
-          <div className="flex flex-wrap md:flex-nowrap gap-2 w-full">
+          <div className="flex w-full flex-wrap justify-end gap-2 sm:gap-3">
             {/* Timeline Dropdown */}
-            <div className="w-full sm:w-[160px]">
+            <div className="flex w-full flex-col gap-1 sm:w-[140px]">
+              <label className="px-1 text-xs font-medium text-[#667085]">
+                Timeline
+              </label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full text-left truncate">
-                    Timeline: Custom
+                  <Button
+                    variant="outline"
+                    className="h-9 w-full justify-between rounded-lg border-[#E4E7EC] bg-white px-3 text-left font-normal text-[#1B2330] shadow-none hover:border-[#98A2B3]"
+                  >
+                    Custom
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[160px]" align="end">
@@ -126,7 +149,9 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
                       onClick={() => handleTimeRangeSelect(value as TimeRange)}
                     >
                       <span>{label}</span>
-                      {timeRange === value && <Check className="h-4 w-4 text-primary" />}
+                      {timeRange === value && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -134,36 +159,53 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
             </div>
 
             {/* Year Picker */}
-            <div className="w-full sm:w-[160px]">
+            <div className="flex w-full flex-col gap-1 sm:w-[100px]">
+              <label className="px-1 text-xs font-medium text-[#667085]">
+                Year
+              </label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full text-left truncate">
-                    Year: {year}
+                  <Button
+                    variant="outline"
+                    className="h-9 w-full justify-between rounded-lg border-[#E4E7EC] bg-white px-3 text-left font-normal text-[#1B2330] shadow-none hover:border-[#98A2B3]"
+                  >
+                    {year}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[160px]" align="end">
-                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i)
+                  {Array.from(
+                    { length: 10 },
+                    (_, i) => new Date().getFullYear() - i,
+                  )
                     .filter((y) => y !== 2017 && y !== 2018)
                     .map((y) => (
-                    <DropdownMenuItem
-                      key={y}
-                      className="flex justify-between"
-                      onClick={() => handleYearSelect(y)}
-                    >
-                      <span>{y}</span>
-                      {year === y && <Check className="h-4 w-4 text-primary" />}
-                    </DropdownMenuItem>
-                  ))}
+                      <DropdownMenuItem
+                        key={y}
+                        className="flex justify-between"
+                        onClick={() => handleYearSelect(y)}
+                      >
+                        <span>{y}</span>
+                        {year === y && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
 
             {/* Start Month Picker */}
-            <div className="w-full sm:w-[160px]">
+            <div className="flex w-full flex-col gap-1 sm:w-[120px]">
+              <label className="px-1 text-xs font-medium text-[#667085]">
+                From
+              </label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full text-left truncate">
-                    From: {months[startMonth]}
+                  <Button
+                    variant="outline"
+                    className="h-9 w-full justify-between rounded-lg border-[#E4E7EC] bg-white px-3 text-left font-normal text-[#1B2330] shadow-none hover:border-[#98A2B3]"
+                  >
+                    {months[startMonth]}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[160px]" align="end">
@@ -174,7 +216,9 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
                       onClick={() => handleStartMonthSelect(index)}
                     >
                       <span>{month}</span>
-                      {startMonth === index && <Check className="h-4 w-4 text-primary" />}
+                      {startMonth === index && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -182,22 +226,32 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
             </div>
 
             {/* End Month Picker */}
-            <div className="w-full sm:w-[160px]">
+            <div className="flex w-full flex-col gap-1 sm:w-[120px]">
+              <label className="px-1 text-xs font-medium text-[#667085]">
+                To
+              </label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full text-left truncate">
-                    To: {months[endMonth]}
+                  <Button
+                    variant="outline"
+                    className="h-9 w-full justify-between rounded-lg border-[#E4E7EC] bg-white px-3 text-left font-normal text-[#1B2330] shadow-none hover:border-[#98A2B3]"
+                  >
+                    {months[endMonth]}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[160px]" align="end">
                   {months.map((month, index) => (
                     <DropdownMenuItem
                       key={month}
-                      className={`flex justify-between ${index < startMonth ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onClick={() => index >= startMonth && handleEndMonthSelect(index)}
+                      className={`flex justify-between ${index < startMonth ? "opacity-50 cursor-not-allowed" : ""}`}
+                      onClick={() =>
+                        index >= startMonth && handleEndMonthSelect(index)
+                      }
                     >
                       <span>{month}</span>
-                      {endMonth === index && <Check className="h-4 w-4 text-primary" />}
+                      {endMonth === index && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>

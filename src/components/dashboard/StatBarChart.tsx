@@ -49,14 +49,26 @@ export function StatBarChart({
   ];
 
   // Labels for each time range option
-  const timeRangeLabels = {
-    all: "All Time",
-    today: "Today",
-    weekly: "Last 7 Days",
-    monthly: "Last 30 Days",
-    yearly: "Last 12 Months",
-    custom: "Custom Range",
-  };
+  const chartTitle =
+    timeRange === "all"
+      ? "Clients and projects by year"
+      : timeRange === "today"
+        ? "Clients and projects today"
+        : timeRange === "weekly" || timeRange === "monthly"
+          ? "Clients and projects by day"
+          : "Clients and projects by month";
+  const chartPeriod =
+    timeRange === "custom" && customRange
+      ? `${months[customRange.startMonth]}${customRange.startMonth !== customRange.endMonth ? ` – ${months[customRange.endMonth]}` : ""} ${customRange.year}`
+      : timeRange === "all"
+        ? "All available years (2019 onward)"
+        : timeRange === "today"
+          ? "Today"
+          : timeRange === "weekly"
+            ? "Last 7 days"
+            : timeRange === "monthly"
+              ? "Last 30 days"
+              : "Last 12 months";
 
   // Generate chart data based on selected time range
   const data = generateChartData({
@@ -71,13 +83,9 @@ export function StatBarChart({
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 px-5 pb-0 pt-5">
         <div>
           <CardTitle className="text-[15px] font-semibold text-[#1B2330]">
-            Clients and projects by month
+            {chartTitle}
           </CardTitle>
-          <p className="mt-1 text-[13px] text-[#667085]">
-            {timeRange === "custom" && customRange
-              ? `${months[customRange.startMonth]}${customRange.startMonth !== customRange.endMonth ? ` – ${months[customRange.endMonth]}` : ""} ${customRange.year}`
-              : timeRangeLabels[timeRange as keyof typeof timeRangeLabels]}
-          </p>
+          <p className="mt-1 text-[13px] text-[#667085]">{chartPeriod}</p>
         </div>
         <div className="flex items-center gap-4 pt-1 text-[13px] text-[#667085]">
           {[

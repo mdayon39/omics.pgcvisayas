@@ -55,11 +55,6 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
     }
   }, [year, startMonth, endMonth, timeRange, onFilterChange]);
 
-  // Helper to trigger filter change for custom range
-  const handleRangeChange = () => {
-    onFilterChange({ year, startMonth, endMonth });
-  };
-
   // Handle selection of a time range
   const handleTimeRangeSelect = (range: TimeRange) => {
     setTimeRange(range);
@@ -73,21 +68,18 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
   // Handle selection of year in custom range
   const handleYearSelect = (selectedYear: number) => {
     setYear(selectedYear);
-    handleRangeChange();
   };
 
   // Handle selection of start month in custom range
   const handleStartMonthSelect = (month: number) => {
     setStartMonth(month);
     if (month > endMonth) setEndMonth(month);
-    handleRangeChange();
   };
 
   // Handle selection of end month in custom range
   const handleEndMonthSelect = (month: number) => {
     setEndMonth(month);
     if (month < startMonth) setStartMonth(month);
-    handleRangeChange();
   };
 
   return (

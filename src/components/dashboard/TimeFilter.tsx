@@ -142,7 +142,9 @@ export function TimeFilter({ onFilterChange }: TimeFilterProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[160px]" align="end">
-                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i)
+                    .filter((y) => y !== 2017 && y !== 2018)
+                    .map((y) => (
                     <DropdownMenuItem
                       key={y}
                       className="flex justify-between"

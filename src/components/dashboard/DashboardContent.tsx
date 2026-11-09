@@ -33,7 +33,7 @@ export function DashboardContent({
                 style: "currency",
                 currency: "PHP",
               })}
-              colorIndex={3}
+              colorIndex={2}
             />
           </div>
         </div>

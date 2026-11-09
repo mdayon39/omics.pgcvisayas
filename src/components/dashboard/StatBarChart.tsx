@@ -24,11 +24,12 @@ import {
 } from "recharts";
 import { generateChartData } from "@/services/filterGraph";
 import { StatisticsBarChartProps } from "@/types/StatBarChart";
+import { DASHBOARD_COLORS } from "./dashboardColors";
 
 // Colors for each category in the bar chart
 const CATEGORY_COLORS = {
-  CLIENTS: "#F06292",  
-  PROJECTS: "#81C784"   
+  CLIENTS: DASHBOARD_COLORS.clients,
+  PROJECTS: DASHBOARD_COLORS.projects,
 } as const;
 
 export function StatBarChart({ 
@@ -79,17 +80,17 @@ export function StatBarChart({
               margin={{ left: -25 }} 
             >
               {/* Grid lines */}
-              <CartesianGrid vertical={false}/>
+              <CartesianGrid vertical={false} stroke="#E2E8F0" />
               {/* X axis for time periods */}
               <XAxis 
                 dataKey="name"
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: "#64748B" }}
                 tickMargin={12}
               />
               {/* Y axis for counts */}
               <YAxis 
                 allowDecimals={false}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: "#64748B" }}
                 tickMargin={12}
               />
               {/* Tooltip for bar details */}

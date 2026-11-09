@@ -6,6 +6,7 @@
 
 import { BasePieChart } from "./BasePieChart";
 import { Project } from "@/types/Project";
+import { DASHBOARD_COLORS } from "./dashboardColors";
 
 // Match exactly with Project interface's sendingInstitution type
 const INSTITUTION_CATEGORIES: readonly ("UP System" | "SUC/HEI" | "Government" | "Private/Local" | "International" | "N/A")[] = [
@@ -21,12 +22,7 @@ type InstitutionCategory = typeof INSTITUTION_CATEGORIES[number];
 
 // Colors for each category in the pie chart
 const CATEGORY_COLORS: Record<InstitutionCategory, string> = {
-  "UP System": "#F06292",         
-  "SUC/HEI": "#FFB74D",           
-  "Government": "#FFF176",       
-  "Private/Local": "#81C784",  
-  "International": "#64B5F6",    
-  "N/A": "#BA68C8",             
+  ...DASHBOARD_COLORS.sendingInstitution,
 };
 
 export function SendingInstitutionChart({ projects }: { projects: Project[] }) {

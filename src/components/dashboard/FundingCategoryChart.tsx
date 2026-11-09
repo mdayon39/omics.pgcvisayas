@@ -6,6 +6,7 @@
 
 import { BasePieChart } from "./BasePieChart";
 import { Project } from "@/types/Project";
+import { DASHBOARD_COLORS } from "./dashboardColors";
 
 // Match exactly with Project interface's fundingCategory type
 const FUNDING_CATEGORIES: readonly ("External" | "In-House")[] = [
@@ -17,8 +18,7 @@ type FundingCategory = typeof FUNDING_CATEGORIES[number];
 
 // Colors for each category in the pie chart
 const CATEGORY_COLORS: Record<FundingCategory, string> = {
-  "In-House": "#F06292",   
-  "External": "#64b5f6",   
+  ...DASHBOARD_COLORS.fundingCategory,
 };
 
 export function FundingCategoryChart({ projects }: { projects: Project[] }) {

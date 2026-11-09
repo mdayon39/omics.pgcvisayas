@@ -7,6 +7,7 @@
 
 import { BasePieChart } from "./BasePieChart";
 import { Project } from "@/types/Project";
+import { DASHBOARD_COLORS } from "./dashboardColors";
 
 const SERVICE_CATEGORIES = [
   "Laboratory Services",
@@ -20,11 +21,7 @@ type ServiceCategory = (typeof SERVICE_CATEGORIES)[number];
 
 // Colors for each category in the pie chart
 const CATEGORY_COLORS: Record<ServiceCategory, string> = {
-  "Laboratory Services": "#F06292",
-  "Equipment Use": "#FFB74D",
-  "Bioinformatics Analysis": "#FFF176",
-  "Retail Sales": "#81C784",
-  "Training": "#7986CB",
+  ...DASHBOARD_COLORS.serviceRequested,
 };
 
 // Type guard to check if a string is a ServiceCategory

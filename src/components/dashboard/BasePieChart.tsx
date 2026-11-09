@@ -60,6 +60,11 @@ export function BasePieChart<T extends string>({
                   paddingAngle={1}
                   stroke="none"
                   isAnimationActive={false}
+                  onMouseEnter={(_, index) => {
+                    const item = data.filter((entry) => entry.value > 0)[index];
+                    if (item) setActiveCategory(item.name);
+                  }}
+                  onMouseLeave={() => setActiveCategory(null)}
                 >
                   {data
                     .filter((item) => item.value > 0)

@@ -40,6 +40,35 @@ async function captureSection(
     scale: 2,
     useCORS: true,
     logging: false,
+    onclone: (clonedDocument) => {
+      if (sectionName !== "breakdown") return;
+
+      const breakdown = clonedDocument.querySelector<HTMLElement>(
+        '[data-pdf-section="breakdown"]',
+      );
+      if (!breakdown) {
+        throw new Error("Could not prepare the project breakdown for export.");
+      }
+
+      breakdown.querySelectorAll<HTMLElement>("button").forEach((button) => {
+        button.style.minHeight = "38px";
+        button.style.height = "auto";
+        button.style.overflow = "visible";
+        button.style.lineHeight = "1.4";
+        button.style.paddingTop = "8px";
+        button.style.paddingBottom = "8px";
+      });
+
+      breakdown
+        .querySelectorAll<HTMLElement>("button .truncate")
+        .forEach((label) => {
+          label.style.height = "auto";
+          label.style.overflow = "visible";
+          label.style.textOverflow = "clip";
+          label.style.whiteSpace = "normal";
+          label.style.lineHeight = "1.4";
+        });
+    },
   });
   const image = canvas.toDataURL("image/jpeg", 0.94);
   canvas.width = 0;

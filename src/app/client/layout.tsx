@@ -59,10 +59,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     );
   }
 
+  const useRedesignedPortal =
+    user.email?.trim().toLowerCase() === "dayonmerlitojr@gmail.com";
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       <Header
-        showBrand={false}
+        showBrand={!useRedesignedPortal}
         user={user}
         onLogout={signOut}
         menuVisibility={configSettings?.portalFeatures ?? DEFAULT_PORTAL_FEATURES}
@@ -101,19 +104,23 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </div>
         }
       />
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
-        <Suspense
-          fallback={
-            <main className="min-h-0 flex-1 overflow-y-auto bg-[#F5F6F8]">
+      {useRedesignedPortal ? (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+          <Suspense
+            fallback={
+              <main className="min-h-0 flex-1 overflow-y-auto bg-[#F5F6F8]">
+                {children}
+              </main>
+            }
+          >
+            <ClientPortalNavigation user={user}>
               {children}
-            </main>
-          }
-        >
-          <ClientPortalNavigation user={user}>
-            {children}
-          </ClientPortalNavigation>
-        </Suspense>
-      </div>
+            </ClientPortalNavigation>
+          </Suspense>
+        </div>
+      ) : (
+        <main className="relative flex-1 overflow-y-auto">{children}</main>
+      )}
     </div>
   );
 }

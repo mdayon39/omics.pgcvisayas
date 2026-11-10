@@ -22,7 +22,10 @@ export function DashboardContent({
   return (
     <>
       {/* Stat Cards Section */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        data-pdf-section="summary"
+      >
         <StatCard
           title="Total approved clients"
           value={filteredClients.length}
@@ -44,7 +47,7 @@ export function DashboardContent({
       </div>
 
       {/* Monthly comparison chart */}
-      <section aria-label="Client and project trends">
+      <section aria-label="Client and project trends" data-pdf-section="trends">
         <div className="h-[400px]">
           <StatBarChart
             projectsData={filteredProjects}
@@ -56,7 +59,10 @@ export function DashboardContent({
       </section>
 
       {/* Pie Charts Section */}
-      <section aria-labelledby="dashboard-breakdown-heading">
+      <section
+        aria-labelledby="dashboard-breakdown-heading"
+        data-pdf-section="breakdown"
+      >
         <h2
           id="dashboard-breakdown-heading"
           className="mb-3 text-base font-semibold tracking-tight text-[#1B2330]"

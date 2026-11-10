@@ -1,78 +1,189 @@
 import html2canvas from "html2canvas";
+import type { CustomRange, TimeRange } from "@/types/TimeFilter";
+
+const PAGE_MARGIN = 13;
+const HEADER_HEIGHT = 32;
+const FOOTER_Y = 203;
+const CONTENT_WIDTH = 271;
+
+function getPeriodLabel(
+  timeRange: TimeRange,
+  customRange: CustomRange | undefined,
+  monthNames: string[],
+): string {
+  if (timeRange === "custom" && customRange) {
+    const startMonth = monthNames[customRange.startMonth];
+    const endMonth = monthNames[customRange.endMonth];
+    const months =
+      customRange.startMonth === customRange.endMonth
+        ? startMonth
+        : `${startMonth} - ${endMonth}`;
+    return `${months} ${customRange.year}`;
+  }
+
+  const labels: Record<Exclude<TimeRange, "custom">, string> = {
+    all: "All time",
+    today: "Today",
+    weekly: "Last 7 days",
+    monthly: "Last 30 days",
+    yearly: "Last 12 months",
+  };
+  return timeRange === "custom" ? "Selected period" : labels[timeRange];
+}
+
+async function captureSection(
+  element: HTMLElement,
+  sectionName: string,
+): Promise<string> {
+  const canvas = await html2canvas(element, {
+    backgroundColor: "#F5F6F8",
+    scale: 2,
+    useCORS: true,
+    logging: false,
+  });
+  const image = canvas.toDataURL("image/jpeg", 0.94);
+  canvas.width = 0;
+  canvas.height = 0;
+
+  if (!image.startsWith("data:image/jpeg")) {
+    throw new Error(`Could not render the ${sectionName} section.`);
+  }
+  return image;
+}
+
+function addPageHeader(
+  pdf: import("jspdf").jsPDF,
+  period: string,
+  generatedDate: string,
+) {
+  pdf.setFillColor(27, 35, 48);
+  pdf.rect(0, 0, 297, HEADER_HEIGHT, "F");
+  pdf.setFillColor(46, 121, 153);
+  pdf.rect(0, HEADER_HEIGHT - 2, 297, 2, "F");
+
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(17);
+  pdf.text("OMICS Dashboard Report", PAGE_MARGIN, 14);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.text(`Reporting period: ${period}`, PAGE_MARGIN, 23);
+
+  pdf.setFontSize(8);
+  pdf.setTextColor(222, 228, 235);
+  pdf.text(`Generated ${generatedDate}`, 297 - PAGE_MARGIN, 15, {
+    align: "right",
+  });
+}
+
+function addPageFooter(pdf: import("jspdf").jsPDF, page: number, total: number) {
+  pdf.setDrawColor(228, 231, 236);
+  pdf.line(PAGE_MARGIN, FOOTER_Y - 5, 297 - PAGE_MARGIN, FOOTER_Y - 5);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(102, 112, 133);
+  pdf.text("OMICS | Philippine Genome Center Visayas", PAGE_MARGIN, FOOTER_Y);
+  pdf.text(`Page ${page} of ${total}`, 297 - PAGE_MARGIN, FOOTER_Y, {
+    align: "right",
+  });
+}
+
+function addImageContain(
+  pdf: import("jspdf").jsPDF,
+  image: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  maxHeight: number,
+) {
+  const imageProperties = pdf.getImageProperties(image);
+  const scale = Math.min(
+    maxWidth / imageProperties.width,
+    maxHeight / imageProperties.height,
+  );
+  const width = imageProperties.width * scale;
+  const height = imageProperties.height * scale;
+  pdf.addImage(image, "JPEG", x + (maxWidth - width) / 2, y, width, height);
+}
 
 export async function exportDashboardPDF({
   elementId,
   timeRange,
   customRange,
-  monthNames
+  monthNames,
 }: {
   elementId: string;
-  timeRange: string;
-  customRange?: { startMonth?: number; endMonth?: number; year?: number };
+  timeRange: TimeRange;
+  customRange?: CustomRange;
   monthNames: string[];
 }) {
-  const element = document.getElementById("dashboard-content");
-  if (!element) {
-    throw new Error("Missing dashboard-content");
+  await document.fonts?.ready;
+
+  const dashboard = document.getElementById(elementId);
+  if (!dashboard) {
+    throw new Error(`Could not find the dashboard element "${elementId}".`);
   }
 
-  // Save original style
-  const originalWidth = element.style.width;
+  const getSection = (name: string) => {
+    const section = dashboard.querySelector<HTMLElement>(
+      `[data-pdf-section="${name}"]`,
+    );
+    if (!section) {
+      throw new Error(`Could not find the dashboard ${name} section.`);
+    }
+    return section;
+  };
 
-  // Force fixed width for export (e.g., 1200px)
-  element.style.width = "1200px";
-
-  // Wait for browser to reflow
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
-  // Get dashboard size in pixels
-  const rect = element.getBoundingClientRect();
-  const dashboardWidthPx = rect.width;
-  const dashboardHeightPx = rect.height;
-
-  // Convert pixels to mm (1px ≈ 0.264583 mm)
-  const pxToMm = (px: number) => px * 0.264583;
-  const pdfWidth = pxToMm(dashboardWidthPx);
-  const pdfHeight = pxToMm(dashboardHeightPx);
-
-  // Render dashboard to canvas
-  const canvas = await html2canvas(element, { scale: 2 });
-  const jsPDF = (await import("jspdf")).default;
-
-  // Restore original style
-  element.style.width = originalWidth;
-
-  // Create PDF with dashboard size
-  const pdf = new jsPDF({
-    orientation: pdfWidth > pdfHeight ? "landscape" : "portrait",
-    unit: "mm",
-    format: [pdfWidth, pdfHeight]
-  });
-
-  const imgData = canvas.toDataURL("image/png");
-
-  // Set margin in mm
-  const margin = 10;
-  const contentWidth = pdfWidth - margin * 2;
-  const contentHeight = pdfHeight - margin * 2;
-
-  // Fill the page with the image, leaving margin
-  pdf.addImage(
-    imgData,
-    "PNG",
-    margin,
-    margin,
-    contentWidth,
-    contentHeight
+  const summaryImage = await captureSection(getSection("summary"), "summary");
+  const trendsImage = await captureSection(getSection("trends"), "trends");
+  const breakdownImage = await captureSection(
+    getSection("breakdown"),
+    "breakdown",
   );
 
-  const now = new Date();
-  const dateStr = now.toISOString().replace(/[:.]/g, "-").slice(0, 19); // "2025-07-17T14-25-27"
-  const filterStr = timeRange === "custom"
-    ? `${monthNames[customRange?.startMonth ?? 0]}-${monthNames[customRange?.endMonth ?? 0]}_${customRange?.year ?? ""}`
-    : timeRange;
-  const safeFilter = filterStr.replace(/[^a-zA-Z0-9_-]/g, "");
-  const fileName = `dashboard-report_${safeFilter}.pdf`;
+  const period = getPeriodLabel(timeRange, customRange, monthNames);
+  const generatedDate = new Date().toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const jsPDF = (await import("jspdf")).default;
+  const pdf = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
 
-  pdf.save(fileName);
+  pdf.setProperties({
+    title: `OMICS Dashboard Report - ${period}`,
+    subject: "Administrative dashboard summary",
+    author: "Philippine Genome Center Visayas",
+  });
+
+  addPageHeader(pdf, period, generatedDate);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(71, 84, 103);
+  pdf.text("KEY PERFORMANCE INDICATORS", PAGE_MARGIN, 41);
+  addImageContain(pdf, summaryImage, PAGE_MARGIN, 45, CONTENT_WIDTH, 31);
+
+  pdf.text("CLIENT AND PROJECT TRENDS", PAGE_MARGIN, 84);
+  addImageContain(pdf, trendsImage, PAGE_MARGIN, 88, CONTENT_WIDTH, 105);
+  addPageFooter(pdf, 1, 2);
+
+  pdf.addPage("a4", "landscape");
+  addPageHeader(pdf, period, generatedDate);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(71, 84, 103);
+  pdf.text("PROJECT BREAKDOWN", PAGE_MARGIN, 42);
+  addImageContain(pdf, breakdownImage, PAGE_MARGIN, 47, CONTENT_WIDTH, 148);
+  addPageFooter(pdf, 2, 2);
+
+  const safePeriod = period
+    .replace(/[^a-zA-Z0-9_-]+/g, "_")
+    .replace(/^_|_$/g, "");
+  const dateSuffix = new Date().toISOString().slice(0, 10);
+  pdf.save(`dashboard-report_${safePeriod}_${dateSuffix}.pdf`);
 }

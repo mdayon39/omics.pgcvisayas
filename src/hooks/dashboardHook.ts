@@ -7,6 +7,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { fetchAllData, fetchFilteredData } from "../services/dashboardUtils";
 import { exportDashboardPDF } from "@/services/exportDashboardPDF";
 import { TimeRange, CustomRange } from "@/types/TimeFilter";
+import { useToast } from "@/hooks/use-toast";
 
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -14,6 +15,7 @@ const monthNames = [
 ];
 
 export function useDashboardData() {
+  const { toast } = useToast();
   const [userName, setUserName] = useState("User");
   const [totalProjects, setTotalProjects] = useState(0);
   const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
@@ -114,6 +116,11 @@ export function useDashboardData() {
       });
     } catch (e) {
       console.error("PDF export failed", e);
+      toast({
+        title: "PDF export failed",
+        description: "The dashboard report could not be generated. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsExporting(false);
     }

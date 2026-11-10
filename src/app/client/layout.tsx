@@ -1,7 +1,7 @@
 //src/app/client/layout.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import Header from "@/components/ui/header";
@@ -13,6 +13,7 @@ import {
 } from "@/services/configurationSettingsService";
 import { ConfigurationSettings } from "@/types/ConfigurationSettings";
 import { EmailBroadcastPreference } from "@/components/client/EmailBroadcastPreference";
+import { ClientPortalNavigation } from "@/components/layout/ClientPortalNavigation";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut, loading } = useAuth();
@@ -61,6 +62,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       <Header
+        showBrand={false}
         user={user}
         onLogout={signOut}
         menuVisibility={configSettings?.portalFeatures ?? DEFAULT_PORTAL_FEATURES}
@@ -99,9 +101,19 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </div>
         }
       />
-      <main className="flex-1 overflow-y-auto relative">
-        {children}
-      </main>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+        <Suspense
+          fallback={
+            <main className="min-h-0 flex-1 overflow-y-auto bg-[#F5F6F8]">
+              {children}
+            </main>
+          }
+        >
+          <ClientPortalNavigation user={user}>
+            {children}
+          </ClientPortalNavigation>
+        </Suspense>
+      </div>
     </div>
   );
 }

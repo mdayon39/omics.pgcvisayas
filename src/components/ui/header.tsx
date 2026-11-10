@@ -18,6 +18,7 @@ import { PortalFeatureVisibility } from "@/types/ConfigurationSettings";
 
 export interface HeaderProps {
   showNavigation?: boolean;
+  showBrand?: boolean;
   user?: {
     displayName?: string | null;
     email?: string | null;
@@ -32,6 +33,7 @@ export default function Header({
   user,
   onLogout,
   showNavigation = true,
+  showBrand = true,
   menuVisibility,
   extras,
   menuContent,
@@ -52,25 +54,27 @@ export default function Header({
       <div className="w-full px-4 py-3">
         <div className="flex justify-between items-center px-2">
           {/* Logo Section */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center">
-              <Image
-                src="/assets/pgc-logo.png"
-                alt="Philippine Genome Center Logo"
-                width={120}
-                height={75}
-                className="object-contain"
-              />
-            </div>
-            <div className="hidden md:block">
-              <div className="text-sm font-semibold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent uppercase tracking-wider">
-                PHILIPPINE GENOME CENTER VISAYAS
+          {showBrand && (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center">
+                <Image
+                  src="/assets/pgc-logo.png"
+                  alt="Philippine Genome Center Logo"
+                  width={120}
+                  height={75}
+                  className="object-contain"
+                />
               </div>
-              <div className="text-[10px] text-slate-500 font-medium">
-                UNIVERSITY OF THE PHILIPPINES VISAYAS, MIAGAO, ILOILO
+              <div className="hidden md:block">
+                <div className="text-sm font-semibold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent uppercase tracking-wider">
+                  PHILIPPINE GENOME CENTER VISAYAS
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium">
+                  UNIVERSITY OF THE PHILIPPINES VISAYAS, MIAGAO, ILOILO
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* User Dropdown Section */}
           {showNavigation && user && (

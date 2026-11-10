@@ -50,6 +50,26 @@ async function captureSection(
         throw new Error("Could not prepare the project breakdown for export.");
       }
 
+      breakdown
+        .querySelectorAll<HTMLElement>(".pointer-events-none")
+        .forEach((center) => {
+          center.style.overflow = "visible";
+          center.style.paddingLeft = "12px";
+          center.style.paddingRight = "12px";
+
+          const value = center.querySelector<HTMLElement>("span:first-child");
+          if (value) {
+            value.style.maxWidth = "100%";
+            value.style.height = "auto";
+            value.style.overflow = "visible";
+            value.style.textOverflow = "clip";
+            value.style.whiteSpace = "nowrap";
+            value.style.lineHeight = "1.35";
+            value.style.paddingTop = "3px";
+            value.style.paddingBottom = "3px";
+          }
+        });
+
       breakdown.querySelectorAll<HTMLElement>("button").forEach((button) => {
         button.style.minHeight = "38px";
         button.style.height = "auto";

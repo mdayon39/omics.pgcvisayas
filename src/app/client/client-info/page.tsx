@@ -8900,28 +8900,76 @@ export default function ClientPortalPage() {
 
       {/* Proceed with Service Confirmation Modal */}
       <AlertDialog open={showProceedModal} onOpenChange={setShowProceedModal}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          className={cn(
+            isReferenceSidebarClient &&
+              "max-w-md rounded-xl border border-slate-200 p-4 sm:p-5",
+          )}
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Proceed with Service?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to proceed with the service using{" "}
-              <strong>Quotation: {selectedQuotationRef}</strong>?
-              <br />
-              <br />
-              You will be redirected to the Project Information Form to create
-              your project.
-            </AlertDialogDescription>
+            <AlertDialogTitle
+              className={cn(
+                isReferenceSidebarClient &&
+                  "flex items-center gap-3 text-lg font-semibold",
+              )}
+            >
+              {isReferenceSidebarClient && (
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#E1F1FD] text-[#1769AA]">
+                  <FileText className="h-5 w-5" />
+                </span>
+              )}
+              Proceed with Service?
+            </AlertDialogTitle>
+            {isReferenceSidebarClient ? (
+              <div className="space-y-4 pt-1">
+                <AlertDialogDescription className="text-sm leading-6 text-slate-600">
+                  Are you sure you want to proceed with the service using{" "}
+                  <span className="inline-flex rounded-lg bg-[#E1F1FD] px-2 py-0.5 font-medium text-[#145B91]">
+                    Quotation: {selectedQuotationRef}
+                  </span>
+                  ?
+                </AlertDialogDescription>
+                <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-5 text-slate-700">
+                  <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-[#1769AA]" />
+                  <p>
+                    You will be redirected to the Project Information Form to
+                    create your project.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <AlertDialogDescription>
+                Are you sure you want to proceed with the service using{" "}
+                <strong>Quotation: {selectedQuotationRef}</strong>?
+                <br />
+                <br />
+                You will be redirected to the Project Information Form to
+                create your project.
+              </AlertDialogDescription>
+            )}
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter
+            className={cn(isReferenceSidebarClient && "gap-2 sm:gap-2")}
+          >
             <AlertDialogCancel
               onClick={() => {
                 setShowProceedModal(false);
                 setSelectedQuotationRef(null);
               }}
+              className={cn(
+                isReferenceSidebarClient &&
+                  "mt-0 border-slate-300 px-4 text-sm",
+              )}
             >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmProceedWithService}>
+            <AlertDialogAction
+              onClick={handleConfirmProceedWithService}
+              className={cn(
+                isReferenceSidebarClient &&
+                  "bg-[#1769AA] px-4 text-sm text-white hover:bg-[#12588F]",
+              )}
+            >
               Yes, Proceed
             </AlertDialogAction>
           </AlertDialogFooter>

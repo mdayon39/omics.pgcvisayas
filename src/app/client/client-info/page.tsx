@@ -147,6 +147,7 @@ import {
   Briefcase,
   FlaskConical,
   ClipboardCheck,
+  ClipboardList,
   FileSpreadsheet,
   ShieldEllipsis,
   Stamp,
@@ -6052,10 +6053,22 @@ export default function ClientPortalPage() {
             </div>
           ) : (
             /* ── Dashboard Overview (no project selected) ─────── */
-            <div className="h-full overflow-y-auto bg-slate-50/30 p-4 lg:p-6">
-              <div className="max-w-4xl mx-auto space-y-6">
+            <div
+              className={cn(
+                "h-full overflow-y-auto bg-slate-50/30 p-4 lg:p-6",
+                isReferenceSidebarClient &&
+                  "bg-[#F1F4F8] p-3 sm:p-4 lg:p-3",
+              )}
+            >
+              <div
+                className={cn(
+                  "max-w-4xl mx-auto space-y-6",
+                  isReferenceSidebarClient && "max-w-5xl space-y-4",
+                )}
+              >
                 {/* ── Request Progress Timeline ──────────────────── */}
-                {portalFeatures.requestProgressTimeline && (
+                {portalFeatures.requestProgressTimeline &&
+                  !isReferenceSidebarClient && (
                   <Card className="border border-slate-100 shadow-sm">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
@@ -6130,49 +6143,94 @@ export default function ClientPortalPage() {
                 )}
 
                 {/* Welcome & Status Header */}
-                <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+                <div
+                  className={cn(
+                    "bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100 relative overflow-hidden",
+                    isReferenceSidebarClient &&
+                      "rounded-xl border-slate-200 px-5 py-4",
+                  )}
+                >
+                  {!isReferenceSidebarClient && (
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+                  )}
                   <div className="relative">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                       <div className="space-y-0.5">
-                        <h2 className="text-base font-bold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent">
-                          Welcome to your Workspace
+                        <h2
+                          className={cn(
+                            "text-base font-bold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent",
+                            isReferenceSidebarClient &&
+                              "text-lg bg-none text-[#145B91]",
+                          )}
+                        >
+                          {isReferenceSidebarClient
+                            ? "Welcome to your Workspace"
+                            : "Welcome to your Workspace"}
                         </h2>
-                        <p className="text-slate-500 text-xs whitespace-nowrap">
-                          Review your official quotations and manage your
-                          research projects here.
+                        <p
+                          className={cn(
+                            "text-slate-500 text-xs",
+                            !isReferenceSidebarClient && "whitespace-nowrap",
+                            isReferenceSidebarClient && "text-[13px]",
+                          )}
+                        >
+                          {isReferenceSidebarClient
+                            ? "Review your official quotations and manage your research projects here."
+                            : "Review your official quotations and manage your research projects here."}
                         </p>
                       </div>
 
                       {currentInquiry && (
-                        <div className="bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 flex items-center gap-3 min-w-[200px]">
-                          <div
-                            className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center shadow-sm",
-                              currentInquiry.status === "Approved Client"
-                                ? "bg-green-100 text-green-600"
-                                : currentInquiry.status === "Quotation Only"
-                                  ? "bg-blue-100 text-blue-600"
-                                  : currentInquiry.status === "Cancelled"
-                                    ? "bg-red-100 text-red-500"
-                                    : "bg-amber-100 text-amber-600",
-                            )}
-                          >
-                            {currentInquiry.status === "Approved Client" ? (
-                              <CheckCircle2 className="h-5 w-5" />
-                            ) : currentInquiry.status === "Quotation Only" ? (
-                              <FileText className="h-5 w-5" />
-                            ) : currentInquiry.status === "Cancelled" ? (
-                              <XCircle className="h-5 w-5" />
-                            ) : (
-                              <Clock className="h-5 w-5" />
-                            )}
-                          </div>
+                        <div
+                          className={cn(
+                            "bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 flex items-center gap-3 min-w-[200px]",
+                            isReferenceSidebarClient &&
+                              "min-w-0 rounded-full border-0 bg-[#E3F5EC] px-3 py-2",
+                          )}
+                        >
+                          {isReferenceSidebarClient ? (
+                            <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-700" />
+                          ) : (
+                            <div
+                              className={cn(
+                                "w-10 h-10 rounded-full flex items-center justify-center shadow-sm",
+                                currentInquiry.status === "Approved Client"
+                                  ? "bg-green-100 text-green-600"
+                                  : currentInquiry.status === "Quotation Only"
+                                    ? "bg-blue-100 text-blue-600"
+                                    : currentInquiry.status === "Cancelled"
+                                      ? "bg-red-100 text-red-500"
+                                      : "bg-amber-100 text-amber-600",
+                              )}
+                            >
+                              {currentInquiry.status === "Approved Client" ? (
+                                <CheckCircle2 className="h-5 w-5" />
+                              ) : currentInquiry.status === "Quotation Only" ? (
+                                <FileText className="h-5 w-5" />
+                              ) : currentInquiry.status === "Cancelled" ? (
+                                <XCircle className="h-5 w-5" />
+                              ) : (
+                                <Clock className="h-5 w-5" />
+                              )}
+                            </div>
+                          )}
                           <div>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                            <p
+                              className={cn(
+                                "text-[9px] font-bold text-slate-400 uppercase tracking-widest",
+                                isReferenceSidebarClient &&
+                                  "text-[11px] font-normal normal-case tracking-normal text-emerald-700",
+                              )}
+                            >
                               Inquiry Status
                             </p>
-                            <p className="font-bold text-slate-700 text-sm">
+                            <p
+                              className={cn(
+                                "font-bold text-slate-700 text-sm",
+                                isReferenceSidebarClient &&
+                                  "text-[13px] leading-4 text-emerald-800",
+                              )}
+                            >
                               {currentInquiry.status}
                             </p>
                           </div>
@@ -6182,14 +6240,36 @@ export default function ClientPortalPage() {
                   </div>
                 </div>
 
-                <div className="space-y-6">
+                <div
+                  className={cn(
+                    "space-y-6",
+                    isReferenceSidebarClient && "space-y-4",
+                  )}
+                >
                   {/* Documents FIRST, then Summary */}
-                  <div className="space-y-6">
+                  <div
+                    className={cn(
+                      "space-y-6",
+                      isReferenceSidebarClient && "space-y-4",
+                    )}
+                  >
                     {/* Official Documents (Quotations) - MOVED UP */}
-                    <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100">
+                    <div
+                      className={cn(
+                        "bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100",
+                        isReferenceSidebarClient &&
+                          "rounded-xl border-slate-200 px-5 py-4",
+                      )}
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-indigo-500" />
+                          <FileText
+                            className={cn(
+                              "h-4 w-4 text-indigo-500",
+                              isReferenceSidebarClient &&
+                                "h-[18px] w-[18px] text-slate-600",
+                            )}
+                          />
                           Official Documents
                         </h3>
                       </div>
@@ -6235,51 +6315,115 @@ export default function ClientPortalPage() {
                             return (
                               <div
                                 key={quote.id}
-                                className="rounded-xl border border-slate-100 bg-white shadow-sm p-2.5"
+                                className={cn(
+                                  "rounded-xl border border-slate-100 bg-white shadow-sm p-2.5",
+                                  isReferenceSidebarClient &&
+                                    cn(
+                                      "rounded-lg p-3 shadow-none",
+                                      isSelected
+                                        ? "border-[#1971C7] bg-[#E7F1FA]"
+                                        : "border-slate-200 bg-white",
+                                    ),
+                                )}
                               >
-                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <div
+                                  className={cn(
+                                    "flex items-center justify-between gap-2 flex-wrap",
+                                    isReferenceSidebarClient &&
+                                      "gap-3 sm:flex-nowrap",
+                                  )}
+                                >
                                   {/* Left: clickable name + totals */}
-                                  <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                                  <div
+                                    className={cn(
+                                      "flex items-center gap-1.5 min-w-0 flex-wrap",
+                                      isReferenceSidebarClient &&
+                                        "flex-1 items-center gap-x-5 gap-y-2",
+                                    )}
+                                  >
                                     <a
                                       href={`/client/view-document?type=quotation&ref=${quote.referenceNumber}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-full px-2.5 py-0.5 transition-colors"
+                                      className={cn(
+                                        "inline-flex items-center gap-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-full px-2.5 py-0.5 transition-colors",
+                                        isReferenceSidebarClient &&
+                                          "rounded-full border-[#1971C7] bg-white px-3 py-2 text-[13px] text-[#145B91] hover:bg-blue-50",
+                                      )}
                                     >
+                                      {isReferenceSidebarClient && (
+                                        <Eye className="h-3.5 w-3.5" />
+                                      )}
                                       {quote.referenceNumber}
                                     </a>
-                                    <span className="text-[10px] text-slate-500">
-                                      Total:{" "}
-                                      <span className="font-semibold text-slate-800">
-                                        {new Intl.NumberFormat("en-PH", {
-                                          style: "currency",
-                                          currency: "PHP",
-                                        }).format(quote.total)}
+                                    <div
+                                      className={cn(
+                                        "flex items-center gap-1.5",
+                                        isReferenceSidebarClient &&
+                                          "flex-row flex-wrap gap-x-5 gap-y-1",
+                                      )}
+                                    >
+                                      <span
+                                        className={cn(
+                                          "text-[10px] text-slate-500",
+                                          isReferenceSidebarClient &&
+                                            "text-[12px] text-slate-600",
+                                        )}
+                                      >
+                                        Total:{" "}
+                                        {!isReferenceSidebarClient && " "}
+                                        <span className="font-semibold text-slate-800">
+                                          {new Intl.NumberFormat("en-PH", {
+                                            style: "currency",
+                                            currency: "PHP",
+                                          }).format(quote.total)}
+                                        </span>
                                       </span>
-                                    </span>
-                                    <span className="text-[10px] text-slate-500">
-                                      Issued:{" "}
-                                      <span className="font-medium text-slate-600">
-                                        {new Date(
-                                          quote.dateIssued,
-                                        ).toLocaleDateString("en-US", {
-                                          year: "numeric",
-                                          month: "short",
-                                          day: "numeric",
-                                        })}
+                                      <span
+                                        className={cn(
+                                          "text-[10px] text-slate-500",
+                                          isReferenceSidebarClient &&
+                                            "text-[12px] text-slate-600",
+                                        )}
+                                      >
+                                        Issued:{" "}
+                                        {!isReferenceSidebarClient && " "}
+                                        <span className="font-medium text-slate-600">
+                                          {new Date(
+                                            quote.dateIssued,
+                                          ).toLocaleDateString("en-US", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                          })}
+                                        </span>
                                       </span>
-                                    </span>
+                                    </div>
                                   </div>
                                   {/* Right: status badge + action buttons */}
-                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                  <div
+                                    className={cn(
+                                      "flex items-center gap-2 flex-shrink-0",
+                                      isReferenceSidebarClient &&
+                                        "w-full justify-between sm:w-auto sm:justify-end",
+                                    )}
+                                  >
                                     {qCancelled ? (
-                                      <span className="inline-flex text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+                                      <span className={cn(
+                                        "inline-flex text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] px-2.5 py-1",
+                                      )}>
                                         Cancelled
                                       </span>
                                     ) : isSelected ? (
-                                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
-                                        <CheckCircle2 className="h-2.5 w-2.5" />{" "}
-                                        Selected
+                                      <span className={cn(
+                                        "inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] px-2.5 py-1",
+                                      )}>
+                                          <CheckCircle2 className="h-2.5 w-2.5" />{" "}
+                                          Selected
                                       </span>
                                     ) : null}
                                     {!qCancelled &&
@@ -6314,15 +6458,41 @@ export default function ClientPortalPage() {
 
                     {/* Quotation Request Details (previously Inquiry Details Summary) */}
                     {currentInquiry && (
-                      <div className="bg-amber-50/70 border border-amber-100 rounded-xl px-4 py-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div
+                        className={cn(
+                          "bg-amber-50/70 border border-amber-100 rounded-xl px-4 py-3",
+                          isReferenceSidebarClient &&
+                            "rounded-xl border-slate-200 bg-[#F5F7FA] px-5 py-4",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "flex flex-col sm:flex-row sm:items-center justify-between gap-2",
+                            isReferenceSidebarClient && "gap-4",
+                          )}
+                        >
                           <div className="space-y-0.5">
-                            <h4 className="text-xs font-bold text-amber-900">
-                              Not proceeding with the service?
+                            <h4
+                              className={cn(
+                                "text-xs font-bold text-amber-900",
+                                isReferenceSidebarClient &&
+                                  "text-sm font-semibold text-slate-900",
+                              )}
+                            >
+                              {isReferenceSidebarClient
+                                ? "Not proceeding with the service?"
+                                : "Not proceeding with the service?"}
                             </h4>
-                            <p className="text-[11px] text-amber-800">
-                              Update this request to "Quotation Only" if you
-                              decide to stop.
+                            <p
+                              className={cn(
+                                "text-[11px] text-amber-800",
+                                isReferenceSidebarClient &&
+                                  "mt-1 text-sm text-slate-600",
+                              )}
+                            >
+                              {isReferenceSidebarClient
+                                ? 'Update this request to "Quotation Only" if you decide to stop.'
+                                : 'Update this request to "Quotation Only" if you decide to stop.'}
                             </p>
                           </div>
                           <Button
@@ -6334,7 +6504,16 @@ export default function ClientPortalPage() {
                               currentInquiry.status === "Approved Client" ||
                               cancelInquirySubmitting
                             }
-                            className="border-amber-200 text-amber-900 hover:bg-amber-100 font-bold text-xs h-7 shrink-0"
+                            className={cn(
+                              "border-amber-200 text-amber-900 hover:bg-amber-100 font-bold text-xs h-7 shrink-0",
+                              isReferenceSidebarClient &&
+                                "h-9 border-slate-200 bg-transparent px-4 text-sm font-medium text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-100",
+                              isReferenceSidebarClient &&
+                                (currentInquiry.status === "Cancelled" ||
+                                  currentInquiry.status === "Quotation Only" ||
+                                  currentInquiry.status === "Approved Client") &&
+                                "border-dashed",
+                            )}
                           >
                             Do Not Proceed
                           </Button>
@@ -6342,7 +6521,16 @@ export default function ClientPortalPage() {
                         {(currentInquiry.status === "Cancelled" ||
                           currentInquiry.status === "Quotation Only" ||
                           currentInquiry.status === "Approved Client") && (
-                          <p className="text-[11px] text-amber-700 mt-1.5">
+                          <p
+                            className={cn(
+                              "text-[11px] text-amber-700 mt-1.5",
+                              isReferenceSidebarClient &&
+                                "mt-2 flex items-center gap-1.5 text-sm text-emerald-700",
+                            )}
+                          >
+                            {isReferenceSidebarClient && (
+                              <CheckCircle2 className="h-4 w-4 shrink-0" />
+                            )}
                             This request is already marked as{" "}
                             {currentInquiry.status}.
                           </p>
@@ -6351,7 +6539,13 @@ export default function ClientPortalPage() {
                     )}
 
                     {currentInquiry && (
-                      <div className="bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden">
+                      <div
+                        className={cn(
+                          "bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden",
+                          isReferenceSidebarClient &&
+                            "rounded-xl border-slate-200 px-5 py-4 shadow-none",
+                        )}
+                      >
                         <button
                           type="button"
                           onClick={() =>
@@ -6360,10 +6554,25 @@ export default function ClientPortalPage() {
                           className="flex w-full items-center justify-between gap-3 text-left"
                           aria-expanded={isQuotationRequestExpanded}
                         >
-                          <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                            <div className="w-2 h-2 bg-gradient-to-r from-[#912ABD] to-[#6E308E] rounded-full"></div>
-                            Quotation Request Details
-                          </h3>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={cn(
+                                "w-2 h-2 bg-gradient-to-r from-[#912ABD] to-[#6E308E] rounded-full",
+                                isReferenceSidebarClient &&
+                                  "hidden",
+                              )}
+                            />
+                            {isReferenceSidebarClient && (
+                              <ClipboardList className="h-5 w-5 text-[#1769AA]" />
+                            )}
+                            <span>
+                              <span className="block text-base font-semibold text-slate-800">
+                                {isReferenceSidebarClient
+                                  ? "Quotation Request Details"
+                                  : "Quotation Request Details"}
+                              </span>
+                            </span>
+                          </div>
                           {isQuotationRequestExpanded ? (
                             <ChevronDown className="h-4 w-4 text-slate-400" />
                           ) : (
@@ -7989,7 +8198,13 @@ export default function ClientPortalPage() {
 
                     {/* Personal Information of Submitter */}
                     {currentInquiry && (
-                      <div className="bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden">
+                      <div
+                        className={cn(
+                          "bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden",
+                          isReferenceSidebarClient &&
+                            "rounded-xl border-slate-200 px-5 py-4 shadow-none",
+                        )}
+                      >
                         <button
                           type="button"
                           onClick={() =>
@@ -7998,11 +8213,19 @@ export default function ClientPortalPage() {
                           className="flex w-full items-center justify-between gap-3 text-left"
                           aria-expanded={isPersonalInfoExpanded}
                         >
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
-                            <h3 className="text-base font-semibold text-slate-800">
-                              Personal Information
-                            </h3>
+                          <div className="flex items-center gap-3">
+                            {isReferenceSidebarClient ? (
+                              <User className="h-5 w-5 text-[#1769AA]" />
+                            ) : (
+                              <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+                            )}
+                            <span>
+                              <span className="block text-base font-semibold text-slate-800">
+                                {isReferenceSidebarClient
+                                  ? "Personal Information"
+                                  : "Personal Information"}
+                              </span>
+                            </span>
                           </div>
                           {isPersonalInfoExpanded ? (
                             <ChevronDown className="h-4 w-4 text-slate-400" />

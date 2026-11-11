@@ -816,6 +816,23 @@ export default function ClientPortalPage() {
   const [showPreviousProjectsList, setShowPreviousProjectsList] =
     useState(false);
   const [isProjectInfoExpanded, setIsProjectInfoExpanded] = useState(false);
+  const autoExpandedReferenceProjects = useRef(new Set<string>());
+  useEffect(() => {
+    const projectPid = projectDetails?.pid;
+    const primaryMember = members.find((member) => member.isPrimary);
+    if (
+      !isReferenceSidebarClient ||
+      !projectPid ||
+      !primaryMember ||
+      autoExpandedReferenceProjects.current.has(projectPid)
+    ) {
+      return;
+    }
+
+    autoExpandedReferenceProjects.current.add(projectPid);
+    setIsProjectInfoExpanded(true);
+    setExpandedMembers((current) => new Set(current).add(primaryMember.id));
+  }, [isReferenceSidebarClient, members, projectDetails?.pid]);
   const [isQuotationRequestExpanded, setIsQuotationRequestExpanded] =
     useState(false);
   const [isPersonalInfoExpanded, setIsPersonalInfoExpanded] = useState(false);
@@ -3596,11 +3613,20 @@ export default function ClientPortalPage() {
           e.preventDefault();
           handleSubmitMember(member.id);
         }}
-        className="space-y-4 pt-3"
+        className={cn(
+          "space-y-4 pt-3",
+          isReferenceSidebarClient && "space-y-4 pt-3",
+        )}
       >
         {/* ── Lock banner ── */}
         {member.isSubmitted && (
-          <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+          <div
+            className={cn(
+              "flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5",
+              isReferenceSidebarClient &&
+                "rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5",
+            )}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-4 w-4 text-green-600 shrink-0"
@@ -3614,7 +3640,12 @@ export default function ClientPortalPage() {
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            <p className="text-xs font-medium text-green-700">
+            <p
+              className={cn(
+                "text-xs font-medium text-green-700",
+                isReferenceSidebarClient && "text-slate-600",
+              )}
+            >
               Information confirmed and locked. Contact the administrator if you
               need to make changes.
             </p>
@@ -3623,10 +3654,25 @@ export default function ClientPortalPage() {
 
         {/* ── All form fields wrapped in a fieldset so the browser natively disables every input/button inside ── */}
         <fieldset disabled={isFormLocked} className="contents">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            className={cn(
+              "grid grid-cols-1 md:grid-cols-2 gap-4",
+              isReferenceSidebarClient &&
+                "grid-cols-1 min-[480px]:grid-cols-6 gap-x-3 gap-y-3",
+            )}
+          >
             {/* Name */}
-            <div className="md:col-span-2">
-              <Label className="text-sm font-semibold text-slate-700 mb-1 block">
+            <div
+              className={cn(
+                "md:col-span-2",
+                isReferenceSidebarClient &&
+                  "min-[480px]:col-span-3 md:col-span-3",
+              )}
+            >
+              <Label className={cn(
+                "text-sm font-semibold text-slate-700 mb-1 block",
+                isReferenceSidebarClient && "text-xs font-medium",
+              )}>
                 Full Name <span className="text-[#B9273A]">*</span>
               </Label>
               <Input
@@ -3640,7 +3686,11 @@ export default function ClientPortalPage() {
                   projectDetails?.status === "Completed" ||
                   projectDetails?.status === "Pending Approval"
                 }
-                className="bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70"
+                className={cn(
+                  "bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70",
+                  isReferenceSidebarClient &&
+                    "h-8 text-xs disabled:bg-slate-50 disabled:opacity-100",
+                )}
               />
               {member.errors.name && (
                 <p className="text-[#B9273A] text-xs mt-1">
@@ -3650,8 +3700,17 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Email */}
-            <div className="md:col-span-2">
-              <Label className="text-sm font-semibold text-slate-700 mb-1 block">
+            <div
+              className={cn(
+                "md:col-span-2",
+                isReferenceSidebarClient &&
+                  "min-[480px]:col-span-3 md:col-span-3",
+              )}
+            >
+              <Label className={cn(
+                "text-sm font-semibold text-slate-700 mb-1 block",
+                isReferenceSidebarClient && "text-xs font-medium",
+              )}>
                 Email Address <span className="text-[#B9273A]">*</span>
                 {member.isPrimary && (
                   <span className="ml-2 text-xs font-normal text-slate-400">
@@ -3675,7 +3734,11 @@ export default function ClientPortalPage() {
                   projectDetails?.status === "Completed" ||
                   projectDetails?.status === "Pending Approval"
                 }
-                className="bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:bg-slate-50 disabled:opacity-70"
+                className={cn(
+                  "bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:bg-slate-50 disabled:opacity-70",
+                  isReferenceSidebarClient &&
+                    "h-8 text-xs disabled:bg-slate-50 disabled:opacity-100",
+                )}
               />
               {member.errors.email && (
                 <p className="text-[#B9273A] text-xs mt-1">
@@ -3685,8 +3748,17 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Affiliation */}
-            <div className="md:col-span-2">
-              <Label className="text-sm font-semibold text-slate-700 mb-1 block">
+            <div
+              className={cn(
+                "md:col-span-2",
+                isReferenceSidebarClient &&
+                  "min-[480px]:col-span-6 md:col-span-6",
+              )}
+            >
+              <Label className={cn(
+                "text-sm font-semibold text-slate-700 mb-1 block",
+                isReferenceSidebarClient && "text-xs font-medium",
+              )}>
                 Affiliation (Department & Institution){" "}
                 <span className="text-[#B9273A]">*</span>
               </Label>
@@ -3701,7 +3773,11 @@ export default function ClientPortalPage() {
                   projectDetails?.status === "Completed" ||
                   projectDetails?.status === "Pending Approval"
                 }
-                className="bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70"
+                className={cn(
+                  "bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70",
+                  isReferenceSidebarClient &&
+                    "h-8 text-xs disabled:bg-slate-50 disabled:opacity-100",
+                )}
               />
               {member.errors.affiliation && (
                 <p className="text-[#B9273A] text-xs mt-1">
@@ -3711,8 +3787,11 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Designation */}
-            <div>
-              <Label className="text-sm font-semibold text-slate-700 mb-1 block">
+            <div className={cn(isReferenceSidebarClient && "min-[480px]:col-span-2")}>
+              <Label className={cn(
+                "text-sm font-semibold text-slate-700 mb-1 block",
+                isReferenceSidebarClient && "text-xs font-medium",
+              )}>
                 Designation <span className="text-[#B9273A]">*</span>
               </Label>
               <Input
@@ -3726,7 +3805,11 @@ export default function ClientPortalPage() {
                   projectDetails?.status === "Completed" ||
                   projectDetails?.status === "Pending Approval"
                 }
-                className="bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70"
+                className={cn(
+                  "bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70",
+                  isReferenceSidebarClient &&
+                    "h-8 text-xs disabled:bg-slate-50 disabled:opacity-100",
+                )}
               />
               {member.errors.designation && (
                 <p className="text-[#B9273A] text-xs mt-1">
@@ -3736,8 +3819,11 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Sex */}
-            <div>
-              <Label className="text-sm font-semibold text-slate-700 mb-1 block">
+            <div className={cn(isReferenceSidebarClient && "min-[480px]:col-span-2")}>
+              <Label className={cn(
+                "text-sm font-semibold text-slate-700 mb-1 block",
+                isReferenceSidebarClient && "text-xs font-medium",
+              )}>
                 Assigned sex at birth <span className="text-[#B9273A]">*</span>
               </Label>
               <Select
@@ -3749,7 +3835,11 @@ export default function ClientPortalPage() {
                   projectDetails?.status === "Pending Approval"
                 }
               >
-                <SelectTrigger className="bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70">
+                <SelectTrigger className={cn(
+                  "bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70",
+                  isReferenceSidebarClient &&
+                    "h-8 text-xs disabled:bg-slate-50 disabled:opacity-100",
+                )}>
                   <SelectValue placeholder="Select Sex at Birth" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3764,8 +3854,17 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Phone Number */}
-            <div className="md:col-span-2">
-              <Label className="text-sm font-semibold text-slate-700 mb-1 block">
+            <div
+              className={cn(
+                "md:col-span-2",
+                isReferenceSidebarClient &&
+                  "min-[480px]:col-span-2 md:col-span-2",
+              )}
+            >
+              <Label className={cn(
+                "text-sm font-semibold text-slate-700 mb-1 block",
+                isReferenceSidebarClient && "text-xs font-medium",
+              )}>
                 Mobile Number <span className="text-[#B9273A]">*</span>
               </Label>
               <Input
@@ -3779,7 +3878,11 @@ export default function ClientPortalPage() {
                   projectDetails?.status === "Completed" ||
                   projectDetails?.status === "Pending Approval"
                 }
-                className="bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70"
+                className={cn(
+                  "bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70",
+                  isReferenceSidebarClient &&
+                    "h-8 text-xs disabled:bg-slate-50 disabled:opacity-100",
+                )}
               />
               {member.errors.phoneNumber && (
                 <p className="text-[#B9273A] text-xs mt-1">
@@ -3789,8 +3892,17 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Affiliation Address */}
-            <div className="md:col-span-2">
-              <Label className="text-sm font-semibold text-slate-700 mb-1 block">
+            <div
+              className={cn(
+                "md:col-span-2",
+                isReferenceSidebarClient &&
+                  "min-[480px]:col-span-6 md:col-span-6",
+              )}
+            >
+              <Label className={cn(
+                "text-sm font-semibold text-slate-700 mb-1 block",
+                isReferenceSidebarClient && "text-xs font-medium",
+              )}>
                 Affiliation Address <span className="text-[#B9273A]">*</span>
               </Label>
               <Textarea
@@ -3804,7 +3916,11 @@ export default function ClientPortalPage() {
                   projectDetails?.status === "Completed" ||
                   projectDetails?.status === "Pending Approval"
                 }
-                className="bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 min-h-[80px] resize-none disabled:opacity-70"
+                className={cn(
+                  "bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 min-h-[80px] resize-none disabled:opacity-70",
+                  isReferenceSidebarClient &&
+                    "min-h-[64px] text-xs disabled:bg-slate-50 disabled:opacity-100",
+                )}
               />
               {member.errors.affiliationAddress && (
                 <p className="text-[#B9273A] text-xs mt-1">
@@ -3826,7 +3942,10 @@ export default function ClientPortalPage() {
                 projectDetails?.status === "Pending Approval"
               }
               variant="outline"
-              className="h-10 px-6 border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50"
+              className={cn(
+                "h-10 px-6 border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50",
+                isReferenceSidebarClient && "h-9 px-3 text-xs",
+              )}
             >
               {activeSavingId === member.id ? (
                 <>
@@ -3848,7 +3967,14 @@ export default function ClientPortalPage() {
                 projectDetails?.status === "Completed" ||
                 projectDetails?.status === "Pending Approval"
               }
-              className="h-10 px-6 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-semibold shadow-md disabled:opacity-50"
+              className={cn(
+                "h-10 px-6 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-semibold shadow-md disabled:opacity-50",
+                isReferenceSidebarClient &&
+                  "h-9 px-4 text-xs disabled:bg-white disabled:text-slate-600 disabled:opacity-100",
+                isReferenceSidebarClient &&
+                  member.isSubmitted &&
+                  "border border-slate-200 bg-white text-slate-600 shadow-none hover:bg-white",
+              )}
             >
               {member.isSubmitted ? (
                 <>
@@ -3880,25 +4006,40 @@ export default function ClientPortalPage() {
         key={member.id}
         className={cn(
           "border transition-all duration-200",
-          isExpanded ? "shadow-md border-slate-200" : "hover:shadow-sm",
+          isReferenceSidebarClient && "rounded-lg border-slate-200 shadow-none",
+          isExpanded
+            ? isReferenceSidebarClient
+              ? ""
+              : "shadow-md border-slate-200"
+            : isReferenceSidebarClient
+              ? ""
+              : "hover:shadow-sm",
         )}
       >
         {/* Card Header – always visible */}
         <button
           type="button"
           onClick={() => toggleMemberExpand(member.id)}
-          className="w-full flex items-center justify-between p-3 text-left"
+          className={cn(
+            "w-full flex items-center justify-between p-3 text-left",
+            isReferenceSidebarClient && "px-4 py-3",
+          )}
         >
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div
               className={cn(
                 "p-1.5 rounded-lg flex-shrink-0",
-                member.isPrimary ? "bg-[#166FB5]/10" : "bg-slate-100",
+                isReferenceSidebarClient
+                  ? "bg-transparent p-0"
+                  : member.isPrimary
+                    ? "bg-[#166FB5]/10"
+                    : "bg-slate-100",
               )}
             >
               <User
                 className={cn(
                   "h-3.5 w-3.5",
+                  isReferenceSidebarClient && "h-4 w-4",
                   member.isPrimary ? "text-[#166FB5]" : "text-slate-500",
                 )}
               />
@@ -3910,7 +4051,11 @@ export default function ClientPortalPage() {
                     (member.isPrimary ? "Primary Member" : "Unnamed Member")}
                 </span>
                 {member.isPrimary && (
-                  <Badge className="bg-[#166FB5]/10 text-[#166FB5] border-[#166FB5]/20 text-[10px] h-5 px-1.5">
+                  <Badge className={cn(
+                    "bg-[#166FB5]/10 text-[#166FB5] border-[#166FB5]/20 text-[10px] h-5 px-1.5",
+                    isReferenceSidebarClient &&
+                      "h-auto border-0 bg-transparent px-0 text-[10px] font-medium text-[#166FB5]",
+                  )}>
                     Primary
                   </Badge>
                 )}
@@ -3919,12 +4064,19 @@ export default function ClientPortalPage() {
                 {member.cid &&
                   member.cid !== "pending" &&
                   member.cid !== "draft" && (
-                    <span className="text-[11px] font-mono text-[#166FB5]/70 bg-blue-50/50 px-1.5 rounded border border-blue-100/30">
+                    <span className={cn(
+                      "text-[11px] font-mono text-[#166FB5]/70 bg-blue-50/50 px-1.5 rounded border border-blue-100/30",
+                      isReferenceSidebarClient &&
+                        "border-0 bg-transparent px-0 text-[10px] text-slate-600",
+                    )}>
                       Client ID: {member.cid}
                     </span>
                   )}
                 {member.formData.email && (
-                  <span className="text-[11px] text-slate-400 truncate">
+                  <span className={cn(
+                    "text-[11px] text-slate-400 truncate",
+                    isReferenceSidebarClient && "text-[10px] text-slate-700",
+                  )}>
                     {member.formData.email}
                   </span>
                 )}
@@ -3937,6 +4089,9 @@ export default function ClientPortalPage() {
               className={cn(
                 status.color,
                 "text-white border-0 text-[10px] h-5 px-2",
+                isReferenceSidebarClient &&
+                  status.label === "Complete" &&
+                  "h-auto rounded-full border-0 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700 shadow-none",
               )}
             >
               {status.label}
@@ -3945,6 +4100,7 @@ export default function ClientPortalPage() {
               <ChevronRight
                 className={cn(
                   "h-6 w-6 text-[#166FB5] transition-transform duration-200",
+                  isReferenceSidebarClient && "h-4 w-4 text-slate-500",
                   isExpanded && "rotate-90",
                 )}
               />
@@ -3954,7 +4110,12 @@ export default function ClientPortalPage() {
 
         {/* Card Body – expanded form */}
         {isExpanded && (
-          <CardContent className="px-3 pb-3 pt-0 border-t border-slate-100">
+          <CardContent
+            className={cn(
+              "px-3 pb-3 pt-0 border-t border-slate-100",
+              isReferenceSidebarClient && "px-4 pb-4 pt-3",
+            )}
+          >
             {/* Remove button for non-primary draft members */}
             {!member.isPrimary &&
               projectDetails?.status !== "Completed" &&
@@ -4935,11 +5096,22 @@ export default function ClientPortalPage() {
         )}
 
         {/* ═════ RIGHT CONTENT ═════ */}
-        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50/50 to-blue-50/30">
+        <main
+          className={cn(
+            "flex-1 overflow-y-auto bg-gradient-to-br from-slate-50/50 to-blue-50/30",
+            isReferenceSidebarClient && "bg-white",
+          )}
+        >
           <div className="flex min-h-full flex-col lg:flex-row">
             <div className="order-2 min-w-0 flex-1 lg:order-1">
           {projectDetails ? (
-            <div className="p-3 lg:p-4 max-w-5xl mx-auto space-y-3">
+            <div
+              className={cn(
+                "p-3 lg:p-4 max-w-5xl mx-auto space-y-3",
+                isReferenceSidebarClient &&
+                  "max-w-5xl space-y-4 rounded-xl p-2 lg:p-2",
+              )}
+            >
               {/* Draft/Pending/Approved status banner */}
               {(projectDetails?.isDraft ||
                 projectDetails?.status === "Ongoing" ||
@@ -5060,16 +5232,30 @@ export default function ClientPortalPage() {
                   (projectDetails?.status === "Draft" ||
                     projectDetails?.status === "Rejected");
                 return (
-                  <div className="border border-slate-100 rounded-2xl bg-white shadow-sm overflow-hidden">
+                  <div
+                    className={cn(
+                      "border border-slate-100 rounded-2xl bg-white shadow-sm overflow-hidden",
+                      isReferenceSidebarClient &&
+                        "rounded-xl border-slate-200 shadow-none",
+                    )}
+                  >
                     {/* Header row — use a div to allow an Edit button alongside the toggle */}
                     <div
-                      className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                      className={cn(
+                        "flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer select-none",
+                        isReferenceSidebarClient && "px-4 py-3",
+                      )}
                       onClick={() => setIsProjectInfoExpanded((prev) => !prev)}
                       role="button"
                       aria-expanded={isProjectInfoExpanded}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <FolderOpen className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                        <FolderOpen
+                          className={cn(
+                            "h-4 w-4 text-blue-600 flex-shrink-0",
+                            isReferenceSidebarClient && "h-4 w-4 text-slate-600",
+                          )}
+                        />
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm font-semibold text-slate-800 truncate">
                             {projectDetails.title || "Project Information"}
@@ -5077,7 +5263,11 @@ export default function ClientPortalPage() {
                           {projectDetails.pid &&
                             projectDetails.status !== "Draft" &&
                             projectDetails.status !== "Pending Approval" && (
-                              <span className="text-[11px] font-mono text-[#166FB5]/70 bg-blue-50/50 px-1.5 rounded border border-blue-100/30 w-fit">
+                              <span className={cn(
+                                "text-[11px] font-mono text-[#166FB5]/70 bg-blue-50/50 px-1.5 rounded border border-blue-100/30 w-fit",
+                                isReferenceSidebarClient &&
+                                  "border-0 bg-transparent px-0 text-[10px] text-slate-700",
+                              )}>
                                 Project ID: {projectDetails.pid}
                               </span>
                             )}
@@ -5109,7 +5299,12 @@ export default function ClientPortalPage() {
                     </div>
 
                     {isProjectInfoExpanded && (
-                      <div className="px-4 pb-4 pt-3 border-t border-slate-100">
+                      <div
+                        className={cn(
+                          "px-4 pb-4 pt-3 border-t border-slate-100",
+                          isReferenceSidebarClient && "px-5 pb-5 pt-4",
+                        )}
+                      >
                         {isProjectInfoEditing ? (
                           /* ── Edit mode ─────────────────────────── */
                           <div className="space-y-3">
@@ -5233,38 +5428,91 @@ export default function ClientPortalPage() {
                           </div>
                         ) : (
                           /* ── Read-only view ──────────────────────── */
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                            <div className="flex items-start gap-2">
-                              <User className="h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                          <div
+                            className={cn(
+                              "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3",
+                              isReferenceSidebarClient &&
+                                "grid-cols-2 gap-x-4 gap-y-4",
+                            )}
+                          >
+                            <div className={cn(
+                              "flex items-start gap-2",
+                              isReferenceSidebarClient && "gap-0",
+                            )}>
+                              <User className={cn(
+                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                isReferenceSidebarClient && "hidden",
+                              )} />
                               <div>
-                                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                <p className={cn(
+                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
+                                  isReferenceSidebarClient &&
+                                    "text-[11px] normal-case tracking-normal text-slate-700",
+                                )}>
                                   Project Lead
                                 </p>
-                                <p className="text-xs text-slate-700 font-medium">
+                                <p className={cn(
+                                  "text-xs text-slate-700 font-medium",
+                                  isReferenceSidebarClient && "text-[11px] text-slate-900",
+                                )}>
                                   {projectDetails.lead || "—"}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="flex items-start gap-2">
-                              <ShieldCheck className="h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                            <div className={cn(
+                              "flex items-start gap-2",
+                              isReferenceSidebarClient && "gap-0",
+                            )}>
+                              <ShieldCheck className={cn(
+                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                isReferenceSidebarClient && "hidden",
+                              )} />
                               <div>
-                                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                <p className={cn(
+                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
+                                  isReferenceSidebarClient &&
+                                    "text-[11px] normal-case tracking-normal text-slate-700",
+                                )}>
                                   Status
                                 </p>
-                                <p className="text-xs text-slate-700 font-medium">
+                                <p
+                                  className={cn(
+                                    "text-xs text-slate-700 font-medium",
+                                    isReferenceSidebarClient &&
+                                      projectDetails.status === "Cancelled" &&
+                                      "text-red-700",
+                                  )}
+                                >
+                                  {isReferenceSidebarClient &&
+                                    projectDetails.status === "Cancelled" && (
+                                      <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-red-600 align-middle" />
+                                    )}
                                   {projectDetails.status || "—"}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="flex items-start gap-2">
-                              <Calendar className="h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                            <div className={cn(
+                              "flex items-start gap-2",
+                              isReferenceSidebarClient && "gap-0",
+                            )}>
+                              <Calendar className={cn(
+                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                isReferenceSidebarClient && "hidden",
+                              )} />
                               <div>
-                                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                <p className={cn(
+                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
+                                  isReferenceSidebarClient &&
+                                    "text-[11px] normal-case tracking-normal text-slate-700",
+                                )}>
                                   Start Date
                                 </p>
-                                <p className="text-xs text-slate-700 font-medium">
+                                <p className={cn(
+                                  "text-xs text-slate-700 font-medium",
+                                  isReferenceSidebarClient && "text-[11px] text-slate-900",
+                                )}>
                                   {projectDetails.startDate
                                     ? (() => {
                                         try {
@@ -5287,25 +5535,51 @@ export default function ClientPortalPage() {
                               </div>
                             </div>
 
-                            <div className="flex items-start gap-2">
-                              <Building2 className="h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                            <div className={cn(
+                              "flex items-start gap-2",
+                              isReferenceSidebarClient && "gap-0",
+                            )}>
+                              <Building2 className={cn(
+                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                isReferenceSidebarClient && "hidden",
+                              )} />
                               <div>
-                                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                <p className={cn(
+                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
+                                  isReferenceSidebarClient &&
+                                    "text-[11px] normal-case tracking-normal text-slate-700",
+                                )}>
                                   Sending Institution
                                 </p>
-                                <p className="text-xs text-slate-700 font-medium">
+                                <p className={cn(
+                                  "text-xs text-slate-700 font-medium",
+                                  isReferenceSidebarClient && "text-[11px] text-slate-900",
+                                )}>
                                   {projectDetails.sendingInstitution || "—"}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="flex items-start gap-2">
-                              <Briefcase className="h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                            <div className={cn(
+                              "flex items-start gap-2",
+                              isReferenceSidebarClient && "gap-0",
+                            )}>
+                              <Briefcase className={cn(
+                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                isReferenceSidebarClient && "hidden",
+                              )} />
                               <div>
-                                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                <p className={cn(
+                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
+                                  isReferenceSidebarClient &&
+                                    "text-[11px] normal-case tracking-normal text-slate-700",
+                                )}>
                                   Funding Institution
                                 </p>
-                                <p className="text-xs text-slate-700 font-medium">
+                                <p className={cn(
+                                  "text-xs text-slate-700 font-medium",
+                                  isReferenceSidebarClient && "text-[11px] text-slate-900",
+                                )}>
                                   {projectDetails.fundingInstitution || "—"}
                                 </p>
                               </div>
@@ -5319,7 +5593,8 @@ export default function ClientPortalPage() {
               })()}
 
               {/* ── Request Progress Timeline ──────────────────── */}
-              {portalFeatures.requestProgressTimeline && (
+              {portalFeatures.requestProgressTimeline &&
+                !isReferenceSidebarClient && (
                 <Card className="border border-slate-100 shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -5379,22 +5654,40 @@ export default function ClientPortalPage() {
                   </CardContent>
                 </Card>
               )}
-              <div className="space-y-2">
+              <div
+                className={cn(
+                  "space-y-2",
+                  isReferenceSidebarClient &&
+                    "-mx-2 space-y-3 rounded-xl bg-[#EEF3F8] px-2 py-3",
+                )}
+              >
                 {/* Section header */}
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-3">
-                    <div className="p-1.5 bg-[#166FB5]/10 rounded-lg">
+                    <div
+                      className={cn(
+                        "p-1.5 bg-[#166FB5]/10 rounded-lg",
+                        isReferenceSidebarClient && "bg-transparent p-0",
+                      )}
+                    >
                       <Users className="h-4 w-4 text-[#166FB5]" />
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-slate-800 leading-tight">
                         Team Members
                       </h2>
-                      <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                      <p
+                        className={cn(
+                          "text-[10px] text-slate-400 uppercase tracking-wider font-semibold",
+                          isReferenceSidebarClient &&
+                            "mt-0.5 text-[11px] normal-case tracking-normal text-slate-600",
+                        )}
+                      >
                         <strong>
                           {members.filter((m) => m.isSubmitted).length}
                         </strong>{" "}
-                        / <strong>{members.length}</strong> Saved
+                        / <strong>{members.length}</strong>{" "}
+                        Saved
                       </p>
                     </div>
                   </div>
@@ -5409,7 +5702,11 @@ export default function ClientPortalPage() {
                         approvalStatus === "pending" ||
                         projectDetails?.status === "Pending Approval"
                       }
-                      className="border-[#166FB5] text-[#166FB5] hover:bg-[#166FB5] hover:text-white disabled:opacity-50"
+                      className={cn(
+                        "border-[#166FB5] text-[#166FB5] hover:bg-[#166FB5] hover:text-white disabled:opacity-50",
+                        isReferenceSidebarClient &&
+                          "h-8 rounded-lg px-3 text-xs hover:bg-[#166FB5] hover:text-white",
+                      )}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       New Member
@@ -5420,7 +5717,11 @@ export default function ClientPortalPage() {
                 {/* Primary member */}
                 {primaryMember && (
                   <div className="space-y-1.5">
-                    <h3 className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1">
+                    <h3 className={cn(
+                      "text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1",
+                      isReferenceSidebarClient &&
+                        "text-[11px] normal-case tracking-normal text-slate-800",
+                    )}>
                       Primary Member
                     </h3>
                     {renderMemberCard(primaryMember)}

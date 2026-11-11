@@ -113,6 +113,7 @@ import { useApprovalStatus } from "@/hooks/useApprovalStatus";
 import {
   Plus,
   X,
+  MoreVertical,
   CheckCircle2,
   AlertCircle,
   Loader2,
@@ -145,6 +146,7 @@ import {
   MapPin,
   Briefcase,
   FlaskConical,
+  ClipboardCheck,
   FileSpreadsheet,
   ShieldEllipsis,
   Stamp,
@@ -352,7 +354,7 @@ const ANNOUNCEMENT_DURATION_MS = 15 * 1000;
 export default function ClientPortalPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [clientAnnouncements, setClientAnnouncements] = useState<{
     id: string;
     title: string;
@@ -378,6 +380,8 @@ export default function ClientPortalPage() {
   const inquiryIdParam = searchParams.get("inquiryId");
   const pidParam = searchParams.get("pid");
   const projectRequestIdParam = searchParams.get("projectRequestId");
+  const isReferenceSidebarClient =
+    user?.email?.trim().toLowerCase() === "dayonmerlitojr@gmail.com";
 
   useEffect(() => {
     const viewerEmail = user?.email?.trim().toLowerCase();
@@ -559,6 +563,7 @@ export default function ClientPortalPage() {
   const [expandedProjectDocs, setExpandedProjectDocs] = useState<Set<string>>(
     new Set(),
   );
+  const initializedReferenceProjectRef = useRef(false);
   const [expandedCsIds, setExpandedCsIds] = useState<Set<string>>(new Set());
   const [expandedQuoteIds, setExpandedQuoteIds] = useState<Set<string>>(
     new Set(),
@@ -642,12 +647,21 @@ export default function ClientPortalPage() {
     Map<string, ChargeSlipRecord[]>
   >(new Map());
 
-  // Initialize expandedProjectDocs when projects list is updated or pidParam changes
   useEffect(() => {
-    // Completely removed auto-expansion logic to ensure projects are always collapsed by default
-    // Even if pidParam is present, we start with empty set to follow user request
     setExpandedProjectDocs(new Set());
   }, []);
+
+  // Open the first project by default for the reference client's sidebar.
+  useEffect(() => {
+    if (
+      isReferenceSidebarClient &&
+      projects.length > 0 &&
+      !initializedReferenceProjectRef.current
+    ) {
+      initializedReferenceProjectRef.current = true;
+      setExpandedProjectDocs(new Set([projects[0].pid]));
+    }
+  }, [isReferenceSidebarClient, projects]);
 
   // Open change-password modal via custom event dispatched from the header burger menu
   useEffect(() => {
@@ -3144,6 +3158,13 @@ export default function ClientPortalPage() {
     ],
   );
 
+  useEffect(() => {
+    if (!isReferenceSidebarClient || projects.length === 0) return;
+    projects.forEach((project) => {
+      void loadProjectDocuments(project);
+    });
+  }, [isReferenceSidebarClient, projects, loadProjectDocuments]);
+
   // Real-time charge slip listener for all expanded projects
   // When a charge slip's status changes (e.g. "pending" after OR upload), the UI updates instantly
   useEffect(() => {
@@ -3957,9 +3978,20 @@ export default function ClientPortalPage() {
   // ────────────────────────────────────────────────────────────────
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-white border-r border-slate-200">
+    <div
+      className={cn(
+        "flex flex-col h-full bg-white border-r border-slate-200",
+        isReferenceSidebarClient && "border-slate-200",
+      )}
+    >
       {/* Header - CLIENT PORTAL + User Identity Card */}
-      <div className="px-5 py-6 border-b border-slate-100 relative">
+      <div
+        className={cn(
+          "px-5 py-6 border-b border-slate-100 relative",
+          isReferenceSidebarClient && "px-3 py-3",
+        )}
+      >
+        {!isReferenceSidebarClient && (
         <div className="flex justify-between items-center mb-4 pl-1">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
             Client Portal
@@ -3972,20 +4004,26 @@ export default function ClientPortalPage() {
             <X className="h-5 w-5" />
           </button>
         </div>
+        )}
 
         {/* User Identity Card - Simple & Professional */}
         <div className="flex items-center gap-3 p-1">
           <div className="relative">
-            <div className="w-10 h-10 bg-[#166FB5] rounded-full flex items-center justify-center flex-shrink-0 text-white shadow-sm ring-2 ring-white">
+            <div
+              className={cn(
+                "w-10 h-10 bg-[#166FB5] rounded-full flex items-center justify-center flex-shrink-0 text-white shadow-sm ring-2 ring-white",
+                isReferenceSidebarClient && "w-11 h-11",
+              )}
+            >
               <span className="font-bold text-sm">
-                {user?.displayName ? (
-                  user.displayName.charAt(0).toUpperCase()
-                ) : (
-                  <User className="w-5 h-5" />
-                )}
+                {user?.displayName?.trim()
+                  ? user.displayName.trim().charAt(0).toUpperCase()
+                  : <User className="w-5 h-5" />}
               </span>
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white"></div>
+            {!isReferenceSidebarClient && (
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white"></div>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -3995,47 +4033,124 @@ export default function ClientPortalPage() {
             <div className="text-xs text-slate-500 truncate">
               {user?.email || emailParam || "merlito.dayon@gmail.com"}
             </div>
-            <button
-              onClick={() => {
-                setChangePwCurrent("");
-                setChangePwNew("");
-                setChangePwConfirm("");
-                setChangePwError(null);
-                setChangePwSuccess(false);
-                setShowChangePasswordModal(true);
-              }}
-              className="mt-1 text-xs text-[#166FB5] hover:underline flex items-center gap-1"
-            >
-              <Key className="h-3 w-3" />
-              Change Password
-            </button>
+            {!isReferenceSidebarClient && (
+              <button
+                onClick={() => {
+                  setChangePwCurrent("");
+                  setChangePwNew("");
+                  setChangePwConfirm("");
+                  setChangePwError(null);
+                  setChangePwSuccess(false);
+                  setShowChangePasswordModal(true);
+                }}
+                className="mt-1 text-xs text-[#166FB5] hover:underline flex items-center gap-1"
+              >
+                <Key className="h-3 w-3" />
+                Change Password
+              </button>
+            )}
           </div>
+          {isReferenceSidebarClient ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 shrink-0 text-slate-500"
+                  aria-label="Account options"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setChangePwCurrent("");
+                    setChangePwNew("");
+                    setChangePwConfirm("");
+                    setChangePwError(null);
+                    setChangePwSuccess(false);
+                    setShowChangePasswordModal(true);
+                  }}
+                >
+                  <Key className="mr-2 h-4 w-4" />
+                  Change Password
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => void signOut()}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+          {isReferenceSidebarClient && (
+            <button
+              onClick={() => setMobileSidebarOpen(false)}
+              className="lg:hidden text-slate-400 hover:text-slate-600 p-1"
+              aria-label="Close sidebar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Projects Section */}
-      <div className="flex-1 overflow-y-auto px-3 py-6">
+      <div
+        className={cn(
+          "flex-1 overflow-y-auto px-3 py-6",
+          isReferenceSidebarClient && "px-3 py-4",
+        )}
+      >
         {/* My Inquiries — collapsible, visible when there are any inquiries */}
-        {allInquiries.length > 0 && (
+        {(isReferenceSidebarClient || allInquiries.length > 0) && (
           <div className="mb-3">
             <div
-              className="mb-2 px-3 flex items-center justify-between group cursor-pointer"
-              onClick={() => setShowInquiriesList(!showInquiriesList)}
+              className={cn(
+                "mb-2 px-3 flex items-center justify-between group cursor-pointer",
+                isReferenceSidebarClient && "mb-2 px-1 cursor-default",
+              )}
+              onClick={
+                isReferenceSidebarClient
+                  ? undefined
+                  : () => setShowInquiriesList(!showInquiriesList)
+              }
             >
               <div className="flex items-center gap-2 text-slate-600 group-hover:text-[#166FB5] transition-colors">
-                <FileText className="h-4 w-4" />
-                <span className="text-sm font-bold">My Inquiries</span>
+                {!isReferenceSidebarClient && (
+                  <FileText className="h-4 w-4" />
+                )}
+                <span
+                  className={cn(
+                    "text-sm font-bold",
+                    isReferenceSidebarClient && "font-medium",
+                  )}
+                >
+                  {isReferenceSidebarClient ? "Inquiries" : "My Inquiries"}
+                </span>
+                {isReferenceSidebarClient && (
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 text-xs text-slate-600">
+                    {allInquiries.length}
+                  </span>
+                )}
               </div>
-              <ChevronDown
+              {!isReferenceSidebarClient && <ChevronDown
                 className={cn(
                   "h-3 w-3 text-slate-400 transition-transform",
                   showInquiriesList && "rotate-180",
                 )}
-              />
+              />}
             </div>
 
             {showInquiriesList && (
-              <div className="ml-6 mt-1 space-y-1">
+              <div
+                className={cn(
+                  "ml-6 mt-1 space-y-1",
+                  isReferenceSidebarClient && "ml-0 mt-1 space-y-1",
+                )}
+              >
                 {allInquiries.map((inq) => {
                   const isActive = inq.id === inquiryIdParam;
                   return (
@@ -4055,55 +4170,116 @@ export default function ClientPortalPage() {
                       }}
                       className={cn(
                         "w-full flex items-start px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left",
-                        isActive
-                          ? "bg-amber-50 text-amber-800 border border-amber-100"
-                          : "text-slate-600 hover:bg-slate-100 hover:text-[#166FB5]",
+                        isReferenceSidebarClient
+                          ? cn(
+                              "px-2.5 py-2.5 rounded-xl border",
+                              isActive
+                                ? "bg-[#E8F2FB] border-[#9CC5E8] text-slate-900"
+                                : "border-transparent text-slate-700 hover:bg-slate-50",
+                            )
+                          : isActive
+                            ? "bg-amber-50 text-amber-800 border border-amber-100"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-[#166FB5]",
                       )}
                     >
-                      <span className="capitalize truncate flex-1">
-                        {formatServiceType(inq.serviceType)}
-                        {inq.createdAt && (
-                          <span className="ml-1 font-normal">
-                            {formatCreatedAt(inq.createdAt)}
+                      {isReferenceSidebarClient ? (
+                        <span className="flex min-w-0 flex-1 items-center gap-2">
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate capitalize">
+                              {formatServiceType(inq.serviceType)}
+                            </span>
+                            {inq.createdAt && (
+                              <span className="mt-1 block font-normal text-slate-500">
+                                {formatCreatedAt(inq.createdAt)}
+                              </span>
+                            )}
                           </span>
-                        )}
-                        <span
-                          className={cn(
-                            "ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold",
-                            isActive
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-amber-50 text-amber-600",
-                          )}
-                        >
-                          {inq.status}
+                          <span
+                            className={cn(
+                              "shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold",
+                              inq.status === "Approved"
+                                ? "bg-emerald-100/70 text-emerald-700"
+                                : "bg-slate-100 text-slate-600",
+                            )}
+                          >
+                            {inq.status === "Approved" && (
+                              <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                            )}
+                            {inq.status}
+                          </span>
                         </span>
-                      </span>
+                      ) : (
+                        <span className="capitalize truncate flex-1">
+                          {formatServiceType(inq.serviceType)}
+                          {inq.createdAt && (
+                            <span className="ml-1 font-normal">
+                              {formatCreatedAt(inq.createdAt)}
+                            </span>
+                          )}
+                          <span
+                            className={cn(
+                              "ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold",
+                              isActive
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-amber-50 text-amber-600",
+                            )}
+                          >
+                            {inq.status}
+                          </span>
+                        </span>
+                      )}
                     </button>
                   );
                 })}
+                {isReferenceSidebarClient && allInquiries.length === 0 && (
+                  <p className="px-3 py-2 text-xs text-slate-500">
+                    No inquiries yet
+                  </p>
+                )}
               </div>
             )}
           </div>
         )}
 
         <div
-          className="mb-2 px-3 flex items-center justify-between group cursor-pointer"
-          onClick={() => setShowProjectsList(!showProjectsList)}
+          className={cn(
+            "mb-2 px-3 flex items-center justify-between group cursor-pointer",
+            isReferenceSidebarClient && "mb-2 mt-6 px-1 cursor-default",
+          )}
+          onClick={
+            isReferenceSidebarClient
+              ? undefined
+              : () => setShowProjectsList(!showProjectsList)
+          }
         >
           <div className="flex items-center gap-2 text-slate-600 group-hover:text-[#166FB5] transition-colors">
-            <FolderOpen className="h-4 w-4" />
-            <span className="text-sm font-bold">My Projects</span>
+            {!isReferenceSidebarClient && (
+              <FolderOpen className="h-4 w-4" />
+            )}
+            <span className="text-sm font-medium">
+              {isReferenceSidebarClient ? "Projects" : "My Projects"}
+            </span>
+            {isReferenceSidebarClient && (
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 text-xs text-slate-600">
+                {projects.length}
+              </span>
+            )}
           </div>
-          <ChevronDown
+          {!isReferenceSidebarClient && <ChevronDown
             className={cn(
               "h-3 w-3 text-slate-400 transition-transform",
               showProjectsList && "rotate-180",
             )}
-          />
+          />}
         </div>
 
         {showProjectsList && (
-          <div className="space-y-3 mt-3 ml-6">
+          <div
+            className={cn(
+              "space-y-3 mt-3 ml-6",
+              isReferenceSidebarClient && "mt-1 ml-0 space-y-2",
+            )}
+          >
             {projects.length === 0 ? (
               <div className="text-center py-8 bg-slate-50 rounded-lg border border-slate-100 border-dashed mx-2">
                 <p className="text-xs text-slate-400">No projects found</p>
@@ -4121,9 +4297,13 @@ export default function ClientPortalPage() {
                 const docs = projectDocuments.get(project.pid);
                 const quotationCount = docs?.quotations.length || 0;
                 const chargeSlipCount = docs?.chargeSlips.length || 0;
-                const sampleFormCount = docs?.sampleForms?.length || 0;
                 const formSubmissionCount = docs?.formSubmissions || 0;
                 const serviceReportCount = docs?.serviceReports?.length || 0;
+                const totalDocumentCount =
+                  quotationCount +
+                  formSubmissionCount +
+                  chargeSlipCount +
+                  serviceReportCount;
                 const officialReceiptCount =
                   docs?.officialReceipts?.length || 0;
                 const sampleFormParams = new URLSearchParams();
@@ -4154,7 +4334,11 @@ export default function ClientPortalPage() {
                     key={project.pid}
                     className={cn(
                       "rounded-xl border transition-all duration-200 overflow-hidden group",
-                      isSelected
+                      isReferenceSidebarClient
+                        ? isSelected || isDocsExpanded
+                          ? "bg-white border-[#8DB9E3] shadow-sm"
+                          : "bg-white border-slate-200 hover:border-[#8DB9E3]"
+                        : isSelected
                         ? "bg-blue-50/50 border-[#166FB5] shadow-sm"
                         : isLinkedToCurrentInquiry
                           ? "bg-amber-50/60 border-amber-300 shadow-sm"
@@ -4163,11 +4347,19 @@ export default function ClientPortalPage() {
                   >
                     {/* Project Header */}
                     <div
-                      className="flex items-center bg-white hover:bg-slate-50 cursor-pointer"
+                      className={cn(
+                        "flex items-center bg-white hover:bg-slate-50 cursor-pointer",
+                        isReferenceSidebarClient && "min-h-[60px] px-3",
+                      )}
                       onClick={handleProjectItemClick}
                     >
                       {/* Main project content - clickable */}
-                      <div className="flex-1 min-w-0 p-3">
+                      <div
+                        className={cn(
+                          "flex-1 min-w-0 p-3",
+                          isReferenceSidebarClient && "px-0 py-2",
+                        )}
+                      >
                         <div className="flex flex-col gap-1">
                           <p
                             className="text-sm text-slate-700 font-medium truncate leading-tight"
@@ -4175,6 +4367,17 @@ export default function ClientPortalPage() {
                           >
                             {project.title || "Untitled Project"}
                           </p>
+                          {isReferenceSidebarClient && (
+                            <span className="text-xs text-slate-500">
+                              {docs?.loading
+                                ? "Loading documents…"
+                                : `${totalDocumentCount} ${
+                                    totalDocumentCount === 1
+                                      ? "document"
+                                      : "documents"
+                                  }`}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -4188,6 +4391,8 @@ export default function ClientPortalPage() {
                         className={cn(
                           "flex-shrink-0 px-3 py-4 hover:bg-slate-100 transition-colors border-l border-slate-200 group/chevron h-full",
                           isDocsExpanded && "bg-blue-50",
+                          isReferenceSidebarClient &&
+                            "border-0 px-1 py-2 text-slate-500 hover:bg-transparent",
                         )}
                         title={
                           isDocsExpanded
@@ -4200,6 +4405,8 @@ export default function ClientPortalPage() {
                           className={cn(
                             "h-5 w-5 text-[#166FB5] transition-all duration-200 group-hover/chevron:translate-x-0.5",
                             isDocsExpanded && "rotate-90",
+                            isReferenceSidebarClient &&
+                              "h-4 w-4 text-slate-500 group-hover/chevron:translate-x-0",
                           )}
                         />
                       </button>
@@ -4214,7 +4421,13 @@ export default function ClientPortalPage() {
                             <span>Loading…</span>
                           </div>
                         ) : (
-                          <div className="p-3 pl-6 space-y-1">
+                          <div
+                            className={cn(
+                              "p-3 pl-6 space-y-1",
+                              isReferenceSidebarClient &&
+                                "bg-[#F7F9FC] px-2 py-1",
+                            )}
+                          >
                             {/* Quotations */}
                             <div>
                               <button
@@ -4222,6 +4435,8 @@ export default function ClientPortalPage() {
                                 disabled={quotationCount === 0}
                                 className={cn(
                                   "flex items-center gap-2 px-2 py-1.5 w-full text-left rounded-lg transition-colors",
+                                  isReferenceSidebarClient &&
+                                    "min-h-10 rounded-none border-b border-slate-200 px-2 py-2",
                                   activeDocPanel === `${project.pid}:quotations`
                                     ? "bg-purple-50"
                                     : quotationCount === 0
@@ -4249,6 +4464,8 @@ export default function ClientPortalPage() {
                                 <span
                                   className={cn(
                                     "text-sm font-semibold flex-1",
+                                    isReferenceSidebarClient &&
+                                      "text-[13px] font-medium",
                                     activeDocPanel ===
                                       `${project.pid}:quotations`
                                       ? "text-purple-700"
@@ -4257,8 +4474,16 @@ export default function ClientPortalPage() {
                                 >
                                   Quotations
                                 </span>
-                                <span className="text-[10px] text-slate-500 mr-1">
-                                  ({quotationCount})
+                                <span
+                                  className={cn(
+                                    "text-[10px] text-slate-500 mr-1",
+                                    isReferenceSidebarClient &&
+                                      "min-w-6 rounded-full bg-[#E8F2FB] px-2 py-1 text-center text-xs text-[#166FB5]",
+                                  )}
+                                >
+                                  {isReferenceSidebarClient
+                                    ? quotationCount
+                                    : `(${quotationCount})`}
                                 </span>
                                 <ChevronRight
                                   className={cn(
@@ -4286,6 +4511,8 @@ export default function ClientPortalPage() {
                                     disabled={isSampleFormDisabled}
                                     className={cn(
                                       "flex items-center gap-2 px-2 py-1.5 w-full text-left rounded-lg transition-colors",
+                                      isReferenceSidebarClient &&
+                                        "min-h-10 rounded-none border-b border-slate-200 px-2 py-2",
                                       isActive
                                         ? "bg-orange-50"
                                         : isSampleFormDisabled
@@ -4301,17 +4528,30 @@ export default function ClientPortalPage() {
                                         );
                                     }}
                                   >
-                                    <FileText
+                                    {isReferenceSidebarClient ? (
+                                      <FlaskConical
+                                        className={cn(
+                                          "h-3 w-3 flex-shrink-0",
+                                          isActive
+                                            ? "text-orange-600"
+                                            : "text-orange-500",
+                                        )}
+                                      />
+                                    ) : (
+                                      <FileText
                                       className={cn(
                                         "h-3 w-3 flex-shrink-0",
                                         isActive
                                           ? "text-orange-600"
                                           : "text-orange-500",
                                       )}
-                                    />
+                                      />
+                                    )}
                                     <span
                                       className={cn(
                                         "text-sm font-semibold flex-1",
+                                        isReferenceSidebarClient &&
+                                          "text-[13px] font-medium",
                                         isActive
                                           ? "text-orange-700"
                                           : "text-slate-700",
@@ -4319,8 +4559,16 @@ export default function ClientPortalPage() {
                                     >
                                       Sample Submission Form
                                     </span>
-                                    <span className="text-[10px] text-slate-500 mr-1">
-                                      ({formSubmissionCount})
+                                    <span
+                                      className={cn(
+                                        "text-[10px] text-slate-500 mr-1",
+                                        isReferenceSidebarClient &&
+                                          "min-w-6 rounded-full bg-[#E8F2FB] px-2 py-1 text-center text-xs text-[#166FB5]",
+                                      )}
+                                    >
+                                      {isReferenceSidebarClient
+                                        ? formSubmissionCount
+                                        : `(${formSubmissionCount})`}
                                     </span>
                                     <ChevronRight
                                       className={cn(
@@ -4349,6 +4597,8 @@ export default function ClientPortalPage() {
                                     disabled={isChargeSlipsDisabled}
                                     className={cn(
                                       "flex items-center gap-2 px-2 py-1.5 w-full text-left rounded-lg transition-colors",
+                                      isReferenceSidebarClient &&
+                                        "min-h-10 rounded-none border-b border-slate-200 px-2 py-2",
                                       isActive
                                         ? "bg-green-50"
                                         : isChargeSlipsDisabled
@@ -4364,21 +4614,27 @@ export default function ClientPortalPage() {
                                         );
                                     }}
                                   >
-                                    <div className="flex items-center justify-center w-3 h-3 flex-shrink-0">
-                                      <span
-                                        className={cn(
-                                          "text-[13px] font-bold leading-none",
-                                          isActive
-                                            ? "text-green-600"
-                                            : "text-green-500",
-                                        )}
-                                      >
-                                        ₱
-                                      </span>
-                                    </div>
+                                    {isReferenceSidebarClient ? (
+                                      <Receipt className="h-4 w-4 flex-shrink-0 text-green-600" />
+                                    ) : (
+                                      <div className="flex items-center justify-center w-3 h-3 flex-shrink-0">
+                                        <span
+                                          className={cn(
+                                            "text-[13px] font-bold leading-none",
+                                            isActive
+                                              ? "text-green-600"
+                                              : "text-green-500",
+                                          )}
+                                        >
+                                          ₱
+                                        </span>
+                                      </div>
+                                    )}
                                     <span
                                       className={cn(
                                         "text-sm font-semibold flex-1",
+                                        isReferenceSidebarClient &&
+                                          "text-[13px] font-medium",
                                         isActive
                                           ? "text-green-700"
                                           : "text-slate-700",
@@ -4415,8 +4671,16 @@ export default function ClientPortalPage() {
                                         </TooltipProvider>
                                       ) : null;
                                     })()}
-                                    <span className="text-[10px] text-slate-500 mr-1">
-                                      ({chargeSlipCount})
+                                    <span
+                                      className={cn(
+                                        "text-[10px] text-slate-500 mr-1",
+                                        isReferenceSidebarClient &&
+                                          "min-w-6 rounded-full bg-[#E8F2FB] px-2 py-1 text-center text-xs text-[#166FB5]",
+                                      )}
+                                    >
+                                      {isReferenceSidebarClient
+                                        ? chargeSlipCount
+                                        : `(${chargeSlipCount})`}
                                     </span>
                                     <ChevronRight
                                       className={cn(
@@ -4447,6 +4711,8 @@ export default function ClientPortalPage() {
                                       disabled={isServiceReportSectionDisabled}
                                       className={cn(
                                         "flex items-center gap-2 px-2 py-1.5 w-full text-left rounded-lg transition-colors",
+                                        isReferenceSidebarClient &&
+                                          "min-h-10 rounded-none border-b border-slate-200 px-2 py-2",
                                         isActive
                                           ? "bg-blue-50"
                                           : isServiceReportSectionDisabled
@@ -4462,17 +4728,23 @@ export default function ClientPortalPage() {
                                           );
                                       }}
                                     >
-                                      <ShieldEllipsis
-                                        className={cn(
-                                          "h-3 w-3 flex-shrink-0",
-                                          isActive
-                                            ? "text-blue-600"
-                                            : "text-blue-500",
-                                        )}
-                                      />
+                                      {isReferenceSidebarClient ? (
+                                        <ClipboardCheck className="h-4 w-4 flex-shrink-0 text-blue-500" />
+                                      ) : (
+                                        <ShieldEllipsis
+                                          className={cn(
+                                            "h-3 w-3 flex-shrink-0",
+                                            isActive
+                                              ? "text-blue-600"
+                                              : "text-blue-500",
+                                          )}
+                                        />
+                                      )}
                                       <span
                                         className={cn(
                                           "text-sm font-semibold flex-1",
+                                          isReferenceSidebarClient &&
+                                            "text-[13px] font-medium",
                                           isActive
                                             ? "text-blue-700"
                                             : "text-slate-700",
@@ -4504,8 +4776,16 @@ export default function ClientPortalPage() {
                                           </TooltipProvider>
                                         ) : null;
                                       })()}
-                                      <span className="text-[10px] text-slate-500 mr-1">
-                                        ({serviceReportCount})
+                                      <span
+                                        className={cn(
+                                          "text-[10px] text-slate-500 mr-1",
+                                          isReferenceSidebarClient &&
+                                            "min-w-6 rounded-full bg-[#E8F2FB] px-2 py-1 text-center text-xs text-[#166FB5]",
+                                        )}
+                                      >
+                                        {isReferenceSidebarClient
+                                          ? serviceReportCount
+                                          : `(${serviceReportCount})`}
                                       </span>
                                       <ChevronRight
                                         className={cn(
@@ -4532,7 +4812,6 @@ export default function ClientPortalPage() {
         )}
       </div>
 
-      {/* Footer deleted as requested */}
       {/* New Inquiry CTA — disabled while any inquiry is Pending or Ongoing Quotation */}
       {(() => {
         const DISABLED_STATUSES = new Set<string>([
@@ -4544,7 +4823,13 @@ export default function ClientPortalPage() {
         );
         const isNewInquiryDisabled = Boolean(blockingInquiry);
         return (
-          <div className="px-4 py-4 border-t border-slate-100 bg-slate-50/60">
+          <div
+            className={cn(
+              "px-4 py-4 border-t border-slate-100 bg-slate-50/60",
+              isReferenceSidebarClient &&
+                "border-slate-200 bg-white px-3 py-3",
+            )}
+          >
             <button
               disabled={isNewInquiryDisabled}
               onClick={() => {
@@ -4562,11 +4847,15 @@ export default function ClientPortalPage() {
                   ? `Cannot create a new inquiry while an inquiry is still "${blockingInquiry?.status}"`
                   : "Submit a new inquiry"
               }
-              className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed text-sm font-semibold transition-all ${
+              className={cn(
+                "w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed text-sm font-semibold transition-all",
                 isNewInquiryDisabled
                   ? "border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed"
-                  : "border-[#166FB5]/50 text-[#166FB5] hover:bg-[#166FB5]/5 hover:border-[#166FB5] cursor-pointer"
-              }`}
+                  : "border-[#166FB5]/50 text-[#166FB5] hover:bg-[#166FB5]/5 hover:border-[#166FB5] cursor-pointer",
+                isReferenceSidebarClient &&
+                  !isNewInquiryDisabled &&
+                  "border-[#166FB5] bg-[#166FB5] text-white hover:bg-[#125E9B] hover:text-white",
+              )}
             >
               <Plus className="h-4 w-4" />
               New Inquiry
@@ -4612,7 +4901,12 @@ export default function ClientPortalPage() {
     <>
       <div className="flex h-[calc(100vh-73px)]">
         {/* ═════ LEFT SIDEBAR — Desktop ═════ */}
-        <aside className="hidden lg:flex w-[400px] min-w-[340px] bg-white border-r border-slate-200 flex-shrink-0 flex-col">
+        <aside
+          className={cn(
+            "hidden lg:flex w-[400px] min-w-[340px] bg-white border-r border-slate-200 flex-shrink-0 flex-col",
+            isReferenceSidebarClient && "w-[330px] min-w-[300px] max-w-[330px]",
+          )}
+        >
           {sidebarContent}
         </aside>
 
@@ -4623,7 +4917,12 @@ export default function ClientPortalPage() {
               className="fixed inset-0 bg-black/40 z-40 lg:hidden"
               onClick={() => setMobileSidebarOpen(false)}
             />
-            <aside className="fixed left-0 top-0 bottom-0 w-[400px] bg-white z-50 lg:hidden shadow-2xl flex flex-col">
+            <aside
+              className={cn(
+                "fixed left-0 top-0 bottom-0 w-[400px] bg-white z-50 lg:hidden shadow-2xl flex flex-col",
+                isReferenceSidebarClient && "w-[min(330px,90vw)]",
+              )}
+            >
               {sidebarContent}
             </aside>
           </>

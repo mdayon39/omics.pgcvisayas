@@ -615,6 +615,8 @@ export default function ClientPortalPage() {
 
   // ── Inquiry context state ─────────────────────────────────────
   const [currentInquiry, setCurrentInquiry] = useState<Inquiry | null>(null);
+  const isPendingReferenceClient =
+    isReferenceSidebarClient && currentInquiry?.status === "Pending";
   const [inquiryQuotations, setInquiryQuotations] = useState<QuotationRecord[]>(
     [],
   );
@@ -6186,10 +6188,15 @@ export default function ClientPortalPage() {
                             "bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 flex items-center gap-3 min-w-[200px]",
                             isReferenceSidebarClient &&
                               "min-w-0 rounded-full border-0 bg-[#E3F5EC] px-3 py-2",
+                              isPendingReferenceClient &&
+                                "bg-[#FFF1D6]",
                           )}
                         >
-                          {isReferenceSidebarClient ? (
-                            <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-700" />
+                          {isReferenceSidebarClient &&
+                          currentInquiry.status === "Pending" ? (
+                              <Clock className="h-6 w-6 shrink-0 text-amber-700" />
+                          ) : isReferenceSidebarClient ? (
+                              <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-700" />
                           ) : (
                             <div
                               className={cn(
@@ -6220,6 +6227,8 @@ export default function ClientPortalPage() {
                                 "text-[9px] font-bold text-slate-400 uppercase tracking-widest",
                                 isReferenceSidebarClient &&
                                   "text-[11px] font-normal normal-case tracking-normal text-emerald-700",
+                                  isPendingReferenceClient &&
+                                    "text-amber-700",
                               )}
                             >
                               Inquiry Status
@@ -6229,6 +6238,8 @@ export default function ClientPortalPage() {
                                 "font-bold text-slate-700 text-sm",
                                 isReferenceSidebarClient &&
                                   "text-[13px] leading-4 text-emerald-800",
+                                  isPendingReferenceClient &&
+                                    "text-amber-800",
                               )}
                             >
                               {currentInquiry.status}
@@ -6281,30 +6292,59 @@ export default function ClientPortalPage() {
                             Fetching documents...
                           </p>
                         </div>
+                      ) : isPendingReferenceClient ||
+                        (inquiryQuotations.length === 0 &&
+                          currentInquiry?.status === "Pending") ? (
+                        <div
+                          className={cn(
+                            "rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-6 text-center space-y-2",
+                            isPendingReferenceClient &&
+                              "border-slate-200 bg-[#F5F7FA] px-4 py-6 sm:py-7",
+                          )}
+                        >
+                          <div className="flex justify-center">
+                            <span
+                              className={cn(
+                                "inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600",
+                                isPendingReferenceClient &&
+                                  "h-16 w-16 bg-[#FFF1D6] text-amber-700 ring-8 ring-[#FBF5E9]",
+                              )}
+                            >
+                              <Clock
+                                className={cn(
+                                  "h-6 w-6",
+                                  isPendingReferenceClient && "h-7 w-7",
+                                )}
+                              />
+                            </span>
+                          </div>
+                          <p
+                            className={cn(
+                              "text-sm font-bold text-amber-900",
+                              isPendingReferenceClient &&
+                                "pt-1 text-base font-semibold text-slate-900",
+                            )}
+                          >
+                            Awaiting Quotation from Admin
+                          </p>
+                          <p
+                            className={cn(
+                              "text-xs text-amber-700 leading-relaxed",
+                              isPendingReferenceClient &&
+                                "mx-auto max-w-xl text-sm text-slate-600",
+                            )}
+                          >
+                            Your inquiry has been submitted and is currently
+                            under review. An official quotation will appear
+                            here once the admin has processed your request.
+                          </p>
+                        </div>
                       ) : inquiryQuotations.length === 0 ? (
-                        currentInquiry?.status === "Pending" ? (
-                          <div className="rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-6 text-center space-y-2">
-                            <div className="flex justify-center">
-                              <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600">
-                                <Clock className="h-6 w-6" />
-                              </span>
-                            </div>
-                            <p className="text-sm font-bold text-amber-900">
-                              Awaiting Quotation from Admin
-                            </p>
-                            <p className="text-xs text-amber-700 leading-relaxed">
-                              Your inquiry has been submitted and is currently
-                              under review. An official quotation will appear
-                              here once the admin has processed your request.
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                            <p className="text-xs text-slate-500 italic">
-                              No official quotations found for this inquiry yet.
-                            </p>
-                          </div>
-                        )
+                        <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                          <p className="text-xs text-slate-500 italic">
+                            No official quotations found for this inquiry yet.
+                          </p>
+                        </div>
                       ) : (
                         <div className="space-y-2">
                           {inquiryQuotations.map((quote) => {
@@ -6463,6 +6503,8 @@ export default function ClientPortalPage() {
                           "bg-amber-50/70 border border-amber-100 rounded-xl px-4 py-3",
                           isReferenceSidebarClient &&
                             "rounded-xl border-slate-200 bg-[#F5F7FA] px-5 py-4",
+                          isPendingReferenceClient &&
+                            "border-slate-200 bg-[#F5F7FA]",
                         )}
                       >
                         <div
@@ -6508,6 +6550,8 @@ export default function ClientPortalPage() {
                               "border-amber-200 text-amber-900 hover:bg-amber-100 font-bold text-xs h-7 shrink-0",
                               isReferenceSidebarClient &&
                                 "h-9 border-slate-200 bg-transparent px-4 text-sm font-medium text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-100",
+                              isPendingReferenceClient &&
+                                "border-red-400 bg-white text-red-700 hover:bg-red-50 disabled:border-red-400 disabled:bg-white disabled:text-red-700",
                               isReferenceSidebarClient &&
                                 (currentInquiry.status === "Cancelled" ||
                                   currentInquiry.status === "Quotation Only" ||

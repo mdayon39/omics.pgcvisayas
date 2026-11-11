@@ -617,6 +617,9 @@ export default function ClientPortalPage() {
   const [currentInquiry, setCurrentInquiry] = useState<Inquiry | null>(null);
   const isPendingReferenceClient =
     isReferenceSidebarClient && currentInquiry?.status === "Pending";
+  const isOngoingQuotationReferenceClient =
+    isReferenceSidebarClient &&
+    currentInquiry?.status === "Ongoing Quotation";
   const [inquiryQuotations, setInquiryQuotations] = useState<QuotationRecord[]>(
     [],
   );
@@ -6190,11 +6193,15 @@ export default function ClientPortalPage() {
                               "min-w-0 rounded-full border-0 bg-[#E3F5EC] px-3 py-2",
                               isPendingReferenceClient &&
                                 "bg-[#FFF1D6]",
+                              isOngoingQuotationReferenceClient &&
+                                "bg-[#E1F1FD]",
                           )}
                         >
                           {isReferenceSidebarClient &&
                           currentInquiry.status === "Pending" ? (
-                              <Clock className="h-6 w-6 shrink-0 text-amber-700" />
+                                <Clock className="h-6 w-6 shrink-0 text-amber-700" />
+                          ) : isOngoingQuotationReferenceClient ? (
+                              <FileText className="h-6 w-6 shrink-0 text-[#1769AA]" />
                           ) : isReferenceSidebarClient ? (
                               <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-700" />
                           ) : (
@@ -6229,6 +6236,8 @@ export default function ClientPortalPage() {
                                   "text-[11px] font-normal normal-case tracking-normal text-emerald-700",
                                   isPendingReferenceClient &&
                                     "text-amber-700",
+                                  isOngoingQuotationReferenceClient &&
+                                    "text-[#1769AA]",
                               )}
                             >
                               Inquiry Status
@@ -6240,6 +6249,8 @@ export default function ClientPortalPage() {
                                   "text-[13px] leading-4 text-emerald-800",
                                   isPendingReferenceClient &&
                                     "text-amber-800",
+                                  isOngoingQuotationReferenceClient &&
+                                    "text-[#145B91]",
                               )}
                             >
                               {currentInquiry.status}
@@ -6360,7 +6371,9 @@ export default function ClientPortalPage() {
                                   isReferenceSidebarClient &&
                                     cn(
                                       "rounded-lg p-3 shadow-none",
-                                      isSelected
+                                      isOngoingQuotationReferenceClient
+                                        ? "border-slate-200 bg-[#F5F7FA]"
+                                        : isSelected
                                         ? "border-[#1971C7] bg-[#E7F1FA]"
                                         : "border-slate-200 bg-white",
                                     ),
@@ -6479,7 +6492,11 @@ export default function ClientPortalPage() {
                                               quote.referenceNumber,
                                             )
                                           }
-                                          className="bg-gradient-to-r from-[#166FB5] to-[#4038AF] text-white hover:opacity-90 font-bold h-8 text-xs"
+                                          className={cn(
+                                            "bg-gradient-to-r from-[#166FB5] to-[#4038AF] text-white hover:opacity-90 font-bold h-8 text-xs",
+                                            isOngoingQuotationReferenceClient &&
+                                              "bg-none bg-[#1769AA] hover:bg-[#12588F] hover:opacity-100",
+                                          )}
                                         >
                                           <ArrowRight className="h-3 w-3 mr-1" />
                                           Proceed with Service
@@ -6504,6 +6521,8 @@ export default function ClientPortalPage() {
                           isReferenceSidebarClient &&
                             "rounded-xl border-slate-200 bg-[#F5F7FA] px-5 py-4",
                           isPendingReferenceClient &&
+                            "border-slate-200 bg-[#F5F7FA]",
+                          isOngoingQuotationReferenceClient &&
                             "border-slate-200 bg-[#F5F7FA]",
                         )}
                       >
@@ -6552,6 +6571,8 @@ export default function ClientPortalPage() {
                                 "h-9 border-slate-200 bg-transparent px-4 text-sm font-medium text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-100",
                               isPendingReferenceClient &&
                                 "border-red-400 bg-white text-red-700 hover:bg-red-50 disabled:border-red-400 disabled:bg-white disabled:text-red-700",
+                              isOngoingQuotationReferenceClient &&
+                                "border-red-400 bg-white text-red-700 hover:bg-red-50",
                               isReferenceSidebarClient &&
                                 (currentInquiry.status === "Cancelled" ||
                                   currentInquiry.status === "Quotation Only" ||

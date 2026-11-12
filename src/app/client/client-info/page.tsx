@@ -6642,6 +6642,13 @@ export default function ClientPortalPage() {
                                         : "reports"}
                                     </p>
                                   )}
+                                  <div
+                                    className={cn(
+                                      "space-y-2",
+                                      isReferenceSidebarClient &&
+                                        "space-y-0 overflow-hidden rounded-xl border border-slate-200 bg-white",
+                                    )}
+                                  >
                                   {panelDocs?.serviceReports.map((item: any) => {
                                   const isReceived = item.status === "received";
                                   const reportUrl =
@@ -6671,7 +6678,7 @@ export default function ClientPortalPage() {
                                       className={cn(
                                         "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col gap-2 hover:bg-slate-50 transition-colors",
                                         isReferenceSidebarClient &&
-                                          "border-slate-200 bg-white p-4 hover:bg-white md:flex-row md:items-center md:gap-4",
+                                          "rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_190px_190px_152px] md:items-center md:gap-x-4 md:gap-y-0",
                                       )}
                                     >
                                       {/* File meta row */}
@@ -6731,20 +6738,24 @@ export default function ClientPortalPage() {
                                             </span>
                                           ) : null}
                                         </div>
-                                        {isReferenceSidebarClient &&
-                                          uploadedDate && (
-                                            <p className="hidden w-40 shrink-0 text-xs text-slate-700 md:block">
-                                              Uploaded {uploadedDate}
-                                            </p>
-                                          )}
                                       </div>
 
-                                      {/* Action row */}
+                                      {isReferenceSidebarClient && (
+                                        <div className="hidden min-w-0 md:flex md:flex-col md:gap-1">
+                                          <span className="text-sm text-slate-600">
+                                            Uploaded
+                                          </span>
+                                          <span className="truncate text-sm text-slate-900">
+                                            {uploadedDate || "—"}
+                                          </span>
+                                        </div>
+                                      )}
+
                                       <div
                                         className={cn(
                                           "flex items-center justify-end",
                                           isReferenceSidebarClient &&
-                                            "flex-wrap justify-between gap-2 pt-1 md:flex-1 md:justify-between md:pt-0",
+                                            "flex-wrap justify-between gap-2 pt-1 md:col-span-2 md:pt-0",
                                         )}
                                       >
                                         {isReceived ? (
@@ -6752,7 +6763,7 @@ export default function ClientPortalPage() {
                                             className={cn(
                                               "flex items-center gap-2",
                                               isReferenceSidebarClient &&
-                                                "w-full flex-wrap justify-between gap-2 md:w-auto",
+                                                "w-full flex-wrap justify-between gap-2",
                                             )}
                                           >
                                             {isReferenceSidebarClient ? (
@@ -6898,6 +6909,7 @@ export default function ClientPortalPage() {
                                     </div>
                                   );
                                   })}
+                                  </div>
                                 </>
                               )}
                             </div>

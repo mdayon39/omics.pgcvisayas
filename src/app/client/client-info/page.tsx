@@ -6241,49 +6241,73 @@ export default function ClientPortalPage() {
                                         "w-full justify-between gap-x-3 gap-y-3",
                                     )}
                                   >
-                                    <a
-                                      href={`/client/view-document?type=quotation&ref=${quotation.referenceNumber}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className={cn(
-                                        "text-[11px] font-bold text-purple-700 border border-purple-200 bg-white rounded-md px-2 py-0.5 hover:bg-purple-50 transition-colors",
-                                        isReferenceSidebarClient &&
-                                          "rounded-lg border-0 bg-purple-50 px-2.5 py-1 font-semibold hover:bg-purple-100",
-                                      )}
-                                    >
-                                      {quotation.referenceNumber}
-                                    </a>
+                                    {!isReferenceSidebarClient && (
+                                      <a
+                                        href={`/client/view-document?type=quotation&ref=${quotation.referenceNumber}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[11px] font-bold text-purple-700 border border-purple-200 bg-white rounded-md px-2 py-0.5 hover:bg-purple-50 transition-colors"
+                                      >
+                                        {quotation.referenceNumber}
+                                      </a>
+                                    )}
                                     {isReferenceSidebarClient ? (
-                                      <div className="order-3 grid w-full grid-cols-2 gap-4">
-                                        <div>
-                                          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                            Total
-                                          </p>
-                                          <p
-                                            className={cn(
-                                              "text-base font-bold text-slate-900",
-                                              qCancelled && "line-through",
-                                            )}
-                                          >
-                                            ₱
-                                            {qTotal.toLocaleString("en-US", {
-                                              minimumFractionDigits: 2,
-                                            })}
-                                          </p>
-                                        </div>
-                                        {qIssuedDate && (
-                                          <div>
-                                            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                              Issued
+                                      <div className="order-3 flex w-full flex-col gap-4">
+                                        <div className="flex items-center justify-between gap-3">
+                                          <div className="min-w-0">
+                                            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                              Quotation No.
                                             </p>
-                                            <p className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                                              {isReferenceSidebarClient && (
-                                                <Calendar className="h-4 w-4 text-slate-500" />
+                                            <a
+                                              href={`/client/view-document?type=quotation&ref=${quotation.referenceNumber}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-100 px-2.5 py-1.5 text-xs font-bold text-purple-800 shadow-sm transition hover:bg-purple-200"
+                                            >
+                                              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white text-purple-700">
+                                                <FileText className="h-3.5 w-3.5" />
+                                              </span>
+                                              {quotation.referenceNumber}
+                                            </a>
+                                          </div>
+                                          {(quotation.status === "selected" ||
+                                            quotation.selectedForProject) && (
+                                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+                                              <CheckCircle2 className="h-3.5 w-3.5" />
+                                              Selected
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div className="grid w-full grid-cols-2 gap-6 border-t border-slate-200 pt-4">
+                                          <div>
+                                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                              Total
+                                            </p>
+                                            <p
+                                              className={cn(
+                                                "text-3xl font-black tracking-tight text-slate-900",
+                                                qCancelled && "line-through",
                                               )}
-                                              {qIssuedDate}
+                                            >
+                                              ₱
+                                              {qTotal.toLocaleString("en-US", {
+                                                minimumFractionDigits: 2,
+                                              })}
                                             </p>
                                           </div>
-                                        )}
+                                          {qIssuedDate && (
+                                            <div>
+                                              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                                Issued
+                                              </p>
+                                              <p className="flex items-center gap-2 text-lg font-medium text-slate-900">
+                                                <Calendar className="h-4 w-4 text-slate-500" />
+                                                {qIssuedDate}
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                     ) : (
                                       <>
@@ -6307,34 +6331,36 @@ export default function ClientPortalPage() {
                                       </>
                                     )}
                                   </div>
-                                  <div
-                                    className={cn(
-                                      "flex-shrink-0",
-                                      isReferenceSidebarClient &&
-                                        "absolute right-4 top-4",
-                                    )}
-                                  >
-                                    {qCancelled ? (
-                                      <span className={cn(
-                                        "inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5",
-                                        isReferenceSidebarClient && "border-0 bg-slate-100 px-2.5 py-1 text-[11px] text-slate-700",
-                                      )}>
-                                        {isReferenceSidebarClient && (
-                                          <XCircle className="h-3 w-3" />
-                                        )}
-                                        Cancelled
-                                      </span>
-                                    ) : quotation.status === "selected" ||
-                                      quotation.selectedForProject ? (
-                                      <span className={cn(
-                                        "inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5",
-                                        isReferenceSidebarClient && "border-0 bg-emerald-100 px-2.5 py-1 text-[11px] text-emerald-800",
-                                      )}>
-                                        <CheckCircle2 className="h-3 w-3" />{" "}
-                                        Selected
-                                      </span>
-                                    ) : null}
-                                  </div>
+                                  {!isReferenceSidebarClient && (
+                                    <div
+                                      className={cn(
+                                        "flex-shrink-0",
+                                        isReferenceSidebarClient &&
+                                          "absolute right-4 top-4",
+                                      )}
+                                    >
+                                      {qCancelled ? (
+                                        <span className={cn(
+                                          "inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5",
+                                          isReferenceSidebarClient && "border-0 bg-slate-100 px-2.5 py-1 text-[11px] text-slate-700",
+                                        )}>
+                                          {isReferenceSidebarClient && (
+                                            <XCircle className="h-3 w-3" />
+                                          )}
+                                          Cancelled
+                                        </span>
+                                      ) : quotation.status === "selected" ||
+                                        quotation.selectedForProject ? (
+                                        <span className={cn(
+                                          "inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5",
+                                          isReferenceSidebarClient && "border-0 bg-emerald-100 px-2.5 py-1 text-[11px] text-emerald-800",
+                                        )}>
+                                          <CheckCircle2 className="h-3 w-3" />{" "}
+                                          Selected
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}

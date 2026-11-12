@@ -34,10 +34,13 @@ import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import useAuth from "@/hooks/useAuth";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface FormEntry {
   label: string;
   description: string;
+  portalDescription: string;
+  revision: string;
   storagePath: string;
   formKey: string;
 }
@@ -46,6 +49,8 @@ const PORTAL_FORMS: FormEntry[] = [
   {
     label: "Sample Submission Requirements",
     description: "VSF-LR-SSR Rev. 005 — Read before submitting samples",
+    portalDescription: "Read before submitting samples",
+    revision: "VSF-LR-SSR · Rev. 005",
     storagePath:
       "forms/VSF-LR-SSR_Sample Submission Requirements and Form_v6.pdf",
     formKey: "ssreq",
@@ -53,6 +58,8 @@ const PORTAL_FORMS: FormEntry[] = [
   {
     label: "Sample Submission Form",
     description: "PGCV-LF-SSF Rev. 001 — Fill out and include with shipment",
+    portalDescription: "Fill out and include with shipment",
+    revision: "PGCV-LF-SSF · Rev. 001",
     storagePath: "forms/Sample_Submission_Form.pdf",
     formKey: "ssf",
   },
@@ -76,9 +83,13 @@ interface SubmittedFile {
 
 interface DownloadFormsProps {
   projectId: string;
+  referenceClientDesign?: boolean;
 }
 
-export default function DownloadForms({ projectId }: DownloadFormsProps) {
+export default function DownloadForms({
+  projectId,
+  referenceClientDesign = false,
+}: DownloadFormsProps) {
   const { user } = useAuth();
   const [templateStates, setTemplateStates] = useState<TemplateState[]>(
     PORTAL_FORMS.map(() => ({ url: null, loading: true, error: false })),
@@ -275,7 +286,12 @@ export default function DownloadForms({ projectId }: DownloadFormsProps) {
   };
 
   return (
-    <div className="ml-5 mb-2 space-y-2">
+    <div
+      className={cn(
+        "ml-5 mb-2 space-y-2",
+        referenceClientDesign && "m-0 space-y-3",
+      )}
+    >
       {PORTAL_FORMS.map((form, i) => {
         const { url, loading, error } = templateStates[i];
         const isDownloading = downloadingIdx === i;
@@ -288,57 +304,130 @@ export default function DownloadForms({ projectId }: DownloadFormsProps) {
         return (
           <div
             key={form.formKey}
-            className="rounded-lg border border-slate-100 bg-slate-50 overflow-hidden"
+            className={cn(
+              "rounded-lg border border-slate-100 bg-slate-50 overflow-hidden",
+              referenceClientDesign && "rounded-xl border-slate-200 bg-white",
+            )}
           >
             {/* Header row */}
-            <div className="w-full flex items-center justify-between gap-2 px-3 py-1.5">
-              <div className="min-w-0 flex-1">
-                {loading ? (
-                  <span className="text-xs font-medium text-slate-400">
-                    {form.label}
-                  </span>
-                ) : error ? (
-                  <span className="text-xs font-medium text-slate-400">
-                    {form.label}
-                  </span>
-                ) : (
-                  <a
-                    href={url || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => {
-                      if (!url) e.preventDefault();
-                    }}
-                    className="inline-flex items-center gap-1.5 text-[11px] font-bold text-orange-600 border border-orange-200 bg-white rounded-md px-2 py-0.5 hover:bg-orange-50 transition-colors"
-                  >
-                    {isDownloading ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : null}
-                    {form.label}
-                  </a>
-                )}
-                <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">
-                  {form.description}
-                </p>
-              </div>
-              {loading && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-300 shrink-0" />
+            <div
+              className={cn(
+                "w-full flex items-center justify-between gap-2 px-3 py-1.5",
+                referenceClientDesign && "flex-wrap items-start gap-3 p-4",
               )}
-              {error && (
-                <span className="text-[10px] text-red-400 shrink-0">
-                  Unavailable
-                </span>
+            >
+              {referenceClientDesign ? (
+                <>
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-50 text-xs font-semibold text-orange-700">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold leading-5 text-slate-900">
+                        {form.label}
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        {form.portalDescription}
+                      </p>
+                      <span className="mt-3 inline-flex rounded-md bg-orange-50 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-orange-700">
+                        {form.revision}
+                      </span>
+                    </div>
+                  </div>
+                  {loading ? (
+                    <Loader2 className="mt-1 h-4 w-4 shrink-0 animate-spin text-orange-500" />
+                  ) : error ? (
+                    <span className="shrink-0 text-[10px] font-medium text-red-500">
+                      Unavailable
+                    </span>
+                  ) : (
+                    <a
+                      href={url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        if (!url) e.preventDefault();
+                      }}
+                      aria-label={`View ${form.label}`}
+                      className={cn(
+                        "inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-orange-500 px-4 text-xs font-semibold text-orange-700 transition-colors hover:bg-orange-50",
+                        !url && "pointer-events-none opacity-50",
+                      )}
+                    >
+                      {isDownloading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                      View
+                    </a>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="min-w-0 flex-1">
+                    {loading ? (
+                      <span className="text-xs font-medium text-slate-400">
+                        {form.label}
+                      </span>
+                    ) : error ? (
+                      <span className="text-xs font-medium text-slate-400">
+                        {form.label}
+                      </span>
+                    ) : (
+                      <a
+                        href={url || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                          if (!url) e.preventDefault();
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-orange-600 border border-orange-200 bg-white rounded-md px-2 py-0.5 hover:bg-orange-50 transition-colors"
+                      >
+                        {isDownloading ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : null}
+                        {form.label}
+                      </a>
+                    )}
+                    <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                      {form.description}
+                    </p>
+                  </div>
+                  {loading && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-300 shrink-0" />
+                  )}
+                  {error && (
+                    <span className="text-[10px] text-red-400 shrink-0">
+                      Unavailable
+                    </span>
+                  )}
+                </>
               )}
             </div>
 
             {/* Upload panel */}
-            <div className="border-t border-slate-100 px-3 py-2 bg-white/60 space-y-1.5">
+            <div
+              className={cn(
+                "border-t border-slate-100 px-3 py-2 bg-white/60 space-y-1.5",
+                referenceClientDesign &&
+                  (uploaded.length > 0 || form.formKey !== "ssreq"
+                    ? "border-t px-4 pb-4 pt-3"
+                    : "border-t-0 px-4 pb-0 pt-0"),
+              )}
+            >
               {/* Uploaded files listed ABOVE the upload button */}
               {uploaded.length > 0 && (
                 <div className="space-y-2">
                   {uploaded.map((f) => (
                     <div key={f.id} className="space-y-1">
-                      <div className="flex items-center gap-1.5 rounded-md bg-slate-50 border border-slate-100 px-2 py-0.5">
+                      <div
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-md bg-slate-50 border border-slate-100 px-2 py-0.5",
+                          referenceClientDesign &&
+                            "gap-2 rounded-xl border-0 bg-slate-50 px-3 py-3",
+                        )}
+                      >
                         {f.acknowledgedByAdmin ? (
                           <CheckCircle2 className="h-2.5 w-2.5 shrink-0 text-emerald-500" />
                         ) : (
@@ -356,17 +445,31 @@ export default function DownloadForms({ projectId }: DownloadFormsProps) {
                           >
                             {f.fileName}
                           </a>
-                          <span className="text-[9px] text-slate-400 shrink-0">
+                          <span
+                            className={cn(
+                              "text-[9px] text-slate-400 shrink-0",
+                              referenceClientDesign &&
+                                "text-[11px] text-slate-500",
+                            )}
+                          >
                             {f.uploadedAt
                               ? format(
                                   f.uploadedAt.toDate(),
-                                  "MMM d, yyyy h:mm a",
+                                  referenceClientDesign
+                                    ? "MMM d, yyyy · h:mm a"
+                                    : "MMM d, yyyy h:mm a",
                                 )
                               : "—"}
                           </span>
                         </div>
                         {f.acknowledgedByAdmin ? (
-                          <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0 shrink-0 h-5">
+                          <span
+                            className={cn(
+                              "flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0 shrink-0 h-5",
+                              referenceClientDesign &&
+                                "h-auto rounded-full border-0 px-2.5 py-1 text-emerald-700",
+                            )}
+                          >
                             Acknowledged
                             {f.acknowledgedAt && (
                               <span className="font-normal text-emerald-500 opacity-80">
@@ -379,7 +482,13 @@ export default function DownloadForms({ projectId }: DownloadFormsProps) {
                             )}
                           </span>
                         ) : (
-                          <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0 shrink-0 h-5">
+                          <span
+                            className={cn(
+                              "text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0 shrink-0 h-5",
+                              referenceClientDesign &&
+                                "h-auto rounded-full px-2.5 py-1",
+                            )}
+                          >
                             Pending
                           </span>
                         )}
@@ -413,7 +522,11 @@ export default function DownloadForms({ projectId }: DownloadFormsProps) {
                           fileInputRefs.current[form.formKey]?.click();
                         }}
                         disabled={isUploading}
-                        className="flex items-center gap-1.5 text-xs font-bold text-orange-600 bg-white hover:bg-orange-600 hover:text-white border border-orange-500 rounded-full px-3 py-1 transition-all shrink-0 disabled:opacity-50"
+                        className={cn(
+                          "flex items-center gap-1.5 text-xs font-bold text-orange-600 bg-white hover:bg-orange-600 hover:text-white border border-orange-500 rounded-full px-3 py-1 transition-all shrink-0 disabled:opacity-50",
+                          referenceClientDesign &&
+                            "rounded-xl px-4 py-2 hover:bg-orange-50 hover:text-orange-700",
+                        )}
                       >
                         <Paperclip className="h-3.5 w-3.5" />
                         Attach Form

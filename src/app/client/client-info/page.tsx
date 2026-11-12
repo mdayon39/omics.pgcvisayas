@@ -6106,11 +6106,29 @@ export default function ClientPortalPage() {
                   if (!meta) return null;
 
                   return (
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+                    <div
+                      className={cn(
+                        "bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4",
+                        isReferenceSidebarClient &&
+                          "space-y-0 overflow-hidden rounded-xl border-slate-200 p-0 shadow-sm",
+                      )}
+                    >
                       {/* Panel header */}
-                      <div className="flex items-center justify-between">
+                      <div
+                        className={cn(
+                          "flex items-center justify-between",
+                          isReferenceSidebarClient &&
+                            "border-b border-slate-200 p-4",
+                        )}
+                      >
                         <div className="flex items-center gap-3">
-                          <div className={cn("p-1.5 rounded-lg", meta.iconBg)}>
+                          <div
+                            className={cn(
+                              "p-1.5 rounded-lg",
+                              meta.iconBg,
+                              isReferenceSidebarClient && "rounded-xl p-2.5",
+                            )}
+                          >
                             {meta.icon}
                           </div>
                           <div>
@@ -6118,20 +6136,41 @@ export default function ClientPortalPage() {
                               className={cn(
                                 "text-base font-bold leading-tight",
                                 meta.accent,
+                                isReferenceSidebarClient && "text-slate-900",
                               )}
                             >
                               {meta.label}
                             </h2>
-                            <p className="text-xs text-slate-400">
+                            <p
+                              className={cn(
+                                "text-xs text-slate-400",
+                                isReferenceSidebarClient && "text-slate-500",
+                              )}
+                            >
                               Project:{" "}
-                              {projectDetails?.pid || selectedProjectPid}
+                              {isReferenceSidebarClient ? (
+                                <span className="font-medium text-slate-700">
+                                  {projectDetails?.pid || selectedProjectPid}
+                                </span>
+                              ) : (
+                                projectDetails?.pid || selectedProjectPid
+                              )}
                             </p>
                           </div>
                         </div>
                         <button
                           onClick={() => setActiveDocPanel(null)}
-                          className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                          className={cn(
+                            "text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors",
+                            isReferenceSidebarClient &&
+                              "rounded-full p-2 hover:bg-slate-100",
+                          )}
                           title="Close panel"
+                          aria-label={
+                            isReferenceSidebarClient
+                              ? `Close ${meta.label} panel`
+                              : undefined
+                          }
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -6139,7 +6178,12 @@ export default function ClientPortalPage() {
 
                       {/* Quotations panel */}
                       {panelSection === "quotations" && (
-                        <div className="space-y-2">
+                        <div
+                          className={cn(
+                            "space-y-2",
+                            isReferenceSidebarClient && "space-y-3 p-4",
+                          )}
+                        >
                           {panelDocs?.loading ? (
                             <div className="flex items-center gap-2 py-6 justify-center text-slate-400">
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -6171,43 +6215,104 @@ export default function ClientPortalPage() {
                               return (
                                 <div
                                   key={quotation.id}
-                                  className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex items-center justify-between gap-3 flex-wrap hover:bg-slate-50 transition-colors"
+                                  className={cn(
+                                    "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex items-center justify-between gap-3 flex-wrap hover:bg-slate-50 transition-colors",
+                                    isReferenceSidebarClient &&
+                                      (qCancelled
+                                        ? "relative flex-col items-stretch border-slate-200 bg-white p-4"
+                                        : "relative flex-col items-stretch border-emerald-200 bg-emerald-50/40 p-4"),
+                                  )}
                                 >
-                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                  <div
+                                    className={cn(
+                                      "flex items-center gap-2 flex-wrap min-w-0",
+                                      isReferenceSidebarClient &&
+                                        "w-full justify-between gap-x-3 gap-y-3",
+                                    )}
+                                  >
                                     <a
                                       href={`/client/view-document?type=quotation&ref=${quotation.referenceNumber}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-[11px] font-bold text-purple-700 border border-purple-200 bg-white rounded-md px-2 py-0.5 hover:bg-purple-50 transition-colors"
+                                      className={cn(
+                                        "text-[11px] font-bold text-purple-700 border border-purple-200 bg-white rounded-md px-2 py-0.5 hover:bg-purple-50 transition-colors",
+                                        isReferenceSidebarClient &&
+                                          "rounded-lg border-0 bg-purple-50 px-2.5 py-1 font-semibold hover:bg-purple-100",
+                                      )}
                                     >
                                       {quotation.referenceNumber}
                                     </a>
-                                    <span className="text-xs text-slate-500">
-                                      Total:{" "}
-                                      <span className="font-semibold text-slate-700">
-                                        ₱
-                                        {qTotal.toLocaleString("en-US", {
-                                          minimumFractionDigits: 2,
-                                        })}
-                                      </span>
-                                    </span>
-                                    {qIssuedDate && (
-                                      <span className="text-xs text-slate-500">
-                                        Issued:{" "}
-                                        <span className="font-medium text-slate-600">
-                                          {qIssuedDate}
+                                    {isReferenceSidebarClient ? (
+                                      <div className="order-3 grid w-full grid-cols-2 gap-4">
+                                        <div>
+                                          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                            Total
+                                          </p>
+                                          <p
+                                            className={cn(
+                                              "text-base font-bold text-slate-900",
+                                              qCancelled && "line-through",
+                                            )}
+                                          >
+                                            ₱
+                                            {qTotal.toLocaleString("en-US", {
+                                              minimumFractionDigits: 2,
+                                            })}
+                                          </p>
+                                        </div>
+                                        {qIssuedDate && (
+                                          <div>
+                                            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                              Issued
+                                            </p>
+                                            <p className="text-sm font-medium text-slate-900">
+                                              {qIssuedDate}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <span className="text-xs text-slate-500">
+                                          Total:{" "}
+                                          <span className="font-semibold text-slate-700">
+                                            ₱
+                                            {qTotal.toLocaleString("en-US", {
+                                              minimumFractionDigits: 2,
+                                            })}
+                                          </span>
                                         </span>
-                                      </span>
+                                        {qIssuedDate && (
+                                          <span className="text-xs text-slate-500">
+                                            Issued:{" "}
+                                            <span className="font-medium text-slate-600">
+                                              {qIssuedDate}
+                                            </span>
+                                          </span>
+                                        )}
+                                      </>
                                     )}
                                   </div>
-                                  <div className="flex-shrink-0">
+                                  <div
+                                    className={cn(
+                                      "flex-shrink-0",
+                                      isReferenceSidebarClient &&
+                                        "absolute right-4 top-4",
+                                    )}
+                                  >
                                     {qCancelled ? (
-                                      <span className="inline-flex text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+                                      <span className={cn(
+                                        "inline-flex text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5",
+                                        isReferenceSidebarClient && "px-2.5 py-1 text-[11px]",
+                                      )}>
                                         Cancelled
                                       </span>
                                     ) : quotation.status === "selected" ||
                                       quotation.selectedForProject ? (
-                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                                      <span className={cn(
+                                        "inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5",
+                                        isReferenceSidebarClient && "px-2.5 py-1 text-[11px]",
+                                      )}>
                                         <CheckCircle2 className="h-3 w-3" />{" "}
                                         Selected
                                       </span>
@@ -6222,10 +6327,19 @@ export default function ClientPortalPage() {
 
                       {/* Sample Submission Form panel */}
                       {panelSection === "sampleForm" && (
-                        <div className="space-y-4">
-                          <DownloadForms projectId={selectedProjectPid} />
+                        <div
+                          className={cn(
+                            "space-y-4",
+                            isReferenceSidebarClient && "space-y-3 p-4",
+                          )}
+                        >
+                          <DownloadForms
+                            projectId={selectedProjectPid}
+                            referenceClientDesign={isReferenceSidebarClient}
+                          />
                           {portalFeatures.sampleForms && (
                             <>
+                              {!isReferenceSidebarClient && (
                               <div className="pt-2 border-t border-slate-100">
                                 <a
                                   href={sfBaseHref}
@@ -6235,16 +6349,32 @@ export default function ClientPortalPage() {
                                   Submission Form
                                 </a>
                               </div>
+                              )}
                               {(panelDocs?.sampleForms?.length || 0) > 0 && (
-                                <div className="space-y-2">
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                <div
+                                  className={cn(
+                                    "space-y-2",
+                                    isReferenceSidebarClient && "space-y-3 p-4",
+                                  )}
+                                >
+                                  <p
+                                    className={cn(
+                                      "text-[10px] font-bold text-slate-400 uppercase tracking-wider",
+                                      isReferenceSidebarClient &&
+                                        "text-xs normal-case tracking-normal text-slate-700",
+                                    )}
+                                  >
                                     Submitted Forms
                                   </p>
                                   {panelDocs?.sampleForms.map((item) => (
                                     <a
                                       key={item.id}
                                       href={`${sfBaseHref}&formId=${item.id}`}
-                                      className="flex items-center gap-2 text-sm text-slate-600 hover:text-orange-600 hover:underline py-1.5 px-3 rounded-lg hover:bg-orange-50 transition-colors"
+                                      className={cn(
+                                        "flex items-center gap-2 text-sm text-slate-600 hover:text-orange-600 hover:underline py-1.5 px-3 rounded-lg hover:bg-orange-50 transition-colors",
+                                        isReferenceSidebarClient &&
+                                          "rounded-xl border border-slate-200 bg-white p-3",
+                                      )}
                                     >
                                       <FileSpreadsheet className="h-4 w-4 text-orange-500 flex-shrink-0" />
                                       {item.id} —{" "}
@@ -6260,7 +6390,12 @@ export default function ClientPortalPage() {
 
                       {/* Charge Slips panel */}
                       {panelSection === "chargeSlips" && (
-                        <div className="space-y-3">
+                        <div
+                          className={cn(
+                            "space-y-3",
+                            isReferenceSidebarClient && "p-4",
+                          )}
+                        >
                           {panelDocs?.loading ? (
                             <div className="flex items-center gap-2 py-6 justify-center text-slate-400">
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -6295,56 +6430,127 @@ export default function ClientPortalPage() {
                               return (
                                 <div
                                   key={chargeSlip.id}
-                                  className="rounded-xl border border-slate-100 bg-slate-50/50 p-4 space-y-3 hover:bg-slate-50 transition-colors"
+                                  className={cn(
+                                    "rounded-xl border border-slate-100 bg-slate-50/50 p-4 space-y-3 hover:bg-slate-50 transition-colors",
+                                    isReferenceSidebarClient &&
+                                      "relative border-slate-200 bg-white p-4 hover:bg-slate-50",
+                                  )}
                                 >
                                   <div className="flex items-center justify-between gap-3 flex-wrap">
-                                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                    <div
+                                      className={cn(
+                                        "flex items-center gap-2 flex-wrap min-w-0",
+                                        isReferenceSidebarClient && "w-full",
+                                      )}
+                                    >
                                       <a
                                         href={`/client/view-document?type=charge-slip&ref=${chargeSlip.id}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-1 text-[11px] font-bold text-green-700 bg-white hover:bg-green-700 hover:text-white border border-green-600 rounded-full px-2.5 py-0.5 transition-all shadow-sm"
+                                        className={cn(
+                                          "flex items-center gap-1 text-[11px] font-bold text-green-700 bg-white hover:bg-green-700 hover:text-white border border-green-600 rounded-full px-2.5 py-0.5 transition-all shadow-sm",
+                                          isReferenceSidebarClient &&
+                                            "rounded-lg border-0 bg-emerald-50 px-2.5 py-1 text-emerald-800 shadow-none hover:bg-emerald-100 hover:text-emerald-900",
+                                        )}
                                       >
                                         {chargeSlip.chargeSlipNumber}
                                       </a>
-                                      <span className="text-xs text-slate-500">
-                                        Total:{" "}
-                                        <span className="font-semibold text-slate-700">
-                                          ₱
-                                          {csTotal.toLocaleString("en-US", {
-                                            minimumFractionDigits: 2,
-                                          })}
-                                        </span>
-                                      </span>
-                                      {csIssuedDate && (
-                                        <span className="text-xs text-slate-500">
-                                          Issued:{" "}
-                                          <span className="font-medium text-slate-600">
-                                            {csIssuedDate}
+                                      {isReferenceSidebarClient ? (
+                                        <div className="order-3 grid w-full grid-cols-2 gap-4">
+                                          <div>
+                                            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                              Total
+                                            </p>
+                                            <p
+                                              className={cn(
+                                                "text-base font-bold text-slate-900",
+                                                csCancelled && "line-through",
+                                              )}
+                                            >
+                                              ₱
+                                              {csTotal.toLocaleString("en-US", {
+                                                minimumFractionDigits: 2,
+                                              })}
+                                            </p>
+                                          </div>
+                                          {csIssuedDate && (
+                                            <div>
+                                              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                Issued
+                                              </p>
+                                              <p className="text-sm font-medium text-slate-900">
+                                                {csIssuedDate}
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <span className="text-xs text-slate-500">
+                                            Total:{" "}
+                                            <span className="font-semibold text-slate-700">
+                                              ₱
+                                              {csTotal.toLocaleString("en-US", {
+                                                minimumFractionDigits: 2,
+                                              })}
+                                            </span>
                                           </span>
-                                        </span>
+                                          {csIssuedDate && (
+                                            <span className="text-xs text-slate-500">
+                                              Issued:{" "}
+                                              <span className="font-medium text-slate-600">
+                                                {csIssuedDate}
+                                              </span>
+                                            </span>
+                                          )}
+                                        </>
                                       )}
                                     </div>
-                                    <div>
+                                    <div
+                                      className={cn(
+                                        isReferenceSidebarClient &&
+                                          "absolute right-4 top-4",
+                                      )}
+                                    >
                                       {csPaid ? (
-                                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-0.5">
+                                        <span className={cn(
+                                          "inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-0.5",
+                                          isReferenceSidebarClient &&
+                                            "px-2.5 py-1 text-[11px]",
+                                        )}>
                                           <CheckCircle2 className="h-3 w-3" />{" "}
                                           Paid
                                         </span>
                                       ) : csCancelled ? (
-                                        <span className="inline-flex text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-3 py-0.5">
+                                        <span className={cn(
+                                          "inline-flex text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-3 py-0.5",
+                                          isReferenceSidebarClient &&
+                                            "px-2.5 py-1 text-[11px]",
+                                        )}>
                                           Cancelled
                                         </span>
                                       ) : csWaived ? (
-                                        <span className="inline-flex text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-3 py-0.5">
+                                        <span className={cn(
+                                          "inline-flex text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-3 py-0.5",
+                                          isReferenceSidebarClient &&
+                                            "px-2.5 py-1 text-[11px]",
+                                        )}>
                                           Waived
                                         </span>
                                       ) : csPending ? (
-                                        <span className="inline-flex text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-0.5 animate-pulse">
+                                        <span className={cn(
+                                          "inline-flex text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-0.5 animate-pulse",
+                                          isReferenceSidebarClient &&
+                                            "px-2.5 py-1 text-[11px]",
+                                        )}>
                                           Pending Validation
                                         </span>
                                       ) : (
-                                        <span className="inline-flex text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-3 py-0.5">
+                                        <span className={cn(
+                                          "inline-flex text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-3 py-0.5",
+                                          isReferenceSidebarClient &&
+                                            "px-2.5 py-1 text-[11px]",
+                                        )}>
                                           Processing
                                         </span>
                                       )}
@@ -6414,11 +6620,27 @@ export default function ClientPortalPage() {
                                   return (
                                     <div
                                       key={item.id}
-                                      className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col gap-2 hover:bg-slate-50 transition-colors"
+                                      className={cn(
+                                        "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col gap-2 hover:bg-slate-50 transition-colors",
+                                        isReferenceSidebarClient &&
+                                          "border-slate-200 bg-white p-4 hover:bg-white",
+                                      )}
                                     >
                                       {/* File meta row */}
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                      <div
+                                        className={cn(
+                                          "flex items-center gap-2 min-w-0",
+                                          isReferenceSidebarClient &&
+                                            "border-b border-slate-100 pb-3",
+                                        )}
+                                      >
+                                        <FileText
+                                          className={cn(
+                                            "h-4 w-4 text-blue-500 flex-shrink-0",
+                                            isReferenceSidebarClient &&
+                                              "h-5 w-5 text-slate-500",
+                                          )}
+                                        />
                                         <div className="min-w-0">
                                           {isReceived &&
                                           item.clientAccessEnabled !== false &&
@@ -6427,31 +6649,65 @@ export default function ClientPortalPage() {
                                               href={reportUrl}
                                               target="_blank"
                                               rel="noopener noreferrer"
-                                              className="text-sm text-blue-700 hover:underline truncate block"
+                                              className={cn(
+                                                "text-sm text-blue-700 hover:underline truncate block",
+                                                isReferenceSidebarClient &&
+                                                  "font-semibold text-slate-900 no-underline hover:text-blue-700 hover:underline",
+                                              )}
                                               title="Open service report"
                                             >
                                               {item.fileName || item.id}
                                             </a>
                                           ) : (
-                                            <span className="text-sm text-slate-600 truncate block">
+                                            <span
+                                              className={cn(
+                                                "text-sm text-slate-600 truncate block",
+                                                isReferenceSidebarClient &&
+                                                  "font-semibold text-slate-900",
+                                              )}
+                                            >
                                               {item.fileName || item.id}
                                             </span>
                                           )}
                                           {uploadedDate && (
-                                            <span className="text-[10px] text-slate-400 font-medium">
-                                              Uploaded: {uploadedDate}
+                                            <span
+                                              className={cn(
+                                                "text-[10px] font-medium text-slate-400",
+                                                isReferenceSidebarClient &&
+                                                  "text-[11px] text-slate-500",
+                                              )}
+                                            >
+                                              {isReferenceSidebarClient
+                                                ? `Uploaded ${uploadedDate}`
+                                                : `Uploaded: ${uploadedDate}`}
                                             </span>
                                           )}
                                         </div>
                                       </div>
 
                                       {/* Action row */}
-                                      <div className="flex items-center justify-end">
+                                      <div
+                                        className={cn(
+                                          "flex items-center justify-end",
+                                          isReferenceSidebarClient &&
+                                            "flex-wrap justify-between gap-2 pt-1",
+                                        )}
+                                      >
                                         {isReceived ? (
-                                          <div className="flex items-center gap-2">
+                                          <div
+                                            className={cn(
+                                              "flex items-center gap-2",
+                                              isReferenceSidebarClient &&
+                                                "w-full flex-wrap justify-between gap-2",
+                                            )}
+                                          >
                                             <Badge
                                               variant="outline"
-                                              className="text-xs text-green-700 border-green-200 bg-green-50 gap-1 h-6 shrink-0"
+                                              className={cn(
+                                                "text-xs text-green-700 border-green-200 bg-green-50 gap-1 h-6 shrink-0",
+                                                isReferenceSidebarClient &&
+                                                  "h-auto rounded-full border-0 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-medium",
+                                              )}
                                             >
                                               <CheckCircle2 className="h-3 w-3" />
                                               Received
@@ -6467,7 +6723,11 @@ export default function ClientPortalPage() {
                                                   href={reportUrl}
                                                   target="_blank"
                                                   rel="noopener noreferrer"
-                                                  className="inline-flex h-8 items-center gap-1 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700"
+                                                  className={cn(
+                                                    "inline-flex h-8 items-center gap-1 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700",
+                                                    isReferenceSidebarClient &&
+                                                      "h-10 rounded-xl px-4 font-semibold",
+                                                  )}
                                                 >
                                                   <Download className="h-3 w-3" />
                                                   Open Report

@@ -830,7 +830,7 @@ export default function ClientPortalPage() {
     }
 
     autoExpandedReferenceProjects.current.add(projectPid);
-    setIsProjectInfoExpanded(true);
+    setIsProjectInfoExpanded(false);
     setExpandedMembers((current) => new Set(current).add(primaryMember.id));
   }, [isReferenceSidebarClient, members, projectDetails?.pid]);
   const [isQuotationRequestExpanded, setIsQuotationRequestExpanded] =
@@ -3599,6 +3599,11 @@ export default function ClientPortalPage() {
 
   const primaryMember = members.find((m) => m.isPrimary);
   const otherMembers = members.filter((m) => !m.isPrimary);
+  const savedMemberCount = members.filter((member) => member.isSubmitted).length;
+  const referenceClientApprovalPending =
+    projectDetails?.status === "Pending Approval" || approvalStatus === "pending";
+  const referenceClientProjectApproved =
+    projectDetails?.status === "Ongoing" || projectDetails?.status === "Completed";
 
   /** Renders the full member form (used inside expandable cards) */
   const renderMemberForm = (member: ClientMember) => {
@@ -3658,29 +3663,35 @@ export default function ClientPortalPage() {
             className={cn(
               "grid grid-cols-1 md:grid-cols-2 gap-4",
               isReferenceSidebarClient &&
-                "grid-cols-1 min-[480px]:grid-cols-6 gap-x-3 gap-y-3",
+                "grid-cols-1 min-[480px]:grid-cols-2 gap-x-3 gap-y-3",
             )}
           >
+            {isReferenceSidebarClient && (
+              <h3 className="col-span-full order-[1] text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                Personal information
+              </h3>
+            )}
             {/* Name */}
             <div
               className={cn(
                 "md:col-span-2",
                 isReferenceSidebarClient &&
-                  "min-[480px]:col-span-3 md:col-span-3",
+                  "order-[2] min-[480px]:col-span-1 md:col-span-1",
               )}
             >
               <Label className={cn(
                 "text-sm font-semibold text-slate-700 mb-1 block",
                 isReferenceSidebarClient && "text-xs font-medium",
               )}>
-                Full Name <span className="text-[#B9273A]">*</span>
+                {isReferenceSidebarClient ? "Full name" : "Full Name"}{" "}
+                <span className="text-[#B9273A]">*</span>
               </Label>
               <Input
                 value={member.formData.name}
                 onChange={(e) =>
                   handleChange(member.id, "name", e.target.value)
                 }
-                placeholder="Enter full name"
+                placeholder={isReferenceSidebarClient ? "First name, last name" : "Enter full name"}
                 disabled={
                   (!member.isDraft && member.isSubmitted) ||
                   projectDetails?.status === "Completed" ||
@@ -3704,17 +3715,22 @@ export default function ClientPortalPage() {
               className={cn(
                 "md:col-span-2",
                 isReferenceSidebarClient &&
-                  "min-[480px]:col-span-3 md:col-span-3",
+                  "order-[3] min-[480px]:col-span-1 md:col-span-1",
               )}
             >
               <Label className={cn(
                 "text-sm font-semibold text-slate-700 mb-1 block",
                 isReferenceSidebarClient && "text-xs font-medium",
               )}>
-                Email Address <span className="text-[#B9273A]">*</span>
+                {isReferenceSidebarClient ? "Email address" : "Email Address"}{" "}
+                <span className="text-[#B9273A]">*</span>
                 {member.isPrimary && (
-                  <span className="ml-2 text-xs font-normal text-slate-400">
-                    (Verified)
+                  <span className={cn(
+                    "ml-2 text-xs font-normal text-slate-400",
+                    isReferenceSidebarClient &&
+                      "rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700",
+                  )}>
+                    {isReferenceSidebarClient ? "Verified" : "(Verified)"}
                   </span>
                 )}
               </Label>
@@ -3747,19 +3763,26 @@ export default function ClientPortalPage() {
               )}
             </div>
 
+            {isReferenceSidebarClient && (
+              <h3 className="col-span-full order-[5] pt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                Affiliation
+              </h3>
+            )}
             {/* Affiliation */}
             <div
               className={cn(
                 "md:col-span-2",
                 isReferenceSidebarClient &&
-                  "min-[480px]:col-span-6 md:col-span-6",
+                  "order-[6] min-[480px]:col-span-1 md:col-span-1",
               )}
             >
               <Label className={cn(
                 "text-sm font-semibold text-slate-700 mb-1 block",
                 isReferenceSidebarClient && "text-xs font-medium",
               )}>
-                Affiliation (Department & Institution){" "}
+                {isReferenceSidebarClient
+                  ? "Department & institution"
+                  : "Affiliation (Department & Institution)"}{" "}
                 <span className="text-[#B9273A]">*</span>
               </Label>
               <Input
@@ -3767,7 +3790,9 @@ export default function ClientPortalPage() {
                 onChange={(e) =>
                   handleChange(member.id, "affiliation", e.target.value)
                 }
-                placeholder="e.g. Division of Biological Sciences - UPV CAS"
+                placeholder={isReferenceSidebarClient
+                  ? "e.g. Division of Biological Sciences, UPV CAS"
+                  : "e.g. Division of Biological Sciences - UPV CAS"}
                 disabled={
                   (!member.isDraft && member.isSubmitted) ||
                   projectDetails?.status === "Completed" ||
@@ -3787,7 +3812,10 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Designation */}
-            <div className={cn(isReferenceSidebarClient && "min-[480px]:col-span-2")}>
+            <div className={cn(
+              isReferenceSidebarClient &&
+                "order-[7] min-[480px]:col-span-1 md:col-span-1",
+            )}>
               <Label className={cn(
                 "text-sm font-semibold text-slate-700 mb-1 block",
                 isReferenceSidebarClient && "text-xs font-medium",
@@ -3819,7 +3847,10 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Sex */}
-            <div className={cn(isReferenceSidebarClient && "min-[480px]:col-span-2")}>
+            <div className={cn(
+              isReferenceSidebarClient &&
+                "order-[4] min-[480px]:col-span-1 md:col-span-1",
+            )}>
               <Label className={cn(
                 "text-sm font-semibold text-slate-700 mb-1 block",
                 isReferenceSidebarClient && "text-xs font-medium",
@@ -3840,7 +3871,7 @@ export default function ClientPortalPage() {
                   isReferenceSidebarClient &&
                     "h-8 text-xs disabled:bg-slate-50 disabled:opacity-100",
                 )}>
-                  <SelectValue placeholder="Select Sex at Birth" />
+                  <SelectValue placeholder={isReferenceSidebarClient ? "Select an option" : "Select Sex at Birth"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="M">Male</SelectItem>
@@ -3858,21 +3889,22 @@ export default function ClientPortalPage() {
               className={cn(
                 "md:col-span-2",
                 isReferenceSidebarClient &&
-                  "min-[480px]:col-span-2 md:col-span-2",
+                  "order-[4] min-[480px]:col-span-1 md:col-span-1",
               )}
             >
               <Label className={cn(
                 "text-sm font-semibold text-slate-700 mb-1 block",
                 isReferenceSidebarClient && "text-xs font-medium",
               )}>
-                Mobile Number <span className="text-[#B9273A]">*</span>
+                {isReferenceSidebarClient ? "Mobile number" : "Mobile Number"}{" "}
+                <span className="text-[#B9273A]">*</span>
               </Label>
               <Input
                 value={member.formData.phoneNumber}
                 onChange={(e) =>
                   handleChange(member.id, "phoneNumber", e.target.value)
                 }
-                placeholder="e.g. 09091234567"
+                placeholder={isReferenceSidebarClient ? "09XX XXX XXXX" : "e.g. 09091234567"}
                 disabled={
                   (!member.isDraft && member.isSubmitted) ||
                   projectDetails?.status === "Completed" ||
@@ -3896,21 +3928,24 @@ export default function ClientPortalPage() {
               className={cn(
                 "md:col-span-2",
                 isReferenceSidebarClient &&
-                  "min-[480px]:col-span-6 md:col-span-6",
+                  "order-[8] col-span-full",
               )}
             >
               <Label className={cn(
                 "text-sm font-semibold text-slate-700 mb-1 block",
                 isReferenceSidebarClient && "text-xs font-medium",
               )}>
-                Affiliation Address <span className="text-[#B9273A]">*</span>
+                {isReferenceSidebarClient ? "Affiliation address" : "Affiliation Address"}{" "}
+                <span className="text-[#B9273A]">*</span>
               </Label>
               <Textarea
                 value={member.formData.affiliationAddress}
                 onChange={(e) =>
                   handleChange(member.id, "affiliationAddress", e.target.value)
                 }
-                placeholder="Enter complete address of your institution/organization"
+                placeholder={isReferenceSidebarClient
+                  ? "Street, city, province, postal code"
+                  : "Enter complete address of your institution/organization"}
                 disabled={
                   (!member.isDraft && member.isSubmitted) ||
                   projectDetails?.status === "Completed" ||
@@ -3931,7 +3966,11 @@ export default function ClientPortalPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-between pt-3 border-t border-slate-100">
+          <div className={cn(
+            "flex justify-between pt-3 border-t border-slate-100",
+            isReferenceSidebarClient &&
+              "-mx-4 -mb-4 mt-4 items-center bg-slate-50 px-4 py-3",
+          )}>
             <Button
               type="button"
               onClick={() => handleSaveDraft(member.id)}
@@ -3944,7 +3983,7 @@ export default function ClientPortalPage() {
               variant="outline"
               className={cn(
                 "h-10 px-6 border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50",
-                isReferenceSidebarClient && "h-9 px-3 text-xs",
+                isReferenceSidebarClient && "h-8 px-3 text-[10px]",
               )}
             >
               {activeSavingId === member.id ? (
@@ -3955,7 +3994,7 @@ export default function ClientPortalPage() {
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Save Draft
+                  {isReferenceSidebarClient ? "Save draft" : "Save Draft"}
                 </>
               )}
             </Button>
@@ -3970,7 +4009,7 @@ export default function ClientPortalPage() {
               className={cn(
                 "h-10 px-6 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-semibold shadow-md disabled:opacity-50",
                 isReferenceSidebarClient &&
-                  "h-9 px-4 text-xs disabled:bg-white disabled:text-slate-600 disabled:opacity-100",
+                  "h-8 px-4 text-[10px] disabled:bg-white disabled:text-slate-600 disabled:opacity-100",
                 isReferenceSidebarClient &&
                   member.isSubmitted &&
                   "border border-slate-200 bg-white text-slate-600 shadow-none hover:bg-white",
@@ -3987,7 +4026,9 @@ export default function ClientPortalPage() {
                   Saving...
                 </>
               ) : (
-                `${member.isPrimary ? "Save & Confirm My Details" : "Save & Confirm Member Details"}`
+                isReferenceSidebarClient
+                  ? `Save & confirm ${member.isPrimary ? "my" : "member"} details`
+                  : `${member.isPrimary ? "Save & Confirm My Details" : "Save & Confirm Member Details"}`
               )}
             </Button>
           </div>
@@ -4030,7 +4071,7 @@ export default function ClientPortalPage() {
               className={cn(
                 "p-1.5 rounded-lg flex-shrink-0",
                 isReferenceSidebarClient
-                  ? "bg-transparent p-0"
+                  ? "rounded-full bg-blue-100 p-1.5"
                   : member.isPrimary
                     ? "bg-[#166FB5]/10"
                     : "bg-slate-100",
@@ -4046,7 +4087,10 @@ export default function ClientPortalPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-sm text-slate-800 truncate">
+                  <span className={cn(
+                    "truncate text-sm font-semibold text-slate-800",
+                    isReferenceSidebarClient && "text-[11px]",
+                  )}>
                   {member.formData.name ||
                     (member.isPrimary ? "Primary Member" : "Unnamed Member")}
                 </span>
@@ -4092,6 +4136,9 @@ export default function ClientPortalPage() {
                 isReferenceSidebarClient &&
                   status.label === "Complete" &&
                   "h-auto rounded-full border-0 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700 shadow-none",
+                isReferenceSidebarClient &&
+                  status.label === "Draft" &&
+                  "h-auto rounded-full border-0 bg-amber-100 px-2 py-1 text-[9px] font-medium text-amber-900 shadow-none",
               )}
             >
               {status.label}
@@ -5099,17 +5146,90 @@ export default function ClientPortalPage() {
         <main
           className={cn(
             "flex-1 overflow-y-auto bg-gradient-to-br from-slate-50/50 to-blue-50/30",
-            isReferenceSidebarClient && "bg-white",
+            isReferenceSidebarClient && "bg-slate-100",
           )}
         >
           <div className="flex min-h-full flex-col lg:flex-row">
             <div className="order-2 min-w-0 flex-1 lg:order-1">
+          {isReferenceSidebarClient && projectDetails && (
+            <div className="mx-auto w-full max-w-3xl px-4 pt-3">
+              <ol
+                aria-label="Project submission progress"
+                className="flex items-center"
+              >
+                {[
+                  {
+                    label: "Project saved",
+                    complete: true,
+                    current: false,
+                  },
+                  {
+                    label: "Primary Member",
+                    complete: Boolean(primaryMember?.isSubmitted),
+                    current:
+                      !primaryMember?.isSubmitted &&
+                      !referenceClientApprovalPending &&
+                      !referenceClientProjectApproved,
+                  },
+                  {
+                    label: "Admin approval",
+                    complete: referenceClientProjectApproved,
+                    current: referenceClientApprovalPending,
+                  },
+                ].map((step, index) => (
+                  <li
+                    key={step.label}
+                    className="flex min-w-0 flex-1 items-center gap-1.5 text-[9px]"
+                    aria-current={step.current ? "step" : undefined}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold",
+                        step.complete
+                          ? "bg-emerald-700 text-white"
+                          : step.current
+                            ? "bg-blue-700 text-white"
+                            : "bg-slate-200 text-slate-600",
+                      )}
+                    >
+                      {step.complete ? (
+                        <CheckCircle2 className="h-3 w-3" />
+                      ) : (
+                        index + 1
+                      )}
+                    </span>
+                    <span
+                      className={cn(
+                        "truncate",
+                        step.complete
+                          ? "font-semibold text-emerald-800"
+                          : step.current
+                            ? "font-semibold text-blue-800"
+                            : "text-slate-500",
+                      )}
+                    >
+                      {step.label}
+                    </span>
+                    {index < 2 && (
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "mx-1 h-px min-w-3 flex-1",
+                          step.complete ? "bg-emerald-700" : "bg-slate-300",
+                        )}
+                      />
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
           {projectDetails ? (
             <div
               className={cn(
                 "p-3 lg:p-4 max-w-5xl mx-auto space-y-3",
                 isReferenceSidebarClient &&
-                  "max-w-5xl space-y-4 rounded-xl p-2 lg:p-2",
+                  "max-w-3xl space-y-3 rounded-xl p-4 lg:p-4",
               )}
             >
               {/* Draft/Pending/Approved status banner */}
@@ -5119,7 +5239,10 @@ export default function ClientPortalPage() {
                 projectDetails?.status === "Rejected" ||
                 projectDetails?.status === "Returned for Revision") && (
                 <div
-                  className={`rounded-lg p-3 border ${
+                  className={isReferenceSidebarClient &&
+                    projectDetails.status === "Draft"
+                    ? "rounded-lg border border-amber-300 bg-amber-50 p-3"
+                    : `rounded-lg p-3 border ${
                     projectDetails.status === "Draft"
                       ? "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200"
                       : projectDetails.status === "Pending Approval"
@@ -5130,16 +5253,33 @@ export default function ClientPortalPage() {
                   }`}
                 >
                   <div className="flex items-start">
+                    {isReferenceSidebarClient &&
+                      projectDetails.status === "Draft" && (
+                        <AlertCircle className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-amber-800" />
+                      )}
                     <div className="flex-1 space-y-1">
                       {projectDetails.status === "Draft" ? (
                         <>
-                          <p className="text-xs font-semibold text-orange-900 leading-none">
-                            Action Required: Complete Project Submission
+                          <p className={cn(
+                            "text-xs font-semibold text-orange-900 leading-none",
+                            isReferenceSidebarClient && "text-[10px]",
+                          )}>
+                            {isReferenceSidebarClient
+                              ? "Action required: complete your project submission"
+                              : "Action Required: Complete Project Submission"}
                           </p>
-                          <p className="text-xs text-orange-700 leading-relaxed">
-                            {members.some(
-                              (m) => m.isPrimary && !m.isSubmitted,
-                            ) ? (
+                          <p className={cn(
+                            "text-xs text-orange-700 leading-relaxed",
+                            isReferenceSidebarClient && "text-[9px]",
+                          )}>
+                            {isReferenceSidebarClient ? (
+                              <>
+                                Add your details as the{" "}
+                                <strong>Primary Member</strong>, then select{" "}
+                              </>
+                            ) : members.some(
+                                (m) => m.isPrimary && !m.isSubmitted,
+                              ) ? (
                               <>
                                 Please provide your details as the{" "}
                                 <strong>Primary Member</strong>.{" "}
@@ -5150,12 +5290,20 @@ export default function ClientPortalPage() {
                                 them now.{" "}
                               </>
                             )}
-                            Once finished, scroll to the bottom and click "
-                            <strong>Submit Project & Team for Approval</strong>"
-                            to send your application for admin review. After
-                            approval, you will be assigned a{" "}
+                            {isReferenceSidebarClient
+                              ? ""
+                              : 'Once finished, scroll to the bottom and click "'}
+                            <strong>Submit Project & Team for Approval</strong>
+                            {isReferenceSidebarClient
+                              ? " to send your application for admin review. Once approved, you'll receive a Project ID and Client ID."
+                              : '" to send your application for admin review. After'}
+                            {!isReferenceSidebarClient && (
+                              <>
+                                approval, you will be assigned a{" "}
                             <strong>Project ID</strong> and{" "}
                             <strong>Client ID</strong>.
+                              </>
+                            )}
                           </p>
                         </>
                       ) : projectDetails.status === "Pending Approval" ? (
@@ -5257,7 +5405,15 @@ export default function ClientPortalPage() {
                           )}
                         />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-semibold text-slate-800 truncate">
+                          {isReferenceSidebarClient && (
+                            <span className="text-[8px] font-medium uppercase tracking-wide text-slate-500">
+                              Project
+                            </span>
+                          )}
+                          <span className={cn(
+                            "text-sm font-semibold text-slate-800 truncate",
+                            isReferenceSidebarClient && "text-xs",
+                          )}>
                             {projectDetails.title || "Project Information"}
                           </span>
                           {projectDetails.pid &&
@@ -5289,6 +5445,11 @@ export default function ClientPortalPage() {
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
                           )}
+                        {isReferenceSidebarClient && (
+                          <span className="mr-1 text-[9px] font-medium text-slate-700">
+                            View details
+                          </span>
+                        )}
                         <ChevronDown
                           className={cn(
                             "h-4 w-4 text-slate-400 transition-transform duration-200",
@@ -5658,16 +5819,20 @@ export default function ClientPortalPage() {
                 className={cn(
                   "space-y-2",
                   isReferenceSidebarClient &&
-                    "-mx-2 space-y-3 rounded-xl bg-[#EEF3F8] px-2 py-3",
+                    "-mx-4 space-y-3 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm",
                 )}
               >
                 {/* Section header */}
-                <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className={cn(
+                  "flex items-center justify-between gap-2 flex-wrap",
+                  isReferenceSidebarClient &&
+                    "border-b border-slate-100 pb-3",
+                )}>
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
                         "p-1.5 bg-[#166FB5]/10 rounded-lg",
-                        isReferenceSidebarClient && "bg-transparent p-0",
+                        isReferenceSidebarClient && "hidden",
                       )}
                     >
                       <Users className="h-4 w-4 text-[#166FB5]" />
@@ -5680,14 +5845,36 @@ export default function ClientPortalPage() {
                         className={cn(
                           "text-[10px] text-slate-400 uppercase tracking-wider font-semibold",
                           isReferenceSidebarClient &&
-                            "mt-0.5 text-[11px] normal-case tracking-normal text-slate-600",
+                            "mt-1 flex items-center gap-2 text-[9px] font-normal normal-case tracking-normal text-slate-600",
                         )}
                       >
-                        <strong>
-                          {members.filter((m) => m.isSubmitted).length}
-                        </strong>{" "}
-                        / <strong>{members.length}</strong>{" "}
-                        Saved
+                        {isReferenceSidebarClient ? (
+                          <>
+                            <span
+                              role="progressbar"
+                              aria-label="Saved team members"
+                              aria-valuemin={0}
+                              aria-valuemax={members.length}
+                              aria-valuenow={savedMemberCount}
+                              className="h-1 w-[72px] overflow-hidden rounded-full bg-slate-200"
+                            >
+                              <span
+                                className="block h-full rounded-full bg-blue-700 transition-[width]"
+                                style={{
+                                  width: `${members.length
+                                    ? (savedMemberCount / members.length) * 100
+                                    : 0}%`,
+                                }}
+                              />
+                            </span>
+                            <span>{savedMemberCount} of {members.length} saved</span>
+                          </>
+                        ) : (
+                          <>
+                            <strong>{savedMemberCount}</strong>{" "}
+                            / <strong>{members.length}</strong> Saved
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -5705,7 +5892,7 @@ export default function ClientPortalPage() {
                       className={cn(
                         "border-[#166FB5] text-[#166FB5] hover:bg-[#166FB5] hover:text-white disabled:opacity-50",
                         isReferenceSidebarClient &&
-                          "h-8 rounded-lg px-3 text-xs hover:bg-[#166FB5] hover:text-white",
+                          "h-8 rounded-lg px-3 text-[10px] hover:bg-[#166FB5] hover:text-white",
                       )}
                     >
                       <Plus className="h-4 w-4 mr-1" />
@@ -5717,13 +5904,11 @@ export default function ClientPortalPage() {
                 {/* Primary member */}
                 {primaryMember && (
                   <div className="space-y-1.5">
-                    <h3 className={cn(
-                      "text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1",
-                      isReferenceSidebarClient &&
-                        "text-[11px] normal-case tracking-normal text-slate-800",
-                    )}>
-                      Primary Member
-                    </h3>
+                    {!isReferenceSidebarClient && (
+                      <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                        Primary Member
+                      </h3>
+                    )}
                     {renderMemberCard(primaryMember)}
                   </div>
                 )}
@@ -5731,7 +5916,11 @@ export default function ClientPortalPage() {
                 {/* Other members */}
                 {otherMembers.length > 0 && (
                   <div className="space-y-1.5">
-                    <h3 className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1">
+                    <h3 className={cn(
+                      "px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400",
+                      isReferenceSidebarClient &&
+                        "text-[11px] normal-case tracking-normal text-slate-800",
+                    )}>
                       Other Members ({otherMembers.length})
                     </h3>
                     <div className="space-y-1.5">
@@ -5777,13 +5966,31 @@ export default function ClientPortalPage() {
                   approvalStatus !== "pending" &&
                   (projectDetails?.isDraft ||
                     members.some((m) => m.isDraft && !m.isPrimary)) && (
-                    <div className="pt-6 border-t-2 border-slate-200">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="text-sm text-slate-500">
+                    <div className={cn(
+                      "pt-6 border-t-2 border-slate-200",
+                      isReferenceSidebarClient &&
+                        "sticky bottom-0 z-10 -mx-4 -mb-4 rounded-b-xl border-t border-slate-200 bg-white p-2",
+                    )}>
+                      <div className={cn(
+                        "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4",
+                        isReferenceSidebarClient && "gap-2",
+                      )}>
+                        <div className={cn(
+                          "text-sm text-slate-500",
+                          isReferenceSidebarClient && "text-[9px]",
+                        )}>
                           {members.some((m) => !m.isSubmitted) ? (
-                            <span className="text-[#B9273A] font-semibold flex items-center gap-1.5">
-                              <AlertCircle className="h-4 w-4" />
-                              Complete and save all member details to proceed
+                            <span className={cn(
+                              "text-[#B9273A] font-semibold flex items-center gap-1.5",
+                              isReferenceSidebarClient && "text-amber-900",
+                            )}>
+                              <AlertCircle className={cn(
+                                "h-4 w-4",
+                                isReferenceSidebarClient && "h-3 w-3 text-amber-800",
+                              )} />
+                              {isReferenceSidebarClient
+                                ? "Save all member details to enable submission"
+                                : "Complete and save all member details to proceed"}
                             </span>
                           ) : projectDetails?.isDraft ? (
                             <span className="flex items-center gap-1.5 text-blue-600 font-medium">
@@ -5799,9 +6006,16 @@ export default function ClientPortalPage() {
                           disabled={
                             submitting || members.some((m) => !m.isSubmitted)
                           }
-                          className="h-12 px-8 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-bold shadow-xl hover:shadow-2xl disabled:opacity-50 whitespace-nowrap"
+                          className={cn(
+                            "h-12 px-8 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-bold shadow-xl hover:shadow-2xl disabled:opacity-50 whitespace-nowrap",
+                            isReferenceSidebarClient &&
+                              "h-8 px-3 text-[9px] font-medium shadow-none disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-100",
+                          )}
                         >
-                          <Send className="h-5 w-5 mr-2" />
+                          <Send className={cn(
+                            "h-5 w-5 mr-2",
+                            isReferenceSidebarClient && "mr-1 h-3 w-3",
+                          )} />
                           {projectDetails?.isDraft
                             ? "Submit Project & Team for Approval"
                             : "Submit Team Members for Approval"}

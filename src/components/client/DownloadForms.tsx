@@ -29,6 +29,7 @@ import {
   X,
   Paperclip,
   Eye,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -425,22 +426,34 @@ export default function DownloadForms({
                         className={cn(
                           "flex items-center gap-1.5 rounded-md bg-slate-50 border border-slate-100 px-2 py-0.5",
                           referenceClientDesign &&
-                            "gap-2 rounded-xl border-0 bg-slate-50 px-3 py-3",
+                            "gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5",
                         )}
                       >
-                        {f.acknowledgedByAdmin ? (
-                          <CheckCircle2 className="h-2.5 w-2.5 shrink-0 text-emerald-500" />
-                        ) : (
-                          <Clock className="h-2.5 w-2.5 shrink-0 text-amber-400" />
-                        )}
-                        {/* Clickable filename */}
-                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-50",
+                            !referenceClientDesign && "hidden",
+                          )}
+                        >
+                          <FileText className="h-4 w-4 text-orange-700" />
+                        </span>
+                        {!referenceClientDesign &&
+                          (f.acknowledgedByAdmin ? (
+                            <CheckCircle2 className="h-2.5 w-2.5 shrink-0 text-emerald-500" />
+                          ) : (
+                            <Clock className="h-2.5 w-2.5 shrink-0 text-amber-400" />
+                          ))}
+                        <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
                           <a
                             href={f.downloadURL}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="text-[11px] font-medium text-orange-600 hover:underline truncate"
+                            className={cn(
+                              "text-[11px] font-medium text-orange-600 hover:underline truncate",
+                              referenceClientDesign &&
+                                "max-w-full text-xs font-semibold text-slate-900 no-underline hover:text-slate-900",
+                            )}
                             title={`View ${f.fileName}`}
                           >
                             {f.fileName}
@@ -452,14 +465,21 @@ export default function DownloadForms({
                                 "text-[11px] text-slate-500",
                             )}
                           >
-                            {f.uploadedAt
-                              ? format(
-                                  f.uploadedAt.toDate(),
-                                  referenceClientDesign
-                                    ? "MMM d, yyyy · h:mm a"
-                                    : "MMM d, yyyy h:mm a",
-                                )
-                              : "—"}
+                            {referenceClientDesign
+                              ? `Submitted ${
+                                  f.uploadedAt
+                                    ? format(
+                                        f.uploadedAt.toDate(),
+                                        "MMM d, yyyy · h:mm a",
+                                      )
+                                    : "—"
+                                }`
+                              : f.uploadedAt
+                                ? format(
+                                    f.uploadedAt.toDate(),
+                                    "MMM d, yyyy h:mm a",
+                                  )
+                                : "—"}
                           </span>
                         </div>
                         {f.acknowledgedByAdmin ? (
@@ -467,11 +487,14 @@ export default function DownloadForms({
                             className={cn(
                               "flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0 shrink-0 h-5",
                               referenceClientDesign &&
-                                "h-auto rounded-full border-0 px-2.5 py-1 text-emerald-700",
+                                "h-auto rounded-full border-0 px-2.5 py-1 text-[10px] text-emerald-800",
                             )}
                           >
+                            {referenceClientDesign && (
+                              <CheckCircle2 className="h-3 w-3" />
+                            )}
                             Acknowledged
-                            {f.acknowledgedAt && (
+                            {f.acknowledgedAt && !referenceClientDesign && (
                               <span className="font-normal text-emerald-500 opacity-80">
                                 ·{" "}
                                 {format(
@@ -486,16 +509,35 @@ export default function DownloadForms({
                             className={cn(
                               "text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0 shrink-0 h-5",
                               referenceClientDesign &&
-                                "h-auto rounded-full px-2.5 py-1",
+                                "inline-flex h-auto items-center gap-1 rounded-full border-0 px-2.5 py-1 text-[10px] text-amber-900",
                             )}
                           >
+                            {referenceClientDesign && (
+                              <Clock className="h-3 w-3" />
+                            )}
                             Pending
                           </span>
                         )}
                       </div>
+                      {referenceClientDesign &&
+                        f.acknowledgedByAdmin &&
+                        f.acknowledgedAt && (
+                          <p className="px-1 text-[11px] text-emerald-800">
+                            Acknowledged on{" "}
+                            {format(
+                              f.acknowledgedAt.toDate(),
+                              "MMM d, yyyy · h:mm a",
+                            )}
+                          </p>
+                        )}
                     </div>
                   ))}
                 </div>
+              )}
+              {referenceClientDesign && hasPendingUpload && (
+                <p className="text-xs leading-5 text-slate-600">
+                  We&apos;ll notify you once the admin acknowledges your form.
+                </p>
               )}
 
               {/* Attach/Upload workflow — hidden while a pending (unacknowledged) file exists, and hidden for read-only forms */}
@@ -529,19 +571,39 @@ export default function DownloadForms({
                         )}
                       >
                         <Paperclip className="h-3.5 w-3.5" />
-                        Attach Form
+                        {referenceClientDesign && uploaded.length > 0
+                          ? "Attach another form"
+                          : "Attach Form"}
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 p-2 bg-blue-50/50 border border-blue-200 rounded-lg">
-                        <FileText className="h-4 w-4 text-blue-600 shrink-0" />
+                      <div
+                        className={cn(
+                          "flex items-center gap-2 p-2 bg-blue-50/50 border border-blue-200 rounded-lg",
+                          referenceClientDesign &&
+                            "gap-3 rounded-xl border-slate-200 bg-white p-3",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-50",
+                            !referenceClientDesign && "hidden",
+                          )}
+                        >
+                          <FileText className="h-4 w-4 text-orange-700" />
+                        </span>
+                        {!referenceClientDesign && (
+                          <FileText className="h-4 w-4 shrink-0 text-blue-600" />
+                        )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-medium text-slate-800 truncate">
+                          <p className="truncate text-xs font-semibold text-slate-900">
                             {attachedFile.name}
                           </p>
-                          <p className="text-[10px] text-slate-500">
-                            {(attachedFile.size / 1024).toFixed(1)} KB
+                          <p className="text-[11px] text-slate-500">
+                            {referenceClientDesign
+                              ? `PDF · ${(attachedFile.size / 1024).toFixed(1)} KB · Ready to upload`
+                              : `${(attachedFile.size / 1024).toFixed(1)} KB`}
                           </p>
                         </div>
                         <a
@@ -549,20 +611,39 @@ export default function DownloadForms({
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="p-1 hover:bg-blue-100 rounded transition-colors"
+                          className={cn(
+                            "p-1 hover:bg-blue-100 rounded transition-colors",
+                            referenceClientDesign &&
+                              "rounded-lg p-2 hover:bg-slate-100",
+                          )}
                           title="Preview file"
+                          aria-label={`Preview ${attachedFile.name}`}
                         >
-                          <Eye className="h-3.5 w-3.5 text-blue-600" />
+                          <Eye
+                            className={cn(
+                              "h-3.5 w-3.5 text-blue-600",
+                              referenceClientDesign && "text-slate-600",
+                            )}
+                          />
                         </a>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRemoveAttachment(form.formKey);
                           }}
-                          className="p-1 hover:bg-red-100 rounded transition-colors"
+                          className={cn(
+                            "p-1 hover:bg-red-100 rounded transition-colors",
+                            referenceClientDesign &&
+                              "rounded-lg p-2 hover:bg-red-50",
+                          )}
                           title="Remove attachment"
+                          aria-label={`Remove ${attachedFile.name}`}
                         >
-                          <X className="h-3.5 w-3.5 text-red-600" />
+                          {referenceClientDesign ? (
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          ) : (
+                            <X className="h-3.5 w-3.5 text-red-600" />
+                          )}
                         </button>
                       </div>
                       <button
@@ -571,14 +652,22 @@ export default function DownloadForms({
                           handleUpload(form);
                         }}
                         disabled={isUploading}
-                        className="flex items-center gap-1.5 text-[11px] font-medium text-white bg-[#166FB5] hover:bg-[#0e4f8a] rounded-full px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
+                        className={cn(
+                          "flex items-center gap-1.5 text-[11px] font-medium text-white bg-[#166FB5] hover:bg-[#0e4f8a] rounded-full px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center",
+                          referenceClientDesign &&
+                            "h-11 rounded-xl bg-orange-700 text-sm font-semibold hover:bg-orange-800",
+                        )}
                       >
                         {isUploading ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
                         ) : (
                           <Upload className="h-3 w-3" />
                         )}
-                        {isUploading ? "Uploading…" : "Upload"}
+                        {isUploading
+                          ? "Uploading…"
+                          : referenceClientDesign
+                            ? "Upload form"
+                            : "Upload"}
                       </button>
                     </div>
                   )}

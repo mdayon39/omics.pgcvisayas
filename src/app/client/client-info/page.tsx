@@ -5154,7 +5154,7 @@ export default function ClientPortalPage() {
           <div className="flex min-h-full flex-col lg:flex-row">
             <div className="order-2 min-w-0 flex-1 lg:order-1">
           {isReferenceSidebarClient && projectDetails && (
-            <div className="mx-auto w-full max-w-3xl px-4 pt-3">
+            <div className="mx-auto w-full max-w-4xl px-4 pt-3">
               <ol
                 aria-label="Project submission progress"
                 className="flex items-center"
@@ -5231,7 +5231,7 @@ export default function ClientPortalPage() {
               className={cn(
                 "p-3 lg:p-4 max-w-5xl mx-auto space-y-3",
                 isReferenceSidebarClient &&
-                  "max-w-3xl space-y-3 rounded-xl p-4 lg:p-4",
+                  "max-w-4xl space-y-3 rounded-xl p-4 lg:p-4",
               )}
             >
               {/* Draft/Pending/Approved status banner */}

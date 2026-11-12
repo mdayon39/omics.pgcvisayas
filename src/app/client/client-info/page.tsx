@@ -6203,7 +6203,7 @@ export default function ClientPortalPage() {
                           ) : (
                             <>
                               {isReferenceSidebarClient && (
-                                <p className="text-sm text-slate-600">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                                   {panelDocs?.quotations.length}{" "}
                                   {panelDocs?.quotations.length === 1
                                     ? "quotation"
@@ -6253,14 +6253,14 @@ export default function ClientPortalPage() {
                                       <div className="order-3 flex w-full flex-col gap-4">
                                         <div className="flex items-end justify-between gap-3">
                                           <div className="min-w-0">
-                                            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+                                            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
                                               Quotation No.
                                             </p>
                                             <a
                                               href={`/client/view-document?type=quotation&ref=${quotation.referenceNumber}`}
                                               target="_blank"
                                               rel="noopener noreferrer"
-                                              className="inline-flex max-w-full items-center gap-2 rounded-lg bg-violet-100 px-3 py-2 text-sm font-semibold text-violet-800 transition hover:bg-violet-200"
+                                              className="inline-flex max-w-full items-center gap-2 rounded-lg bg-violet-100 px-3 py-2 text-[11px] font-bold text-violet-800 transition hover:bg-violet-200"
                                             >
                                               <FileText className="h-4 w-4 shrink-0" />
                                               {quotation.referenceNumber}
@@ -6269,13 +6269,13 @@ export default function ClientPortalPage() {
                                           {!qCancelled &&
                                             (quotation.status === "selected" ||
                                               quotation.selectedForProject) && (
-                                              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-100 bg-emerald-100 px-3 py-1.5 text-sm font-semibold text-emerald-800">
+                                              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-100 bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
                                                 <CheckCircle2 className="h-3.5 w-3.5" />
                                                 Selected
                                               </span>
                                           )}
                                           {qCancelled && (
-                                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">
+                                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
                                               <XCircle className="h-3.5 w-3.5" />
                                               Cancelled
                                             </span>
@@ -6284,12 +6284,12 @@ export default function ClientPortalPage() {
 
                                         <div className="grid w-full grid-cols-1 gap-4 rounded-xl bg-slate-50 px-4 py-4 sm:grid-cols-2 sm:gap-6">
                                           <div>
-                                            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+                                            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
                                               Total
                                             </p>
                                             <p
                                               className={cn(
-                                                "text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl",
+                                                "text-base font-bold text-slate-900",
                                                 qCancelled && "line-through",
                                               )}
                                             >
@@ -6301,10 +6301,10 @@ export default function ClientPortalPage() {
                                           </div>
                                           {qIssuedDate && (
                                             <div>
-                                              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+                                              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
                                                 Issued
                                               </p>
-                                              <p className="flex items-center gap-2 text-base font-medium text-slate-900 sm:text-lg">
+                                              <p className="flex items-center gap-2 text-sm font-medium text-slate-900">
                                                 <Calendar className="h-4 w-4 shrink-0 text-slate-500" />
                                                 {qIssuedDate}
                                               </p>

@@ -3723,7 +3723,9 @@ export default function ClientPortalPage() {
                 isReferenceSidebarClient && "text-xs font-medium",
               )}>
                 {isReferenceSidebarClient ? "Email address" : "Email Address"}{" "}
-                <span className="text-[#B9273A]">*</span>
+                {!(isReferenceSidebarClient && member.isPrimary) && (
+                  <span className="text-[#B9273A]">*</span>
+                )}
                 {member.isPrimary && (
                   <span className={cn(
                     "ml-2 text-xs font-normal text-slate-400",

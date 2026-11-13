@@ -95,6 +95,7 @@ import { getSampleFormsByProjectId } from "@/services/sampleFormService";
 import {
   getServiceReportsByProjectId,
   markServiceReportReceived,
+  type ServiceReport,
 } from "@/services/serviceReportService";
 import {
   getConfigurationSettings,
@@ -165,6 +166,8 @@ import {
 import ClientConformeModal from "@/components/forms/ClientConformeModal";
 import UploadReceipt from "@/components/client/UploadReceipt";
 import DownloadForms from "@/components/client/DownloadForms";
+import ClientWorkflowTimeline from "@/components/client/ClientWorkflowTimeline";
+import { isReferenceClient } from "@/constants/referenceClients";
 
 // ────────────────────────────────────────────────────────────────
 //  Formatting Helpers
@@ -382,10 +385,7 @@ export default function ClientPortalPage() {
   const inquiryIdParam = searchParams.get("inquiryId");
   const pidParam = searchParams.get("pid");
   const projectRequestIdParam = searchParams.get("projectRequestId");
-  const isReferenceSidebarClient = [
-    "dayonmerlitojr@gmail.com",
-    "ping.biason@gmail.com",
-  ].includes(user?.email?.trim().toLowerCase() || "");
+  const isReferenceSidebarClient = isReferenceClient(user?.email);
 
   useEffect(() => {
     const viewerEmail = user?.email?.trim().toLowerCase();
@@ -608,7 +608,7 @@ export default function ClientPortalPage() {
         quotations: QuotationRecord[];
         chargeSlips: ChargeSlipRecord[];
         sampleForms: SampleFormSummary[];
-        serviceReports: any[];
+        serviceReports: ServiceReport[];
         officialReceipts: any[];
         formSubmissions: number;
         loading: boolean;
@@ -3263,7 +3263,7 @@ export default function ClientPortalPage() {
         const serviceReports = snapshot.docs.map((d) => ({
           id: d.id,
           ...d.data(),
-        }));
+        })) as ServiceReport[];
         setProjectDocuments((prev) => {
           const existing = prev.get(pid);
           if (!existing || existing.loading) return prev;
@@ -3555,6 +3555,56 @@ export default function ClientPortalPage() {
     projectDetails?.status,
     projectDocuments,
     selectedProjectPid,
+  ]);
+
+  const workflowProjectPid = selectedProjectPid || projects[0]?.pid;
+  const clientWorkflowSteps = useMemo(() => {
+    const docs = workflowProjectPid
+      ? projectDocuments.get(workflowProjectPid)
+      : undefined;
+    const hasSampleForms = (docs?.sampleForms?.length ?? 0) > 0;
+    const hasChargeSlips = (docs?.chargeSlips?.length ?? 0) > 0;
+    const hasOfficialReceipts = (docs?.officialReceipts?.length ?? 0) > 0;
+    const hasReceivedServiceReports = (docs?.serviceReports ?? []).some(
+      (report) => report.status === "received",
+    );
+    const hasApprovedQuotation = inquiryQuotations.some(
+      (quotation) =>
+        quotation.status === "selected" || quotation.status === "completed",
+    );
+    const hasProceeded =
+      hasApprovedQuotation ||
+      currentInquiry?.status === "In Progress" ||
+      Boolean(projectRequest || projectDetails) ||
+      hasSampleForms ||
+      hasChargeSlips ||
+      hasOfficialReceipts ||
+      hasReceivedServiceReports;
+
+    return [
+      { label: "Inquiry submitted", complete: Boolean(currentInquiry) },
+      {
+        label: "Quotation received",
+        complete: inquiryQuotations.some(
+          (quotation) => quotation.status !== "cancelled",
+        ),
+      },
+      { label: "Quotation approved", complete: hasProceeded },
+      { label: "Sample information submitted", complete: hasSampleForms },
+      { label: "Charge slip received", complete: hasChargeSlips },
+      { label: "Official receipt uploaded", complete: hasOfficialReceipts },
+      {
+        label: "Service reports received",
+        complete: hasReceivedServiceReports,
+      },
+    ];
+  }, [
+    currentInquiry,
+    inquiryQuotations,
+    projectDetails,
+    projectDocuments,
+    projectRequest,
+    workflowProjectPid,
   ]);
 
   // ────────────────────────────────────────────────────────────────
@@ -5156,6 +5206,19 @@ export default function ClientPortalPage() {
         >
           <div className="flex min-h-full flex-col lg:flex-row">
             <div className="order-2 min-w-0 flex-1 lg:order-1">
+          {isReferenceSidebarClient && (
+            <ClientWorkflowTimeline
+              steps={clientWorkflowSteps}
+              loading={
+                !currentInquiry ||
+                loadingQuotations ||
+                Boolean(
+                  workflowProjectPid &&
+                    projectDocuments.get(workflowProjectPid)?.loading,
+                )
+              }
+            />
+          )}
           {isReferenceSidebarClient && projectDetails && (
             <div className="mx-auto w-full max-w-4xl px-4 pt-3">
               <ol

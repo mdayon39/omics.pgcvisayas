@@ -27,15 +27,13 @@ import { saveProjectRequest, getProjectRequest, getProjectRequestById, getProjec
 import { updateQuotationStatus, markQuotationAsSelected } from "@/services/quotationService";
 import { updateInquiryStatus } from "@/app/actions/inquiryActions";
 import useAuth from "@/hooks/useAuth";
+import { isReferenceClient } from "@/constants/referenceClients";
 
 export default function ProjectForm() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const usesReferenceDesign = [
-    "dayonmerlitojr@gmail.com",
-    "ping.biason@gmail.com",
-  ].includes(user?.email?.trim().toLowerCase() || "");
+  const usesReferenceDesign = isReferenceClient(user?.email);
   // Get inquiry ID and email from URL
   const inquiryId = searchParams.get("inquiryId");
   const email = searchParams.get("email");

@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Check } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
@@ -381,10 +381,10 @@ export default function ProjectForm() {
                           : "border-slate-200 bg-white text-slate-700"
                       }`}
                     >
-                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
                         index === 0 ? "bg-blue-700 text-white" : "bg-slate-200 text-slate-700"
                       }`}>
-                        {index + 1}
+                        <Check className="h-3 w-3" aria-hidden="true" />
                       </span>
                       {step}
                     </li>

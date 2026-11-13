@@ -3156,7 +3156,9 @@ export default function ClientPortalPage() {
           new Map(prev).set(pid, {
             quotations,
             chargeSlips,
-            sampleForms,
+            sampleForms: sampleFormSnapshotsReceivedRef.current.has(pid)
+              ? (prev.get(pid)?.sampleForms ?? [])
+              : sampleForms,
             serviceReports,
             officialReceipts,
             formSubmissions,
@@ -3560,6 +3562,65 @@ export default function ClientPortalPage() {
   ]);
 
   const workflowProjectPid = selectedProjectPid || projects[0]?.pid;
+  const sampleFormSnapshotsReceivedRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (
+      !isReferenceSidebarClient ||
+      !portalFeatures.sampleForms ||
+      !workflowProjectPid ||
+      workflowProjectPid === "DRAFT" ||
+      workflowProjectPid.startsWith("PENDING-")
+    ) {
+      return;
+    }
+
+    const sampleFormsQuery = query(
+      collection(db, "sampleForms"),
+      where("projectId", "==", workflowProjectPid),
+    );
+
+    return onSnapshot(
+      sampleFormsQuery,
+      (snapshot) => {
+        sampleFormSnapshotsReceivedRef.current.add(workflowProjectPid);
+        const sampleForms = snapshot.docs.map((sampleForm) => {
+          const data = sampleForm.data();
+          return {
+            id: sampleForm.id,
+            projectId: data.projectId || workflowProjectPid,
+            totalNumberOfSamples: Number(data.totalNumberOfSamples || 0),
+            submittedByEmail: data.submittedByEmail || "",
+            createdAt: data.createdAt,
+          } as SampleFormSummary;
+        });
+
+        setProjectDocuments((previous) => {
+          const existing = previous.get(workflowProjectPid);
+          const next = new Map(previous);
+          next.set(workflowProjectPid, {
+            quotations: existing?.quotations ?? [],
+            chargeSlips: existing?.chargeSlips ?? [],
+            sampleForms,
+            serviceReports: existing?.serviceReports ?? [],
+            officialReceipts: existing?.officialReceipts ?? [],
+            formSubmissions: existing?.formSubmissions ?? 0,
+            loading: existing?.loading ?? false,
+          });
+          return next;
+        });
+      },
+      (error) => {
+        console.error("Failed to listen for submitted sample forms:", error);
+        toast.error("Could not update sample form progress.");
+      },
+    );
+  }, [
+    isReferenceSidebarClient,
+    portalFeatures.sampleForms,
+    workflowProjectPid,
+  ]);
+
   const clientWorkflowSteps = useMemo(() => {
     const docs = workflowProjectPid
       ? projectDocuments.get(workflowProjectPid)

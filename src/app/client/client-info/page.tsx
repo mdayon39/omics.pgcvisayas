@@ -6206,8 +6206,8 @@ export default function ClientPortalPage() {
                                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                                   {panelDocs?.quotations.length}{" "}
                                   {panelDocs?.quotations.length === 1
-                                    ? "quotation"
-                                    : "quotations"}
+                                    ? "QUOTATION"
+                                    : "QUOTATIONS"}
                                 </p>
                               )}
                               {panelDocs?.quotations.map((quotation) => {
@@ -6282,7 +6282,7 @@ export default function ClientPortalPage() {
                                           )}
                                         </div>
 
-                                        <div className="grid w-full grid-cols-1 gap-4 rounded-xl bg-slate-50 px-4 py-4 sm:grid-cols-2 sm:gap-6">
+                                        <div className="grid w-full grid-cols-1 gap-4 rounded-xl bg-slate-50 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] sm:gap-6">
                                           <div>
                                             <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
                                               Total

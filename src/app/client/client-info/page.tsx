@@ -3566,10 +3566,12 @@ export default function ClientPortalPage() {
   const sampleFormSnapshotsReceivedRef = useRef(new Set<string>());
 
   useEffect(() => {
+    const submittedByEmail = user?.email;
     if (
       !isReferenceSidebarClient ||
       !portalFeatures.sampleForms ||
-      !inquiryIdParam
+      !inquiryIdParam ||
+      !submittedByEmail
     ) {
       setHasWorkflowSampleForm(false);
       return;
@@ -3578,8 +3580,10 @@ export default function ClientPortalPage() {
     const sampleFormsQuery = query(
       collection(db, "sampleForms"),
       where("inquiryId", "==", inquiryIdParam),
+      where("submittedByEmail", "==", submittedByEmail),
     );
 
+    setHasWorkflowSampleForm(false);
     return onSnapshot(
       sampleFormsQuery,
       (snapshot) => setHasWorkflowSampleForm(!snapshot.empty),
@@ -3588,7 +3592,12 @@ export default function ClientPortalPage() {
         toast.error("Could not update sample form progress.");
       },
     );
-  }, [inquiryIdParam, isReferenceSidebarClient, portalFeatures.sampleForms]);
+  }, [
+    inquiryIdParam,
+    isReferenceSidebarClient,
+    portalFeatures.sampleForms,
+    user?.email,
+  ]);
 
   useEffect(() => {
     if (
@@ -3689,7 +3698,7 @@ export default function ClientPortalPage() {
         complete: hasProceeded,
       },
       {
-        completedLabel: "Sample information submitted",
+        completedLabel: "Sample Information Submitted",
         pendingLabel: "Submit Sample Information",
         complete: hasSampleForms,
       },

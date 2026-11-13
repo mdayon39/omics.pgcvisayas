@@ -43,7 +43,7 @@ export default function ClientWorkflowTimeline({
         <div className="overflow-x-auto pb-1">
           <ol
             aria-label="Service request progress"
-            className="flex min-w-[790px] items-start"
+            className="grid min-w-[980px] grid-cols-7 items-start"
           >
             {steps.map((step, index) => {
               const isCurrent =
@@ -54,52 +54,38 @@ export default function ClientWorkflowTimeline({
                 <li
                   key={step.label}
                   aria-current={isCurrent ? "step" : undefined}
-                  className="flex min-w-0 flex-1 flex-col items-center text-center"
+                  className="relative flex min-w-0 flex-col items-center px-2 text-center"
                 >
-                  <div className="flex w-full items-center">
-                    {index > 0 && (
-                      <span
-                        aria-hidden="true"
-                        className={`h-0.5 flex-1 ${
-                          steps[index - 1].complete
-                            ? "bg-emerald-600"
-                            : "bg-slate-200"
-                        }`}
-                      />
-                    )}
+                  {index < steps.length - 1 && (
                     <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-medium ${
-                        step.complete
-                          ? "border-emerald-600 bg-emerald-600 text-white"
-                          : isCurrent
-                            ? "border-violet-500 bg-gradient-to-br from-orange-400 to-violet-600 text-white shadow-[0_0_0_5px_rgba(168,85,247,0.12)]"
-                            : "border-slate-200 bg-white text-slate-500"
+                      aria-hidden="true"
+                      className={`absolute left-1/2 top-[17px] h-0.5 w-full ${
+                        step.complete ? "bg-emerald-600" : "bg-slate-200"
                       }`}
-                    >
-                      {step.complete ? (
-                        <Check className="h-4 w-4" aria-hidden="true" />
-                      ) : isCurrent ? (
-                        <Clock3 className="h-4 w-4" aria-hidden="true" />
-                      ) : (
-                        index + 1
-                      )}
-                    </span>
-                    {index < steps.length - 1 && (
-                      <span
-                        aria-hidden="true"
-                        className={`h-0.5 flex-1 ${
-                          step.complete ? "bg-emerald-600" : "bg-slate-200"
-                        }`}
-                      />
-                    )}
-                  </div>
+                    />
+                  )}
                   <span
-                    className={`mt-2 max-w-[108px] text-xs leading-4 ${
+                    className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-medium ${
                       step.complete
-                        ? "font-medium text-slate-800"
+                        ? "border-emerald-600 bg-emerald-600 text-white"
                         : isCurrent
-                          ? "font-semibold text-violet-700"
-                          : "text-slate-500"
+                          ? "border-violet-500 bg-gradient-to-br from-orange-400 to-violet-600 text-white shadow-[0_0_0_5px_rgba(168,85,247,0.12)]"
+                          : "border-slate-200 bg-white text-slate-500"
+                    }`}
+                  >
+                    {step.complete ? (
+                      <Check className="h-4 w-4" aria-hidden="true" />
+                    ) : isCurrent ? (
+                      <Clock3 className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      index + 1
+                    )}
+                  </span>
+                  <span
+                    className={`mt-2 flex h-10 max-w-[120px] items-start justify-center text-xs font-medium leading-4 ${
+                      step.complete || isCurrent
+                        ? "text-slate-800"
+                        : "text-slate-500"
                     }`}
                   >
                     {step.label}

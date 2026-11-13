@@ -3562,7 +3562,33 @@ export default function ClientPortalPage() {
   ]);
 
   const workflowProjectPid = selectedProjectPid || projects[0]?.pid;
+  const [hasWorkflowSampleForm, setHasWorkflowSampleForm] = useState(false);
   const sampleFormSnapshotsReceivedRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (
+      !isReferenceSidebarClient ||
+      !portalFeatures.sampleForms ||
+      !inquiryIdParam
+    ) {
+      setHasWorkflowSampleForm(false);
+      return;
+    }
+
+    const sampleFormsQuery = query(
+      collection(db, "sampleForms"),
+      where("inquiryId", "==", inquiryIdParam),
+    );
+
+    return onSnapshot(
+      sampleFormsQuery,
+      (snapshot) => setHasWorkflowSampleForm(!snapshot.empty),
+      (error) => {
+        console.error("Failed to listen for inquiry sample forms:", error);
+        toast.error("Could not update sample form progress.");
+      },
+    );
+  }, [inquiryIdParam, isReferenceSidebarClient, portalFeatures.sampleForms]);
 
   useEffect(() => {
     if (
@@ -3625,7 +3651,7 @@ export default function ClientPortalPage() {
     const docs = workflowProjectPid
       ? projectDocuments.get(workflowProjectPid)
       : undefined;
-    const hasSampleForms = (docs?.sampleForms?.length ?? 0) > 0;
+    const hasSampleForms = hasWorkflowSampleForm;
     const hasChargeSlips = (docs?.chargeSlips?.length ?? 0) > 0;
     const hasOfficialReceipts = (docs?.officialReceipts?.length ?? 0) > 0;
     const hasReceivedServiceReports = (docs?.serviceReports ?? []).some(
@@ -3685,6 +3711,7 @@ export default function ClientPortalPage() {
     ];
   }, [
     currentInquiry,
+    hasWorkflowSampleForm,
     inquiryQuotations,
     projectDetails,
     projectDocuments,

@@ -18,8 +18,16 @@ import { ChargeSlipRecord } from "@/types/ChargeSlipRecord";
 import { convertToDate, convertToTimestamp } from "@/lib/convert";
 import { Client } from "@/types/Client";
 import { Project } from "@/types/Project";
+import { getClientById } from "@/services/clientProjectService";
 
 const CHARGE_SLIPS_COLLECTION = "chargeSlips";
+
+function isMissingClientName(name: unknown): boolean {
+  return (
+    typeof name !== "string" ||
+    ["unknown", "unknown client", "—"].includes(name.trim().toLowerCase())
+  );
+}
 
 function normalizeEmail(value?: string | null): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -138,12 +146,58 @@ export async function getAllChargeSlips(): Promise<ChargeSlipRecord[]> {
     ),
   );
 
-  return snapshot.docs.map((docSnap) => {
-    const data = docSnap.data() as any;
+  const rawRecords = snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    data: docSnap.data() as any,
+  }));
+  const clientIdsNeedingLookup = Array.from(
+    new Set(
+      rawRecords
+        .filter(({ data }) => {
+          return (
+            isMissingClientName(data.clientInfo?.name) ||
+            isMissingClientName(data.client?.name)
+          );
+        })
+        .map(({ data }) => data.cid || data.client?.cid)
+        .filter((cid): cid is string => typeof cid === "string" && !!cid.trim()),
+    ),
+  );
+  const clientLookups = await Promise.all(
+    clientIdsNeedingLookup.map(async (cid) => [cid, await getClientById(cid)] as const),
+  );
+  const clientsById = new Map(
+    clientLookups.map(([cid, client]) => [cid.trim().toUpperCase(), client]),
+  );
+
+  return rawRecords.map(({ id, data }) => {
+    const storedClient = (data.client || {}) as Client;
+    const storedClientInfo = data.clientInfo || {};
+    const clientId = data.cid || storedClient.cid;
+    const resolvedClient =
+      typeof clientId === "string"
+        ? clientsById.get(clientId.trim().toUpperCase())
+        : undefined;
+    const resolvedClientName = isMissingClientName(resolvedClient?.name)
+      ? undefined
+      : resolvedClient?.name;
+    const clientName = resolvedClientName || storedClient.name;
 
     const clientData: Client = {
-      ...data.client,
+      ...storedClient,
+      ...(isMissingClientName(storedClient.name) &&
+      !isMissingClientName(clientName)
+        ? { name: clientName }
+        : {}),
       createdAt: convertToDate(data.client?.createdAt),
+    };
+
+    const clientInfo = {
+      ...storedClientInfo,
+      ...(isMissingClientName(storedClientInfo.name) &&
+      !isMissingClientName(clientName)
+        ? { name: clientName }
+        : {}),
     };
 
     const projectData: Project = {
@@ -153,8 +207,9 @@ export async function getAllChargeSlips(): Promise<ChargeSlipRecord[]> {
 
     return {
       ...data,
-      id: docSnap.id,
+      id,
       client: clientData,
+      clientInfo,
       project: projectData,
       dateIssued: convertToDate(data.dateIssued),
       dateOfOR: convertToDate(data.dateOfOR),
@@ -172,13 +227,37 @@ export async function getChargeSlipById(
   if (!snap.exists()) return null;
 
   const data = snap.data() as any;
+  const storedClient = data.client || {};
+  const storedClientInfo = data.clientInfo || {};
+  const clientId = data.cid || storedClient.cid;
+  const resolvedClient =
+    typeof clientId === "string" &&
+    (isMissingClientName(storedClient.name) ||
+      isMissingClientName(storedClientInfo.name))
+      ? await getClientById(clientId)
+      : null;
+  const resolvedClientName = isMissingClientName(resolvedClient?.name)
+    ? undefined
+    : resolvedClient?.name;
+  const clientName = resolvedClientName || storedClient.name;
 
   return {
     ...data,
     id: snap.id,
     client: {
-      ...data.client,
+      ...storedClient,
+      ...(isMissingClientName(storedClient.name) &&
+      !isMissingClientName(clientName)
+        ? { name: clientName }
+        : {}),
       createdAt: convertToDate(data.client?.createdAt),
+    },
+    clientInfo: {
+      ...storedClientInfo,
+      ...(isMissingClientName(storedClientInfo.name) &&
+      !isMissingClientName(clientName)
+        ? { name: clientName }
+        : {}),
     },
     project: {
       ...data.project,

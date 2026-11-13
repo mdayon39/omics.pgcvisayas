@@ -652,7 +652,11 @@ function ChargeSlipDetailContent() {
                   Total Amount
                 </span>
                 <span className="text-xl font-bold bg-gradient-to-r from-[#F69122] to-[#B9273A] bg-clip-text text-transparent">
-                  ₱{record.total.toLocaleString()}
+                  ₱
+                  {record.total.toLocaleString("en-PH", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </span>
               </div>
             </div>

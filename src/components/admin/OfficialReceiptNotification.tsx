@@ -50,6 +50,7 @@ interface PendingReceipt {
   uploadedAt?: Timestamp;
   size?: number;
   returnedByAdmin?: boolean;
+  chargeSlipNumber?: string;
 }
 
 function formatDate(ts?: Timestamp) {
@@ -130,29 +131,48 @@ export function OfficialReceiptNotification() {
   const handleAcknowledge = async (receipt: PendingReceipt) => {
     setAcknowledging(receipt.id);
     try {
+      const chargeSlips = receipt.chargeSlipNumber
+        ? await getChargeSlipsByProjectId(receipt.projectId)
+        : [];
+      const matchingChargeSlip = chargeSlips.find(
+        (chargeSlip) =>
+          chargeSlip.chargeSlipNumber === receipt.chargeSlipNumber,
+      );
+
+      if (receipt.chargeSlipNumber && !matchingChargeSlip) {
+        throw new Error(
+          `Charge slip ${receipt.chargeSlipNumber} was not found for project ${receipt.projectId}.`,
+        );
+      }
+
       // 1. Mark as acknowledged in the sub-collection
       await updateDoc(
         doc(db, "projects", receipt.projectId, "officialReceipts", receipt.id),
         { acknowledgedByAdmin: true },
       );
 
-      // 2. Update all processing charge slips for this project to Paid
-      const chargeSlips = await getChargeSlipsByProjectId(receipt.projectId);
-      for (const cs of chargeSlips) {
-        if (cs.id && cs.status !== "paid" && cs.status !== "cancelled") {
-          const orDateVal = receipt.orDate
-            ? Timestamp.fromDate(new Date(receipt.orDate))
-            : cs.dateOfOR;
-          await updateChargeSlip(cs.id, {
+      // 2. Update only the charge slip this receipt was uploaded for.
+      if (
+        matchingChargeSlip?.id &&
+        matchingChargeSlip.status !== "paid" &&
+        matchingChargeSlip.status !== "cancelled"
+      ) {
+        const orDateVal = receipt.orDate
+          ? Timestamp.fromDate(new Date(receipt.orDate))
+          : matchingChargeSlip.dateOfOR;
+        await updateChargeSlip(
+          matchingChargeSlip.id,
+          {
             status: "paid",
-            orNumber: cs.orNumber || receipt.orNumber,
+            orNumber: matchingChargeSlip.orNumber || receipt.orNumber,
             dateOfOR: orDateVal,
-          }, {
+          },
+          {
             email: adminInfo?.email || "",
             name: adminInfo?.name,
             role: adminInfo?.role,
-          });
-        }
+          },
+        );
       }
 
       // 3. (Optional) We no longer need to write the whole setDoc here if the client already wrote it.
@@ -274,6 +294,14 @@ export function OfficialReceiptNotification() {
                         <span className="font-medium text-slate-700">
                           {receipt.projectId}
                         </span>
+                        {receipt.chargeSlipNumber && (
+                          <>
+                            {" · "}Charge Slip:{" "}
+                            <span className="font-medium text-slate-700">
+                              {receipt.chargeSlipNumber}
+                            </span>
+                          </>
+                        )}
                       </p>
                       <p className="text-[10px] text-slate-500">
                         OR No.:{" "}

@@ -297,7 +297,7 @@ function ChargeSlipBuilderInner({
     .filter((s) => typeof s.quantity === "number" && s.quantity > 0)
     .map((s) => ({ ...s, quantity: s.quantity as number }));
 
-  const subtotal = cleanedServices.reduce((sum, item) => {
+  const rawSubtotal = cleanedServices.reduce((sum, item) => {
     const serviceType = item.type.toLowerCase();
 
     if (
@@ -324,8 +324,12 @@ function ChargeSlipBuilderInner({
       return sum + item.price * item.quantity;
     }
   }, 0);
-  const discount = isInternal ? subtotal * 0.12 : 0;
-  const total = subtotal - discount;
+  const subtotal = Math.round((rawSubtotal + Number.EPSILON) * 100) / 100;
+  const discount = Math.round(
+    ((isInternal ? subtotal * 0.12 : 0) + Number.EPSILON) * 100,
+  ) / 100;
+  const total =
+    Math.round((subtotal - discount + Number.EPSILON) * 100) / 100;
 
   useEffect(() => {
     setClientInfo({
@@ -437,6 +441,17 @@ function ChargeSlipBuilderInner({
   };
 
   const handleSaveAndDownload = async () => {
+    const normalizedClientName = clientInfo.name.trim().toLowerCase();
+    if (
+      !normalizedClientName ||
+      ["unknown", "unknown client", "—"].includes(normalizedClientName)
+    ) {
+      toast.error(
+        "Client details could not be verified. Confirm the client record before creating this charge slip.",
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const rawRecord = {

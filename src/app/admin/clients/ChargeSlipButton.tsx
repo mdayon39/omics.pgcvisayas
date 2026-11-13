@@ -96,7 +96,11 @@ export function ChargeSlipButton({ clientId, projectIds }: ChargeSlipButtonProps
                           {cs.project?.pid || cs.projectId || "No Project"}
                         </span>
                         <span className="text-xs font-medium text-slate-700">
-                          ₱{(cs.total || 0).toLocaleString()}
+                          ₱
+                          {(cs.total || 0).toLocaleString("en-PH", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </span>
                       </div>
                     </div>

@@ -1,7 +1,15 @@
 // Service for fetching a single client or project by ID from Firestore, with schema validation and timestamp conversion.
 
 import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  query,
+  where,
+} from "firebase/firestore";
 import { clientSchema } from "@/schemas/clientSchema";
 import { projectSchema } from "@/schemas/projectSchema";
 import { Client } from "@/types/Client";
@@ -28,12 +36,26 @@ export async function getClientById(cid: string): Promise<Client | null> {
     const normalizedCid = cid.trim().toUpperCase();
     if (!normalizedCid) return null;
 
-    const docRef = doc(db, "clients", normalizedCid);
-    const snapshot = await getDoc(docRef);
+    const snapshot = await getDoc(doc(db, "clients", normalizedCid));
+    let data: Record<string, any>;
+    let documentId: string;
 
-    if (!snapshot.exists()) return null;
-
-    const data = snapshot.data();
+    if (snapshot.exists()) {
+      data = snapshot.data();
+      documentId = snapshot.id;
+    } else {
+      const clientsByCid = await getDocs(
+        query(
+          collection(db, "clients"),
+          where("cid", "==", normalizedCid),
+          limit(1),
+        ),
+      );
+      const matchingClient = clientsByCid.docs[0];
+      if (!matchingClient) return null;
+      data = matchingClient.data();
+      documentId = matchingClient.id;
+    }
 
     // Handle createdAt timestamp conversion
     // Check if it's a Firestore Timestamp with toDate method
@@ -48,7 +70,7 @@ export async function getClientById(cid: string): Promise<Client | null> {
     }
 
     // Validate with Zod schema
-    const parsed = clientSchema.safeParse({ id: snapshot.id, ...data });
+    const parsed = clientSchema.safeParse({ id: documentId, ...data });
 
     if (!parsed.success) {
       console.warn("Client has legacy fields; using available client data:", cid, parsed.error);
@@ -56,7 +78,7 @@ export async function getClientById(cid: string): Promise<Client | null> {
 
     const clientData = parsed.success
       ? parsed.data
-      : { ...data, cid: data.cid ?? snapshot.id };
+      : { ...data, cid: data.cid ?? documentId };
 
     // Normalize parsed.client so it matches the Client type:
     // - convert any nullable fields that are `null` to `undefined`
@@ -68,7 +90,7 @@ export async function getClientById(cid: string): Promise<Client | null> {
 
     const client: Client = {
       ...sanitized,
-      cid: sanitized.cid ?? snapshot.id,
+      cid: sanitized.cid ?? documentId,
       createdAt: sanitized.createdAt
         ? typeof sanitized.createdAt === "string"
           ? new Date(sanitized.createdAt)

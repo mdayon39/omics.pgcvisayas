@@ -6086,7 +6086,14 @@ export default function ClientPortalPage() {
                     },
                     chargeSlips: {
                       icon: (
-                        <span className="text-sm font-bold text-green-600">
+                        <span
+                          className={cn(
+                            "text-sm font-bold",
+                            isReferenceSidebarClient
+                              ? "text-[#08724f]"
+                              : "text-green-600",
+                          )}
+                        >
                           ₱
                         </span>
                       ),
@@ -6127,6 +6134,9 @@ export default function ClientPortalPage() {
                             className={cn(
                               "p-1.5 rounded-lg",
                               meta.iconBg,
+                              isReferenceSidebarClient &&
+                                panelSection === "chargeSlips" &&
+                                "bg-[#d8eee4]",
                               isReferenceSidebarClient && "rounded-xl p-2.5",
                             )}
                           >
@@ -6499,6 +6509,11 @@ export default function ClientPortalPage() {
                                         isReferenceSidebarClient && "w-full",
                                       )}
                                     >
+                                      {isReferenceSidebarClient && (
+                                        <p className="w-full text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                          Charge Slip No.
+                                        </p>
+                                      )}
                                       <a
                                         href={`/client/view-document?type=charge-slip&ref=${chargeSlip.id}`}
                                         target="_blank"
@@ -6506,13 +6521,16 @@ export default function ClientPortalPage() {
                                         className={cn(
                                           "flex items-center gap-1 text-[11px] font-bold text-green-700 bg-white hover:bg-green-700 hover:text-white border border-green-600 rounded-full px-2.5 py-0.5 transition-all shadow-sm",
                                           isReferenceSidebarClient &&
-                                            "rounded-lg border-0 bg-emerald-50 px-2.5 py-1 text-emerald-800 shadow-none hover:bg-emerald-100 hover:text-emerald-900",
+                                            "rounded-lg border-0 bg-[#d8eee4] px-3 py-2 text-sm text-[#075f45] shadow-none hover:bg-[#c8e5d7] hover:text-[#075f45]",
                                         )}
                                       >
+                                        {isReferenceSidebarClient && (
+                                          <FileText className="h-4 w-4 shrink-0" />
+                                        )}
                                         {chargeSlip.chargeSlipNumber}
                                       </a>
                                       {isReferenceSidebarClient ? (
-                                        <div className="order-3 grid w-full grid-cols-2 gap-4">
+                                        <div className="order-3 grid w-full grid-cols-1 gap-4 rounded-xl bg-slate-50 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] sm:gap-6">
                                           <div>
                                             <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
                                               Total
@@ -6586,6 +6604,9 @@ export default function ClientPortalPage() {
                                           isReferenceSidebarClient &&
                                             "px-2.5 py-1 text-[11px]",
                                         )}>
+                                          {isReferenceSidebarClient && (
+                                            <XCircle className="mr-1 h-3 w-3" />
+                                          )}
                                           Cancelled
                                         </span>
                                       ) : csWaived ? (

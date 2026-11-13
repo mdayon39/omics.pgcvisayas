@@ -3582,19 +3582,41 @@ export default function ClientPortalPage() {
       hasReceivedServiceReports;
 
     return [
-      { label: "Inquiry submitted", complete: Boolean(currentInquiry) },
       {
-        label: "Quotation received",
+        completedLabel: "Inquiry submitted",
+        pendingLabel: "Submit Inquiry",
+        complete: Boolean(currentInquiry),
+      },
+      {
+        completedLabel: "Quotation received",
+        pendingLabel: "Receive Quotation",
         complete: inquiryQuotations.some(
           (quotation) => quotation.status !== "cancelled",
         ),
       },
-      { label: "Quotation approved", complete: hasProceeded },
-      { label: "Sample information submitted", complete: hasSampleForms },
-      { label: "Charge slip received", complete: hasChargeSlips },
-      { label: "Official receipt uploaded", complete: hasOfficialReceipts },
       {
-        label: "Service reports received",
+        completedLabel: "Quotation approved",
+        pendingLabel: "Confirm and Proceed",
+        complete: hasProceeded,
+      },
+      {
+        completedLabel: "Sample information submitted",
+        pendingLabel: "Submit Sample Information",
+        complete: hasSampleForms,
+      },
+      {
+        completedLabel: "Charge slip received",
+        pendingLabel: "Receive Charge Slip",
+        complete: hasChargeSlips,
+      },
+      {
+        completedLabel: "Official receipt uploaded",
+        pendingLabel: "Upload Official Receipt",
+        complete: hasOfficialReceipts,
+      },
+      {
+        completedLabel: "Service reports received",
+        pendingLabel: "Receive Service Reports",
         complete: hasReceivedServiceReports,
       },
     ];

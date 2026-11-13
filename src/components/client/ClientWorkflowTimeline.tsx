@@ -2,7 +2,8 @@ import { Check, Clock3 } from "lucide-react";
 
 interface ClientWorkflowTimelineProps {
   steps: Array<{
-    label: string;
+    completedLabel: string;
+    pendingLabel: string;
     complete: boolean;
   }>;
   loading?: boolean;
@@ -36,7 +37,7 @@ export default function ClientWorkflowTimeline({
 
             return (
               <li
-                key={step.label}
+                key={step.completedLabel}
                 aria-current={isCurrent ? "step" : undefined}
                 className="relative flex min-w-0 flex-col items-center px-1 text-center"
               >
@@ -72,7 +73,7 @@ export default function ClientWorkflowTimeline({
                       : "text-slate-600"
                   }`}
                 >
-                  {step.label}
+                  {step.complete ? step.completedLabel : step.pendingLabel}
                 </span>
                 <span className="sr-only">
                   {step.complete

@@ -32,8 +32,10 @@ export default function ProjectForm() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const usesReferenceDesign =
-    user?.email?.trim().toLowerCase() === "dayonmerlitojr@gmail.com";
+  const usesReferenceDesign = [
+    "dayonmerlitojr@gmail.com",
+    "ping.biason@gmail.com",
+  ].includes(user?.email?.trim().toLowerCase() || "");
   // Get inquiry ID and email from URL
   const inquiryId = searchParams.get("inquiryId");
   const email = searchParams.get("email");

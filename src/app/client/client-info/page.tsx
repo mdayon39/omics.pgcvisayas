@@ -3563,7 +3563,58 @@ export default function ClientPortalPage() {
 
   const workflowProjectPid = selectedProjectPid || projects[0]?.pid;
   const [hasWorkflowSampleForm, setHasWorkflowSampleForm] = useState(false);
+  const [hasUploadedSampleSubmission, setHasUploadedSampleSubmission] =
+    useState(false);
   const sampleFormSnapshotsReceivedRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    const uploadedBy = user?.email;
+    if (
+      !isReferenceSidebarClient ||
+      !portalFeatures.sampleForms ||
+      !workflowProjectPid ||
+      workflowProjectPid === "DRAFT" ||
+      workflowProjectPid.startsWith("PENDING-") ||
+      !uploadedBy
+    ) {
+      setHasUploadedSampleSubmission(false);
+      return;
+    }
+
+    setHasUploadedSampleSubmission(false);
+    const submissionsQuery = query(
+      collection(db, "clientFormSubmissions"),
+      where("projectId", "==", workflowProjectPid),
+      where("uploadedBy", "==", uploadedBy),
+    );
+
+    return onSnapshot(
+      submissionsQuery,
+      (snapshot) => {
+        setHasUploadedSampleSubmission(
+          snapshot.docs.some((submission) => {
+            const data = submission.data();
+            return (
+              data.formKey === "ssf" ||
+              data.formLabel === "Sample Submission Form"
+            );
+          }),
+        );
+      },
+      (error) => {
+        console.error(
+          "Failed to listen for uploaded sample submission forms:",
+          error,
+        );
+        toast.error("Could not update sample form progress.");
+      },
+    );
+  }, [
+    isReferenceSidebarClient,
+    portalFeatures.sampleForms,
+    user?.email,
+    workflowProjectPid,
+  ]);
 
   useEffect(() => {
     const submittedByEmail = user?.email;
@@ -3660,7 +3711,8 @@ export default function ClientPortalPage() {
     const docs = workflowProjectPid
       ? projectDocuments.get(workflowProjectPid)
       : undefined;
-    const hasSampleForms = hasWorkflowSampleForm;
+    const hasSampleForms =
+      hasWorkflowSampleForm || hasUploadedSampleSubmission;
     const hasChargeSlips = (docs?.chargeSlips?.length ?? 0) > 0;
     const hasOfficialReceipts = (docs?.officialReceipts?.length ?? 0) > 0;
     const hasReceivedServiceReports = (docs?.serviceReports ?? []).some(
@@ -3720,6 +3772,7 @@ export default function ClientPortalPage() {
     ];
   }, [
     currentInquiry,
+    hasUploadedSampleSubmission,
     hasWorkflowSampleForm,
     inquiryQuotations,
     projectDetails,

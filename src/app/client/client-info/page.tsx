@@ -3653,10 +3653,6 @@ export default function ClientPortalPage() {
   const primaryMember = members.find((m) => m.isPrimary);
   const otherMembers = members.filter((m) => !m.isPrimary);
   const savedMemberCount = members.filter((member) => member.isSubmitted).length;
-  const referenceClientApprovalPending =
-    projectDetails?.status === "Pending Approval" || approvalStatus === "pending";
-  const referenceClientProjectApproved =
-    projectDetails?.status === "Ongoing" || projectDetails?.status === "Completed";
 
   /** Renders the full member form (used inside expandable cards) */
   const renderMemberForm = (member: ClientMember) => {
@@ -5218,79 +5214,6 @@ export default function ClientPortalPage() {
                 )
               }
             />
-          )}
-          {isReferenceSidebarClient && projectDetails && (
-            <div className="mx-auto w-full max-w-4xl px-4 pt-3">
-              <ol
-                aria-label="Project submission progress"
-                className="flex items-center"
-              >
-                {[
-                  {
-                    label: "Project saved",
-                    complete: true,
-                    current: false,
-                  },
-                  {
-                    label: "Primary Member",
-                    complete: Boolean(primaryMember?.isSubmitted),
-                    current:
-                      !primaryMember?.isSubmitted &&
-                      !referenceClientApprovalPending &&
-                      !referenceClientProjectApproved,
-                  },
-                  {
-                    label: "Admin approval",
-                    complete: referenceClientProjectApproved,
-                    current: referenceClientApprovalPending,
-                  },
-                ].map((step, index) => (
-                  <li
-                    key={step.label}
-                    className="flex min-w-0 flex-1 items-center gap-1.5 text-[9px]"
-                    aria-current={step.current ? "step" : undefined}
-                  >
-                    <span
-                      className={cn(
-                        "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold",
-                        step.complete
-                          ? "bg-emerald-700 text-white"
-                          : step.current
-                            ? "bg-blue-700 text-white"
-                            : "bg-slate-200 text-slate-600",
-                      )}
-                    >
-                      {step.complete ? (
-                        <CheckCircle2 className="h-3 w-3" />
-                      ) : (
-                        index + 1
-                      )}
-                    </span>
-                    <span
-                      className={cn(
-                        "truncate",
-                        step.complete
-                          ? "font-semibold text-emerald-800"
-                          : step.current
-                            ? "font-semibold text-blue-800"
-                            : "text-slate-500",
-                      )}
-                    >
-                      {step.label}
-                    </span>
-                    {index < 2 && (
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "mx-1 h-px min-w-3 flex-1",
-                          step.complete ? "bg-emerald-700" : "bg-slate-300",
-                        )}
-                      />
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </div>
           )}
           {projectDetails ? (
             <div

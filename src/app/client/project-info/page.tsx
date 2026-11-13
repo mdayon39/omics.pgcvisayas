@@ -323,7 +323,7 @@ export default function ProjectForm() {
         ? "min-h-screen flex items-center justify-center p-6 bg-white"
         : "min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50/50 to-blue-50/30"}>
         <div className={usesReferenceDesign
-          ? "w-full max-w-3xl p-8 bg-white"
+          ? "w-full max-w-4xl p-8 bg-white"
           : "bg-white/80 p-8 rounded-2xl shadow-xl border border-white/50 backdrop-blur-sm"}>
           <div className="animate-pulse space-y-4">
             <div className="h-6 bg-slate-200 rounded w-48" />
@@ -340,7 +340,7 @@ export default function ProjectForm() {
       ? "min-h-screen bg-white"
       : "min-h-screen p-6 bg-gradient-to-br from-slate-50/50 to-blue-50/30"}>
       <div className={usesReferenceDesign
-        ? "mx-auto flex min-h-screen w-full max-w-3xl flex-col px-5"
+        ? "mx-auto flex min-h-screen w-full max-w-4xl flex-col px-5"
         : "max-w-2xl mx-auto"}>
         <div className={usesReferenceDesign
           ? "flex-1 bg-white"
@@ -350,7 +350,7 @@ export default function ProjectForm() {
             <>
               <header className="flex items-center justify-between border-b border-slate-200 py-5">
                 <div>
-                  <h1 className="text-xl font-bold leading-tight text-slate-950">
+                  <h1 className="text-2xl font-bold leading-tight text-slate-950">
                     Project Information Form
                   </h1>
                 </div>
@@ -362,7 +362,7 @@ export default function ProjectForm() {
                 )}
               </header>
               <div className="py-5">
-                <p className="text-xs leading-5 text-[#18365d]">
+                <p className="text-sm leading-6 text-[#18365d]">
                   Thank you for partnering with us. To better understand and support your project,
                   please complete this form.
                 </p>
@@ -375,13 +375,13 @@ export default function ProjectForm() {
                     <li
                       key={step}
                       aria-current={index === 0 ? "step" : undefined}
-                      className={`flex min-h-11 items-center gap-2 rounded-lg border px-2.5 py-2 text-[10px] leading-tight ${
+                      className={`flex min-h-12 items-center gap-2 rounded-lg border px-3 py-2 text-xs leading-tight ${
                         index === 0
                           ? "border-blue-200 bg-blue-50 text-[#15385e]"
                           : "border-slate-200 bg-white text-slate-700"
                       }`}
                     >
-                      <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                         index === 0 ? "bg-blue-700 text-white" : "bg-slate-200 text-slate-700"
                       }`}>
                         {index + 1}
@@ -419,13 +419,13 @@ export default function ProjectForm() {
           {/* Project form fields */}
           <form onSubmit={handleSubmit} className={usesReferenceDesign ? "space-y-4 pb-5" : "space-y-4"}>
             {usesReferenceDesign && (
-              <h2 className="text-xs font-bold text-slate-950">
+              <h2 className="text-sm font-bold text-slate-950">
                 Project details <span className="float-right font-normal text-slate-500"><span className="text-[#B9273A]">*</span> Required</span>
               </h2>
             )}
             {/* Project Title – full width */}
             <div>
-              <Label className={usesReferenceDesign ? "text-xs font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
+              <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
                 {usesReferenceDesign ? "Project title" : "Project Title"} <span className="text-[#B9273A]">*</span>
               </Label>
               <Input
@@ -433,7 +433,7 @@ export default function ProjectForm() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("title", e.target.value)}
                 placeholder={usesReferenceDesign ? "e.g. Coastal biodiversity genome survey" : "Enter your project title"}
                 className={usesReferenceDesign
-                  ? "mt-1 h-[34px] rounded-md border-slate-300 bg-white text-xs shadow-none placeholder:text-slate-400"
+                  ? "mt-1 h-10 rounded-md border-slate-300 bg-white text-sm shadow-none placeholder:text-slate-400"
                   : "mt-1"}
               />
               {errors.title && <p className="text-[#B9273A] text-xs mt-0.5">{errors.title}</p>}
@@ -442,7 +442,7 @@ export default function ProjectForm() {
             {/* Project Lead + Start Date */}
             <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${usesReferenceDesign ? "pt-0.5" : ""}`}>
               <div>
-                <Label className={usesReferenceDesign ? "text-xs font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
+                <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
                   {usesReferenceDesign ? "Project lead" : "Project Lead"} <span className="text-[#B9273A]">*</span>
                 </Label>
                 <Input
@@ -450,14 +450,14 @@ export default function ProjectForm() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("projectLead", e.target.value)}
                   placeholder={usesReferenceDesign ? "Full name" : "Enter project lead name"}
                   className={usesReferenceDesign
-                    ? "mt-1 h-[34px] rounded-md border-slate-300 bg-white text-xs shadow-none placeholder:text-slate-400"
+                    ? "mt-1 h-10 rounded-md border-slate-300 bg-white text-sm shadow-none placeholder:text-slate-400"
                     : "mt-1"}
                 />
                 {errors.projectLead && <p className="text-[#B9273A] text-xs mt-0.5">{errors.projectLead}</p>}
               </div>
 
               <div>
-                <Label className={usesReferenceDesign ? "text-xs font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
+                <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
                   {usesReferenceDesign ? "Start date" : "Start Date"} <span className="text-[#B9273A]">*</span>
                 </Label>
                 <Popover open={startOpen} onOpenChange={setStartOpen}>
@@ -467,7 +467,7 @@ export default function ProjectForm() {
                         value={formatDate(formData.startDate)}
                         readOnly
                         className={usesReferenceDesign
-                          ? "h-[34px] rounded-md border-slate-300 bg-white pr-10 text-xs shadow-none"
+                          ? "h-10 rounded-md border-slate-300 bg-white pr-10 text-sm shadow-none"
                           : "pr-10"}
                       />
                       <Button
@@ -503,7 +503,7 @@ export default function ProjectForm() {
             {/* Sending Institution + Funding Institution */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className={usesReferenceDesign ? "text-xs font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
+                <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
                   {usesReferenceDesign ? "Sending institution type" : "Sending Institution"} <span className="text-[#B9273A]">*</span>
                 </Label>
                 <Select
@@ -511,7 +511,7 @@ export default function ProjectForm() {
                   onValueChange={(val: string) => handleChange("sendingInstitution", val)}
                 >
                   <SelectTrigger className={usesReferenceDesign
-                    ? "mt-1 h-[34px] w-full rounded-md border-slate-300 bg-white text-xs shadow-none"
+                    ? "mt-1 h-10 w-full rounded-md border-slate-300 bg-white text-sm shadow-none"
                     : "w-full mt-1"}>
                     <SelectValue placeholder="Select institution type" />
                   </SelectTrigger>
@@ -528,7 +528,7 @@ export default function ProjectForm() {
               </div>
 
               <div>
-                <Label className={usesReferenceDesign ? "text-xs font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
+                <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
                   {usesReferenceDesign ? "Funding institution" : "Funding Institution"} <span className="text-[#B9273A]">*</span>
                 </Label>
                 <Input
@@ -536,7 +536,7 @@ export default function ProjectForm() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("fundingInstitution", e.target.value)}
                   placeholder={usesReferenceDesign ? "Name of funding body" : "Enter funding institution"}
                   className={usesReferenceDesign
-                    ? "mt-1 h-[34px] rounded-md border-slate-300 bg-white text-xs shadow-none placeholder:text-slate-400"
+                    ? "mt-1 h-10 rounded-md border-slate-300 bg-white text-sm shadow-none placeholder:text-slate-400"
                     : "mt-1"}
                 />
                 {errors.fundingInstitution && <p className="text-[#B9273A] text-xs mt-0.5">{errors.fundingInstitution}</p>}
@@ -554,7 +554,7 @@ export default function ProjectForm() {
                 type="button"
                 onClick={handleGoBack}
                 className={usesReferenceDesign
-                  ? "h-[34px] border border-slate-300 bg-white px-4 text-xs font-medium text-slate-800 hover:bg-slate-100"
+                  ? "h-10 border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-100"
                   : "h-9 px-5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition"}
               >
                 Go Back
@@ -566,7 +566,7 @@ export default function ProjectForm() {
                 type="submit"
                 disabled={isDraftSaveLocked || isSavingDraft}
                 className={usesReferenceDesign
-                  ? "h-[34px] bg-blue-700 px-4 text-xs font-semibold text-white hover:bg-blue-800"
+                  ? "h-10 bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800"
                   : "h-9 px-6 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300"}
               >
                 {usesReferenceDesign ? "Save project draft" : "Save Project Draft"}

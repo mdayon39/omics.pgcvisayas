@@ -30,12 +30,17 @@ import {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut, loading } = useAuth();
   const router = useRouter();
+  const canViewBirthdayGreetings =
+    user?.email?.trim().toLowerCase() === "madayon1@up.edu.ph";
   const [birthdays, setBirthdays] = useState<
     { id: string; title: string; message: string }[]
   >([]);
 
   useEffect(() => {
-    if (loading || !user || !isAdmin) return;
+    if (loading || !user || !isAdmin || !canViewBirthdayGreetings) {
+      setBirthdays([]);
+      return;
+    }
 
     return subscribeToOfficeEvents((events) => {
       const today = new Intl.DateTimeFormat("en-CA", {
@@ -50,7 +55,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }));
       setBirthdays(todaysBirthdays);
     });
-  }, [isAdmin, loading, user]);
+  }, [canViewBirthdayGreetings, isAdmin, loading, user]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -154,7 +159,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </DropdownMenu>
               </div>
             </div>
-            {birthdays.length > 0 && (
+            {canViewBirthdayGreetings && birthdays.length > 0 && (
               <div
                 role="status"
                 aria-live="polite"

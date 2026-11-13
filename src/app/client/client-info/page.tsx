@@ -382,8 +382,10 @@ export default function ClientPortalPage() {
   const inquiryIdParam = searchParams.get("inquiryId");
   const pidParam = searchParams.get("pid");
   const projectRequestIdParam = searchParams.get("projectRequestId");
-  const isReferenceSidebarClient =
-    user?.email?.trim().toLowerCase() === "dayonmerlitojr@gmail.com";
+  const isReferenceSidebarClient = [
+    "dayonmerlitojr@gmail.com",
+    "ping.biason@gmail.com",
+  ].includes(user?.email?.trim().toLowerCase() || "");
 
   useEffect(() => {
     const viewerEmail = user?.email?.trim().toLowerCase();

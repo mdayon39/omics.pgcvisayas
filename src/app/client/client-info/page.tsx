@@ -623,6 +623,8 @@ export default function ClientPortalPage() {
   const isOngoingQuotationReferenceClient =
     isReferenceSidebarClient &&
     currentInquiry?.status === "Ongoing Quotation";
+  const isInProgressReferenceClient =
+    isReferenceSidebarClient && currentInquiry?.status === "In Progress";
   const [inquiryQuotations, setInquiryQuotations] = useState<QuotationRecord[]>(
     [],
   );
@@ -7118,6 +7120,7 @@ export default function ClientPortalPage() {
                                 "bg-[#FFF1D6]",
                               isOngoingQuotationReferenceClient &&
                                 "bg-[#E1F1FD]",
+                              isInProgressReferenceClient && "bg-[#F6E6D9]",
                           )}
                         >
                           {isReferenceSidebarClient &&
@@ -7125,6 +7128,8 @@ export default function ClientPortalPage() {
                                 <Clock className="h-6 w-6 shrink-0 text-amber-700" />
                           ) : isOngoingQuotationReferenceClient ? (
                               <FileText className="h-6 w-6 shrink-0 text-[#1769AA]" />
+                          ) : isInProgressReferenceClient ? (
+                              <CheckCircle2 className="h-6 w-6 shrink-0 text-[#8A4B20]" />
                           ) : isReferenceSidebarClient ? (
                               <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-700" />
                           ) : (
@@ -7161,6 +7166,8 @@ export default function ClientPortalPage() {
                                     "text-amber-700",
                                   isOngoingQuotationReferenceClient &&
                                     "text-[#1769AA]",
+                                  isInProgressReferenceClient &&
+                                    "text-[#8A4B20]",
                               )}
                             >
                               Inquiry Status
@@ -7174,6 +7181,8 @@ export default function ClientPortalPage() {
                                     "text-amber-800",
                                   isOngoingQuotationReferenceClient &&
                                     "text-[#145B91]",
+                                  isInProgressReferenceClient &&
+                                    "text-[#713B19]",
                               )}
                             >
                               {currentInquiry.status}

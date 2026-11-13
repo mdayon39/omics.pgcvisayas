@@ -350,9 +350,6 @@ export default function ProjectForm() {
             <>
               <header className="flex items-center justify-between border-b border-slate-200 py-5">
                 <div>
-                  <p className="text-[10px] font-medium tracking-wide text-[#18365d]">
-                    PHILIPPINE GENOME CENTER VISAYAS
-                  </p>
                   <h1 className="text-xl font-bold leading-tight text-slate-950">
                     Project Information Form
                   </h1>

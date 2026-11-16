@@ -13,11 +13,15 @@ import {
 } from "@/services/configurationSettingsService";
 import { ConfigurationSettings } from "@/types/ConfigurationSettings";
 import { EmailBroadcastPreference } from "@/components/client/EmailBroadcastPreference";
+import { MASTER_PORTAL_EMAILS } from "@/constants/portalAccess";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut, loading } = useAuth();
   const router = useRouter();
   const [configSettings, setConfigSettings] = useState<ConfigurationSettings | null>(null);
+  const isMasterPortalAccount = MASTER_PORTAL_EMAILS.some(
+    (email) => email === user?.email?.trim().toLowerCase(),
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -45,12 +49,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       } else {
         router.replace('/login');
       }
-    } else if (!loading && user && isAdmin) {
+    } else if (!loading && user && isAdmin && !isMasterPortalAccount) {
       router.replace("/admin/dashboard");
     }
-  }, [user, isAdmin, loading, router]);
+  }, [user, isAdmin, isMasterPortalAccount, loading, router]);
 
-  if (loading || !user || isAdmin) {
+  if (loading || !user || (isAdmin && !isMasterPortalAccount)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
         <p className="text-sm text-muted-foreground">Checking access...</p>

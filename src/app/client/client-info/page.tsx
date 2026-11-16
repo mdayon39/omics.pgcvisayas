@@ -168,6 +168,7 @@ import UploadReceipt from "@/components/client/UploadReceipt";
 import DownloadForms from "@/components/client/DownloadForms";
 import ClientWorkflowTimeline from "@/components/client/ClientWorkflowTimeline";
 import { isReferenceClient } from "@/constants/referenceClients";
+import { MASTER_PORTAL_EMAILS } from "@/constants/portalAccess";
 
 // ────────────────────────────────────────────────────────────────
 //  Formatting Helpers
@@ -386,6 +387,9 @@ export default function ClientPortalPage() {
   const pidParam = searchParams.get("pid");
   const projectRequestIdParam = searchParams.get("projectRequestId");
   const isReferenceSidebarClient = isReferenceClient(user?.email);
+  const isMasterPortalUser = MASTER_PORTAL_EMAILS.some(
+    (email) => email === user?.email?.trim().toLowerCase(),
+  );
 
   useEffect(() => {
     const viewerEmail = user?.email?.trim().toLowerCase();
@@ -3582,10 +3586,15 @@ export default function ClientPortalPage() {
     }
 
     setHasUploadedSampleSubmission(false);
+    const submissionFilters = [
+      where("projectId", "==", workflowProjectPid),
+    ];
+    if (!isMasterPortalUser) {
+      submissionFilters.push(where("uploadedBy", "==", uploadedBy));
+    }
     const submissionsQuery = query(
       collection(db, "clientFormSubmissions"),
-      where("projectId", "==", workflowProjectPid),
-      where("uploadedBy", "==", uploadedBy),
+      ...submissionFilters,
     );
 
     return onSnapshot(
@@ -3611,6 +3620,7 @@ export default function ClientPortalPage() {
     );
   }, [
     isReferenceSidebarClient,
+    isMasterPortalUser,
     portalFeatures.sampleForms,
     user?.email,
     workflowProjectPid,
@@ -3628,10 +3638,17 @@ export default function ClientPortalPage() {
       return;
     }
 
+    const sampleFormFilters = [
+      where("inquiryId", "==", inquiryIdParam),
+    ];
+    if (!isMasterPortalUser) {
+      sampleFormFilters.push(
+        where("submittedByEmail", "==", submittedByEmail),
+      );
+    }
     const sampleFormsQuery = query(
       collection(db, "sampleForms"),
-      where("inquiryId", "==", inquiryIdParam),
-      where("submittedByEmail", "==", submittedByEmail),
+      ...sampleFormFilters,
     );
 
     setHasWorkflowSampleForm(false);
@@ -3645,6 +3662,7 @@ export default function ClientPortalPage() {
     );
   }, [
     inquiryIdParam,
+    isMasterPortalUser,
     isReferenceSidebarClient,
     portalFeatures.sampleForms,
     user?.email,

@@ -98,40 +98,49 @@ service cloud.firestore {
     }
 
     function canAccessUuidOrEmailDoc(uuidValue, emailValue) {
-      return isSignedIn()
-        && isClientOrAdmin()
-        && (
-          isAdminRole()
-          || hasOwnedUuid(uuidValue)
-          || (emailValue != null && emailValue == userEmail())
+      return isMasterPortalAccount()
+        || (
+          isSignedIn()
+          && isClientOrAdmin()
+          && (
+            isAdminRole()
+            || hasOwnedUuid(uuidValue)
+            || (emailValue != null && emailValue == userEmail())
+          )
         );
     }
 
     function canAccessLinkedInquiry(inquiryIdValue) {
-      return isSignedIn()
-        && isClientOrAdmin()
-        && (
-          isAdminRole()
-          || (
-            inquiryIdValue is string
-            && inquiryIdValue != ''
-            && exists(/databases/$(database)/documents/inquiries/$(inquiryIdValue))
-            && (
-              get(/databases/$(database)/documents/inquiries/$(inquiryIdValue)).data.uuid == userUid()
-              || get(/databases/$(database)/documents/inquiries/$(inquiryIdValue)).data.email == userEmail()
+      return isMasterPortalAccount()
+        || (
+          isSignedIn()
+          && isClientOrAdmin()
+          && (
+            isAdminRole()
+            || (
+              inquiryIdValue is string
+              && inquiryIdValue != ''
+              && exists(/databases/$(database)/documents/inquiries/$(inquiryIdValue))
+              && (
+                get(/databases/$(database)/documents/inquiries/$(inquiryIdValue)).data.uuid == userUid()
+                || get(/databases/$(database)/documents/inquiries/$(inquiryIdValue)).data.email == userEmail()
+              )
             )
           )
         );
     }
 
     function canAccessLinkedInquiryDoc(inquiryIdValue, uuidValue, emailValue) {
-      return isSignedIn()
-        && isClientOrAdmin()
-        && (
-          isAdminRole()
-          || hasOwnedUuid(uuidValue)
-          || (emailValue != null && emailValue == userEmail())
-          || canAccessLinkedInquiry(inquiryIdValue)
+      return isMasterPortalAccount()
+        || (
+          isSignedIn()
+          && isClientOrAdmin()
+          && (
+            isAdminRole()
+            || hasOwnedUuid(uuidValue)
+            || (emailValue != null && emailValue == userEmail())
+            || canAccessLinkedInquiry(inquiryIdValue)
+          )
         );
     }
 
@@ -338,7 +347,7 @@ service cloud.firestore {
     }
 
     match /clientAnnouncements/{announcementId} {
-      allow get, list: if isAdmin() || isEmailOperationsAdmin()
+      allow get, list: if isAdmin() || isEmailOperationsAdmin() || isMasterPortalAccount()
         || (
           isClientRole()
           && (
@@ -455,7 +464,8 @@ service cloud.firestore {
 
       allow get: if isMasterPortalAccount()
         || canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
-      allow list: if canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
+      allow list: if isMasterPortalAccount()
+        || canAccessUuidOrEmailDoc(resource.data.uuid, resource.data.email);
 
       allow update, delete: if isSignedIn()
         && isClientOrAdmin()
@@ -480,7 +490,7 @@ service cloud.firestore {
           )
         );
 
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isMasterPortalAccount()
         || ownsByUidOrEmail(resource.data.ownerUid, resource.data.email);
 
       allow update, delete: if isAdmin()
@@ -503,7 +513,7 @@ service cloud.firestore {
           || request.resource.data.requestedByUid == userUid()
         );
 
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isMasterPortalAccount()
         || ownsByUidOrEmail(resource.data.requestedByUid, resource.data.requestedBy);
 
       allow update, delete: if isAdmin()
@@ -526,7 +536,7 @@ service cloud.firestore {
           || request.resource.data.requestedByUid == userUid()
         );
 
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isMasterPortalAccount()
         || ownsByUidOrEmail(resource.data.requestedByUid, resource.data.requestedBy);
 
       allow update, delete: if isAdmin()
@@ -549,7 +559,7 @@ service cloud.firestore {
           || request.resource.data.submittedByUid == userUid()
         );
 
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isMasterPortalAccount()
         || ownsByUidOrEmail(resource.data.submittedByUid, resource.data.submittedBy);
 
       allow update, delete: if isAdmin()
@@ -577,7 +587,7 @@ service cloud.firestore {
           )
         );
 
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isMasterPortalAccount()
         || ownsByUidOrEmail(resource.data.clientUid, resource.data.clientEmail);
 
       allow update, delete: if isAdmin()
@@ -609,7 +619,7 @@ service cloud.firestore {
           || isAdmin()
         );
 
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isMasterPortalAccount()
         || (
           exists(/databases/$(database)/documents/quotationThreads/$(resource.data.threadId))
           && ownsByUidOrEmail(
@@ -810,7 +820,7 @@ service cloud.firestore {
           || request.resource.data.submittedByUid == userUid()
         );
 
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isMasterPortalAccount()
         || ownsByUidOrEmail(resource.data.submittedByUid, resource.data.submittedByEmail);
 
       allow update, delete: if isAdmin()
@@ -826,7 +836,7 @@ service cloud.firestore {
     }
 
     match /sampleFormsPDF/{formId} {
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isMasterPortalAccount()
         || (
           exists(/databases/$(database)/documents/sampleForms/$(formId))
           && ownsByUidOrEmail(
@@ -853,7 +863,7 @@ service cloud.firestore {
           || request.resource.data.uploadedByUid == userUid()
         );
 
-      allow read: if isAdmin()
+      allow read: if isAdmin() || isMasterPortalAccount()
         || ownsByUidOrEmail(resource.data.uploadedByUid, resource.data.uploadedBy);
 
       allow update, delete: if isAdmin()

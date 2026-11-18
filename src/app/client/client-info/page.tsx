@@ -614,7 +614,6 @@ export default function ClientPortalPage() {
       }
     >
   >(new Map());
-  const officialReceiptSnapshotsReceivedRef = useRef(new Set<string>());
 
   // ── Inquiry context state ─────────────────────────────────────
   const [currentInquiry, setCurrentInquiry] = useState<Inquiry | null>(null);
@@ -3130,43 +3129,33 @@ export default function ClientPortalPage() {
             ? await getServiceReportsByProjectId(project.pid).catch(() => [])
             : [];
 
-        setProjectDocuments((prev) => {
-          const next = new Map(prev);
-          const latestOfficialReceipts =
-            officialReceiptSnapshotsReceivedRef.current.has(pid)
-              ? prev.get(pid)?.officialReceipts ?? officialReceipts
-              : officialReceipts;
-          next.set(pid, {
+        setProjectDocuments((prev) =>
+          new Map(prev).set(pid, {
             quotations,
             chargeSlips,
             sampleForms: sampleFormSnapshotsReceivedRef.current.has(pid)
               ? (prev.get(pid)?.sampleForms ?? [])
               : sampleForms,
             serviceReports,
-            officialReceipts: latestOfficialReceipts,
+            officialReceipts,
             formSubmissions,
             loading: false,
-          });
-          return next;
-        });
+          }),
+        );
       } catch (error) {
         console.error("Error fetching project documents:", error);
         toast.error("Failed to load documents");
-        setProjectDocuments((prev) => {
-          const next = new Map(prev);
-          next.set(pid, {
+        setProjectDocuments((prev) =>
+          new Map(prev).set(pid, {
             quotations: [],
             chargeSlips: [],
             sampleForms: [],
             serviceReports: [],
-            officialReceipts: officialReceiptSnapshotsReceivedRef.current.has(pid)
-              ? prev.get(pid)?.officialReceipts ?? []
-              : [],
+            officialReceipts: [],
             formSubmissions: 0,
             loading: false,
-          });
-          return next;
-        });
+          }),
+        );
       }
     },
     [
@@ -3182,45 +3171,6 @@ export default function ClientPortalPage() {
       void loadProjectDocuments(project);
     });
   }, [isReferenceSidebarClient, projects, loadProjectDocuments]);
-
-  useEffect(() => {
-    if (!isReferenceSidebarClient || !portalFeatures.officialReceipts) return;
-
-    const pids = projects
-      .map((project) => project.pid)
-      .filter(
-        (pid): pid is string =>
-          !!pid && pid !== "DRAFT" && !pid.startsWith("PENDING-"),
-      );
-    if (pids.length === 0) return;
-
-    const unsubscribers = pids.map((pid) =>
-      onSnapshot(
-        collection(db, "projects", pid, "officialReceipts"),
-        (snapshot) => {
-          officialReceiptSnapshotsReceivedRef.current.add(pid);
-          const officialReceipts = snapshot.docs.map((receipt) => ({
-            id: receipt.id,
-            ...receipt.data(),
-          }));
-          setProjectDocuments((prev) => {
-            const existing = prev.get(pid);
-            if (!existing) return prev;
-            return new Map(prev).set(pid, { ...existing, officialReceipts });
-          });
-        },
-        (error) => {
-          console.error(
-            `Failed to listen for official receipts for project ${pid}:`,
-            error,
-          );
-          toast.error("Could not update official receipt progress.");
-        },
-      ),
-    );
-
-    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
-  }, [isReferenceSidebarClient, portalFeatures.officialReceipts, projects]);
 
   // Real-time charge slip listener for all expanded projects
   // When a charge slip's status changes (e.g. "pending" after OR upload), the UI updates instantly
@@ -3583,6 +3533,8 @@ export default function ClientPortalPage() {
   ]);
 
   const workflowProjectPid = selectedProjectPid || projects[0]?.pid;
+  const [hasValidatedOfficialReceipt, setHasValidatedOfficialReceipt] =
+    useState(false);
   const [hasWorkflowSampleForm, setHasWorkflowSampleForm] = useState(false);
   const [hasUploadedSampleSubmission, setHasUploadedSampleSubmission] =
     useState(false);
@@ -3595,6 +3547,37 @@ export default function ClientPortalPage() {
     setHasAcknowledgedUploadedSampleSubmission,
   ] = useState(false);
   const sampleFormSnapshotsReceivedRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (
+      !isReferenceSidebarClient ||
+      !workflowProjectPid ||
+      workflowProjectPid === "DRAFT" ||
+      workflowProjectPid.startsWith("PENDING-")
+    ) {
+      setHasValidatedOfficialReceipt(false);
+      return;
+    }
+
+    setHasValidatedOfficialReceipt(false);
+    return onSnapshot(
+      collection(db, "projects", workflowProjectPid, "officialReceipts"),
+      (snapshot) => {
+        setHasValidatedOfficialReceipt(
+          snapshot.docs.some(
+            (receipt) => receipt.data().acknowledgedByAdmin === true,
+          ),
+        );
+      },
+      (error) => {
+        console.error(
+          `Failed to listen for validated official receipts for project ${workflowProjectPid}:`,
+          error,
+        );
+        toast.error("Could not update official receipt progress.");
+      },
+    );
+  }, [isReferenceSidebarClient, workflowProjectPid]);
 
   useEffect(() => {
     if (
@@ -3756,9 +3739,6 @@ export default function ClientPortalPage() {
     const hasChargeSlips = (docs?.chargeSlips?.length ?? 0) > 0;
     const hasUploadedOfficialReceipts =
       (docs?.officialReceipts?.length ?? 0) > 0;
-    const hasValidatedOfficialReceipt = (docs?.officialReceipts ?? []).some(
-      (receipt) => receipt.acknowledgedByAdmin === true,
-    );
     const hasReceivedServiceReports = (docs?.serviceReports ?? []).some(
       (report) => report.status === "received",
     );
@@ -3819,6 +3799,7 @@ export default function ClientPortalPage() {
     hasAcknowledgedUploadedSampleSubmission,
     hasAcknowledgedWorkflowSampleForm,
     hasUploadedSampleSubmission,
+    hasValidatedOfficialReceipt,
     hasWorkflowSampleForm,
     inquiryQuotations,
     projectDetails,

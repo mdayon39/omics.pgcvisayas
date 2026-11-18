@@ -168,7 +168,6 @@ import UploadReceipt from "@/components/client/UploadReceipt";
 import DownloadForms from "@/components/client/DownloadForms";
 import ClientWorkflowTimeline from "@/components/client/ClientWorkflowTimeline";
 import { isReferenceClient } from "@/constants/referenceClients";
-import { MASTER_PORTAL_EMAILS } from "@/constants/portalAccess";
 
 // ────────────────────────────────────────────────────────────────
 //  Formatting Helpers
@@ -387,9 +386,6 @@ export default function ClientPortalPage() {
   const pidParam = searchParams.get("pid");
   const projectRequestIdParam = searchParams.get("projectRequestId");
   const isReferenceSidebarClient = isReferenceClient(user?.email);
-  const isMasterPortalUser = MASTER_PORTAL_EMAILS.some(
-    (email) => email === user?.email?.trim().toLowerCase(),
-  );
 
   useEffect(() => {
     const viewerEmail = user?.email?.trim().toLowerCase();
@@ -3551,14 +3547,12 @@ export default function ClientPortalPage() {
   const sampleFormSnapshotsReceivedRef = useRef(new Set<string>());
 
   useEffect(() => {
-    const uploadedBy = user?.email;
     if (
       !isReferenceSidebarClient ||
       !portalFeatures.sampleForms ||
       !workflowProjectPid ||
       workflowProjectPid === "DRAFT" ||
-      workflowProjectPid.startsWith("PENDING-") ||
-      !uploadedBy
+      workflowProjectPid.startsWith("PENDING-")
     ) {
       setHasUploadedSampleSubmission(false);
       setHasAcknowledgedUploadedSampleSubmission(false);
@@ -3567,15 +3561,9 @@ export default function ClientPortalPage() {
 
     setHasUploadedSampleSubmission(false);
     setHasAcknowledgedUploadedSampleSubmission(false);
-    const submissionFilters = [
-      where("projectId", "==", workflowProjectPid),
-    ];
-    if (!isMasterPortalUser) {
-      submissionFilters.push(where("uploadedBy", "==", uploadedBy));
-    }
     const submissionsQuery = query(
       collection(db, "clientFormSubmissions"),
-      ...submissionFilters,
+      where("projectId", "==", workflowProjectPid),
     );
 
     return onSnapshot(
@@ -3605,36 +3593,24 @@ export default function ClientPortalPage() {
     );
   }, [
     isReferenceSidebarClient,
-    isMasterPortalUser,
     portalFeatures.sampleForms,
-    user?.email,
     workflowProjectPid,
   ]);
 
   useEffect(() => {
-    const submittedByEmail = user?.email;
     if (
       !isReferenceSidebarClient ||
       !portalFeatures.sampleForms ||
-      !inquiryIdParam ||
-      !submittedByEmail
+      !inquiryIdParam
     ) {
       setHasWorkflowSampleForm(false);
       setHasAcknowledgedWorkflowSampleForm(false);
       return;
     }
 
-    const sampleFormFilters = [
-      where("inquiryId", "==", inquiryIdParam),
-    ];
-    if (!isMasterPortalUser) {
-      sampleFormFilters.push(
-        where("submittedByEmail", "==", submittedByEmail),
-      );
-    }
     const sampleFormsQuery = query(
       collection(db, "sampleForms"),
-      ...sampleFormFilters,
+      where("inquiryId", "==", inquiryIdParam),
     );
 
     setHasWorkflowSampleForm(false);
@@ -3657,10 +3633,8 @@ export default function ClientPortalPage() {
     );
   }, [
     inquiryIdParam,
-    isMasterPortalUser,
     isReferenceSidebarClient,
     portalFeatures.sampleForms,
-    user?.email,
   ]);
 
   useEffect(() => {

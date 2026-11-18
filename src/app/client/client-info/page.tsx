@@ -6917,7 +6917,11 @@ export default function ClientPortalPage() {
                                       className={cn(
                                         "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col gap-2 hover:bg-slate-50 transition-colors",
                                         isReferenceSidebarClient &&
-                                          "rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-3 md:items-center md:gap-x-0 md:gap-y-0",
+                                          `rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:items-center md:gap-x-0 md:gap-y-0 ${
+                                            isReceived
+                                              ? "md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
+                                              : "md:grid-cols-3"
+                                          }`,
                                       )}
                                     >
                                       {/* File meta row */}
@@ -6990,6 +6994,23 @@ export default function ClientPortalPage() {
                                         </div>
                                       )}
 
+                                      {isReferenceSidebarClient && isReceived && (
+                                        <div className="hidden min-w-0 flex-col items-center justify-center gap-1 border-l border-slate-200 px-4 text-center md:flex">
+                                          <Badge
+                                            variant="outline"
+                                            className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800"
+                                          >
+                                            <CheckCircle2 className="h-3 w-3" />
+                                            Received
+                                          </Badge>
+                                          {receivedDate && (
+                                            <span className="text-xs text-slate-700">
+                                              {receivedDate}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+
                                       <div
                                         className={cn(
                                           "flex items-center justify-end",
@@ -7002,11 +7023,11 @@ export default function ClientPortalPage() {
                                             className={cn(
                                               "flex items-center gap-2",
                                               isReferenceSidebarClient &&
-                                                "w-full flex-wrap justify-between gap-2",
+                                                "w-full flex-col items-start gap-2 md:w-auto md:items-end",
                                             )}
                                           >
                                             {isReferenceSidebarClient ? (
-                                              <div className="flex flex-col items-start gap-1">
+                                              <div className="flex flex-col items-start gap-1 md:hidden">
                                                 <Badge
                                                   variant="outline"
                                                   className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800"

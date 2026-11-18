@@ -6917,7 +6917,7 @@ export default function ClientPortalPage() {
                                       className={cn(
                                         "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col gap-2 hover:bg-slate-50 transition-colors",
                                         isReferenceSidebarClient &&
-                                          "rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_190px_190px_152px] md:items-center md:gap-x-4 md:gap-y-0",
+                                          "rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_190px_152px] md:items-center md:gap-x-4 md:gap-y-0",
                                       )}
                                     >
                                       {/* File meta row */}
@@ -6980,7 +6980,7 @@ export default function ClientPortalPage() {
                                       </div>
 
                                       {isReferenceSidebarClient && (
-                                        <div className="hidden min-w-0 md:flex md:flex-col md:gap-1">
+                                        <div className="hidden min-w-0 md:flex md:flex-col md:items-center md:gap-1 md:text-center">
                                           <span className="text-sm text-slate-600">
                                             Uploaded
                                           </span>
@@ -6994,7 +6994,7 @@ export default function ClientPortalPage() {
                                         className={cn(
                                           "flex items-center justify-end",
                                           isReferenceSidebarClient &&
-                                            "flex-wrap justify-between gap-2 pt-1 md:col-span-2 md:pt-0",
+                                            "flex-wrap justify-end gap-2 pt-1 md:w-full md:pt-0",
                                         )}
                                       >
                                         {isReceived ? (

@@ -571,7 +571,6 @@ export default function ClientPortalPage() {
   const [expandedProjectDocs, setExpandedProjectDocs] = useState<Set<string>>(
     new Set(),
   );
-  const initializedReferenceProjectRef = useRef(false);
   const [expandedCsIds, setExpandedCsIds] = useState<Set<string>>(new Set());
   const [expandedQuoteIds, setExpandedQuoteIds] = useState<Set<string>>(
     new Set(),
@@ -661,22 +660,6 @@ export default function ClientPortalPage() {
   const [notifChargeSlips, setNotifChargeSlips] = useState<
     Map<string, ChargeSlipRecord[]>
   >(new Map());
-
-  useEffect(() => {
-    setExpandedProjectDocs(new Set());
-  }, []);
-
-  // Open the first project by default for the reference client's sidebar.
-  useEffect(() => {
-    if (
-      isReferenceSidebarClient &&
-      projects.length > 0 &&
-      !initializedReferenceProjectRef.current
-    ) {
-      initializedReferenceProjectRef.current = true;
-      setExpandedProjectDocs(new Set([projects[0].pid]));
-    }
-  }, [isReferenceSidebarClient, projects]);
 
   // Open change-password modal via custom event dispatched from the header burger menu
   useEffect(() => {
@@ -1447,12 +1430,6 @@ export default function ClientPortalPage() {
         projectDetails.status !== selectedDetails.status
       ) {
         setProjectDetails(selectedDetails);
-        // Also expand project docs by default when selecting a project
-        setExpandedProjectDocs((prev) => {
-          const next = new Set(prev);
-          if (selectedDetails) next.add(selectedDetails.pid);
-          return next;
-        });
       }
 
       if (selectedProjectPid !== selectedDetails.pid) {
@@ -3337,13 +3314,7 @@ export default function ClientPortalPage() {
     const isExpanding = !expandedProjectDocs.has(pid);
 
     setExpandedProjectDocs((prev) => {
-      const next = new Set(prev);
-      if (next.has(pid)) {
-        next.delete(pid);
-      } else {
-        next.add(pid);
-      }
-      return next;
+      return prev.has(pid) ? new Set() : new Set([pid]);
     });
 
     // Fetch documents if expanding and not already loaded

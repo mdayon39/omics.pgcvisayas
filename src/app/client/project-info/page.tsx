@@ -551,6 +551,7 @@ export default function ProjectForm() {
               <Button
                 type="button"
                 onClick={handleGoBack}
+                disabled={isDraftSaveLocked || isSavingDraft}
                 className={usesReferenceDesign
                   ? "h-10 border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-100"
                   : "h-9 px-5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition"}

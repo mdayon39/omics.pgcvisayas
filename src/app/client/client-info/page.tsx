@@ -3540,6 +3540,14 @@ export default function ClientPortalPage() {
   const [hasWorkflowSampleForm, setHasWorkflowSampleForm] = useState(false);
   const [hasUploadedSampleSubmission, setHasUploadedSampleSubmission] =
     useState(false);
+  const [
+    hasAcknowledgedWorkflowSampleForm,
+    setHasAcknowledgedWorkflowSampleForm,
+  ] = useState(false);
+  const [
+    hasAcknowledgedUploadedSampleSubmission,
+    setHasAcknowledgedUploadedSampleSubmission,
+  ] = useState(false);
   const sampleFormSnapshotsReceivedRef = useRef(new Set<string>());
 
   useEffect(() => {
@@ -3553,10 +3561,12 @@ export default function ClientPortalPage() {
       !uploadedBy
     ) {
       setHasUploadedSampleSubmission(false);
+      setHasAcknowledgedUploadedSampleSubmission(false);
       return;
     }
 
     setHasUploadedSampleSubmission(false);
+    setHasAcknowledgedUploadedSampleSubmission(false);
     const submissionFilters = [
       where("projectId", "==", workflowProjectPid),
     ];
@@ -3571,14 +3581,18 @@ export default function ClientPortalPage() {
     return onSnapshot(
       submissionsQuery,
       (snapshot) => {
-        setHasUploadedSampleSubmission(
-          snapshot.docs.some((submission) => {
-            const data = submission.data();
-            return (
-              data.formKey === "ssf" ||
-              data.formLabel === "Sample Submission Form"
-            );
-          }),
+        const sampleSubmissions = snapshot.docs.filter((submission) => {
+          const data = submission.data();
+          return (
+            data.formKey === "ssf" ||
+            data.formLabel === "Sample Submission Form"
+          );
+        });
+        setHasUploadedSampleSubmission(sampleSubmissions.length > 0);
+        setHasAcknowledgedUploadedSampleSubmission(
+          sampleSubmissions.some(
+            (submission) => submission.data().acknowledgedByAdmin === true,
+          ),
         );
       },
       (error) => {
@@ -3606,6 +3620,7 @@ export default function ClientPortalPage() {
       !submittedByEmail
     ) {
       setHasWorkflowSampleForm(false);
+      setHasAcknowledgedWorkflowSampleForm(false);
       return;
     }
 
@@ -3623,9 +3638,18 @@ export default function ClientPortalPage() {
     );
 
     setHasWorkflowSampleForm(false);
+    setHasAcknowledgedWorkflowSampleForm(false);
     return onSnapshot(
       sampleFormsQuery,
-      (snapshot) => setHasWorkflowSampleForm(!snapshot.empty),
+      (snapshot) => {
+        setHasWorkflowSampleForm(!snapshot.empty);
+        setHasAcknowledgedWorkflowSampleForm(
+          snapshot.docs.some((sampleForm) => {
+            const status = sampleForm.data().status;
+            return status === "Reviewed" || status === "Approved";
+          }),
+        );
+      },
       (error) => {
         console.error("Failed to listen for inquiry sample forms:", error);
         toast.error("Could not update sample form progress.");
@@ -3700,8 +3724,11 @@ export default function ClientPortalPage() {
     const docs = workflowProjectPid
       ? projectDocuments.get(workflowProjectPid)
       : undefined;
-    const hasSampleForms =
+    const hasSubmittedSampleInformation =
       hasWorkflowSampleForm || hasUploadedSampleSubmission;
+    const hasAcknowledgedSampleInformation =
+      hasAcknowledgedWorkflowSampleForm ||
+      hasAcknowledgedUploadedSampleSubmission;
     const hasChargeSlips = (docs?.chargeSlips?.length ?? 0) > 0;
     const hasOfficialReceipts = (docs?.officialReceipts?.length ?? 0) > 0;
     const hasReceivedServiceReports = (docs?.serviceReports ?? []).some(
@@ -3715,7 +3742,7 @@ export default function ClientPortalPage() {
       hasApprovedQuotation ||
       currentInquiry?.status === "In Progress" ||
       Boolean(projectRequest || projectDetails) ||
-      hasSampleForms ||
+      hasSubmittedSampleInformation ||
       hasChargeSlips ||
       hasOfficialReceipts ||
       hasReceivedServiceReports;
@@ -3741,7 +3768,7 @@ export default function ClientPortalPage() {
       {
         completedLabel: "Sample Information Submitted",
         pendingLabel: "Submit Sample Information",
-        complete: hasSampleForms,
+        complete: hasAcknowledgedSampleInformation,
       },
       {
         completedLabel: "Charge slip received",
@@ -3761,6 +3788,8 @@ export default function ClientPortalPage() {
     ];
   }, [
     currentInquiry,
+    hasAcknowledgedUploadedSampleSubmission,
+    hasAcknowledgedWorkflowSampleForm,
     hasUploadedSampleSubmission,
     hasWorkflowSampleForm,
     inquiryQuotations,

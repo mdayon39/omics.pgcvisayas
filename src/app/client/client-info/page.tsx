@@ -3549,7 +3549,6 @@ export default function ClientPortalPage() {
   useEffect(() => {
     if (
       !isReferenceSidebarClient ||
-      !portalFeatures.sampleForms ||
       !workflowProjectPid ||
       workflowProjectPid === "DRAFT" ||
       workflowProjectPid.startsWith("PENDING-")
@@ -3571,9 +3570,11 @@ export default function ClientPortalPage() {
       (snapshot) => {
         const sampleSubmissions = snapshot.docs.filter((submission) => {
           const data = submission.data();
+          const formKey = String(data.formKey ?? "").trim().toLowerCase();
+          const formLabel = String(data.formLabel ?? "").trim().toLowerCase();
           return (
-            data.formKey === "ssf" ||
-            data.formLabel === "Sample Submission Form"
+            formKey === "ssf" ||
+            formLabel.includes("sample submission form")
           );
         });
         setHasUploadedSampleSubmission(sampleSubmissions.length > 0);
@@ -3593,7 +3594,6 @@ export default function ClientPortalPage() {
     );
   }, [
     isReferenceSidebarClient,
-    portalFeatures.sampleForms,
     workflowProjectPid,
   ]);
 

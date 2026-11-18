@@ -7063,32 +7063,15 @@ export default function ClientPortalPage() {
                                               item.skipChargeSlipRequirement,
                                             )
                                           ) ? (
-                                          <TooltipProvider delayDuration={100}>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <span>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="h-8 text-xs px-3 gap-1 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none"
-                                                    disabled
-                                                  >
-                                                    <Download className="h-3 w-3" />{" "}
-                                                    Receive
-                                                  </Button>
-                                                </span>
-                                              </TooltipTrigger>
-                                              <TooltipContent
-                                                side="left"
-                                                className="max-w-[220px] text-xs text-center"
-                                              >
-                                                Please settle the Charge Slip
-                                                first to receive the service
-                                                report. The status must be Paid
-                                                or Waived.
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-8 text-xs px-3 gap-1 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none"
+                                            disabled
+                                          >
+                                            <Download className="h-3 w-3" />{" "}
+                                            Receive
+                                          </Button>
                                         ) : formOpenedReports.has(item.id) ? (
                                           /* Step 2 — confirm form was submitted then unlock PDF */
                                           <div className="flex items-center gap-2">

@@ -6905,6 +6905,15 @@ export default function ClientPortalPage() {
                                   const uploadedDate = item.uploadedAt?.toDate
                                     ? format(
                                         item.uploadedAt.toDate(),
+                                        "MMM d, yyyy",
+                                      )
+                                    : "";
+                                  const uploadedTime = item.uploadedAt?.toDate
+                                    ? format(item.uploadedAt.toDate(), "h:mm a")
+                                    : "";
+                                  const uploadedDateTime = item.uploadedAt?.toDate
+                                    ? format(
+                                        item.uploadedAt.toDate(),
                                         "MMM d, yyyy h:mm a",
                                       )
                                     : "";
@@ -6917,7 +6926,7 @@ export default function ClientPortalPage() {
                                       className={cn(
                                         "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col gap-2 hover:bg-slate-50 transition-colors",
                                         isReferenceSidebarClient &&
-                                          "rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_190px_190px_152px] md:items-center md:gap-x-4 md:gap-y-0",
+                                          "rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1.05fr)_minmax(240px,0.9fr)] md:items-center md:gap-x-4 md:gap-y-0",
                                       )}
                                     >
                                       {/* File meta row */}
@@ -6968,12 +6977,8 @@ export default function ClientPortalPage() {
                                               PDF document
                                             </span>
                                           ) : uploadedDate ? (
-                                            <span
-                                              className={cn(
-                                                "text-[10px] font-medium text-slate-400",
-                                              )}
-                                            >
-                                              Uploaded: {uploadedDate}
+                                            <span className="text-[10px] font-medium text-slate-400">
+                                              Uploaded: {uploadedDateTime}
                                             </span>
                                           ) : null}
                                         </div>
@@ -6981,12 +6986,17 @@ export default function ClientPortalPage() {
 
                                       {isReferenceSidebarClient && (
                                         <div className="hidden min-w-0 md:flex md:flex-col md:gap-1">
-                                          <span className="text-sm text-slate-600">
+                                          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                                             Uploaded
                                           </span>
-                                          <span className="truncate text-sm text-slate-900">
+                                          <span className="truncate text-sm font-medium text-slate-900">
                                             {uploadedDate || "—"}
                                           </span>
+                                          {uploadedTime && (
+                                            <span className="text-sm text-slate-600">
+                                              {uploadedTime}
+                                            </span>
+                                          )}
                                         </div>
                                       )}
 
@@ -6994,7 +7004,7 @@ export default function ClientPortalPage() {
                                         className={cn(
                                           "flex items-center justify-end",
                                           isReferenceSidebarClient &&
-                                            "flex-wrap justify-between gap-2 pt-1 md:col-span-2 md:pt-0",
+                                            "flex-wrap justify-between gap-2 pt-1 md:col-span-1 md:pt-0",
                                         )}
                                       >
                                         {isReceived ? (
@@ -7066,14 +7076,25 @@ export default function ClientPortalPage() {
                                             <TooltipProvider delayDuration={100}>
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                  <span>
+                                                  <span
+                                                    className={cn(
+                                                      isReferenceSidebarClient &&
+                                                        "block w-full",
+                                                    )}
+                                                  >
                                                     <Button
                                                       size="sm"
                                                       variant="outline"
-                                                      className="h-8 text-xs px-3 gap-1 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none"
+                                                      className={cn(
+                                                        "h-8 text-xs px-3 gap-1 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none",
+                                                        isReferenceSidebarClient &&
+                                                          "h-[60px] w-full rounded-xl bg-slate-100 px-4 text-base font-semibold text-slate-600 hover:bg-slate-100",
+                                                      )}
                                                       disabled
                                                     >
-                                                      <Download className="h-3 w-3" />{" "}
+                                                      {!isReferenceSidebarClient && (
+                                                        <Download className="h-3 w-3" />
+                                                      )}{" "}
                                                       Receive
                                                     </Button>
                                                   </span>

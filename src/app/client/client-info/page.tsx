@@ -7078,17 +7078,15 @@ export default function ClientPortalPage() {
                                                     </Button>
                                                   </span>
                                                 </TooltipTrigger>
-                                                {!isReferenceSidebarClient && (
-                                                  <TooltipContent
-                                                    side="left"
-                                                    className="max-w-[220px] text-xs text-center"
-                                                  >
-                                                    Please settle the Charge Slip
-                                                    first to receive the service
-                                                    report. The status must be Paid
-                                                    or Waived.
-                                                  </TooltipContent>
-                                                )}
+                                                <TooltipContent
+                                                  side="left"
+                                                  className="max-w-[220px] text-xs text-center"
+                                                >
+                                                  Please settle the Charge Slip
+                                                  first to receive the service
+                                                  report. The status must be Paid
+                                                  or Waived.
+                                                </TooltipContent>
                                               </Tooltip>
                                             </TooltipProvider>
                                         ) : formOpenedReports.has(item.id) ? (

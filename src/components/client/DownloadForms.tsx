@@ -452,7 +452,7 @@ export default function DownloadForms({
               {uploaded.length > 0 && (
                 <div className="space-y-2">
                   {uploaded.map((f) => (
-                    <div key={f.id} className="space-y-1">
+                    <div key={f.id} className="space-y-1.5">
                       <div
                         className={cn(
                           "flex items-center gap-1.5 rounded-md bg-slate-50 border border-slate-100 px-2 py-0.5",
@@ -514,7 +514,18 @@ export default function DownloadForms({
                                       ? `${(f.size / (1024 * 1024)).toFixed(1)} MB`
                                       : `${(f.size / 1024).toFixed(1)} KB`
                                     : "—"
-                                } · Submitted`
+                                } · ${
+                                  f.acknowledgedByAdmin
+                                    ? `Acknowledged on ${
+                                        f.acknowledgedAt
+                                          ? format(
+                                              f.acknowledgedAt.toDate(),
+                                              "MMM d, yyyy · h:mm a",
+                                            )
+                                          : "—"
+                                      }`
+                                    : "Submitted"
+                                }`
                               : f.uploadedAt
                                 ? format(
                                     f.uploadedAt.toDate(),
@@ -524,25 +535,15 @@ export default function DownloadForms({
                           </span>
                         </div>
                       </div>
-                      {referenceClientDesign &&
-                        f.acknowledgedByAdmin &&
-                        f.acknowledgedAt && (
-                          <p className="px-1 text-[11px] text-emerald-800">
-                            Acknowledged on{" "}
-                            {format(
-                              f.acknowledgedAt.toDate(),
-                              "MMM d, yyyy · h:mm a",
-                            )}
-                          </p>
-                        )}
+                      {referenceClientDesign && !f.acknowledgedByAdmin && (
+                        <p className="px-1 text-xs leading-5 text-slate-600">
+                          We&apos;ll notify you once the admin acknowledges your
+                          form.
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
-              )}
-              {referenceClientDesign && hasPendingUpload && (
-                <p className="text-xs leading-5 text-slate-600">
-                  We&apos;ll notify you once the admin acknowledges your form.
-                </p>
               )}
 
               {/* Attach/Upload workflow — hidden while a pending (unacknowledged) file exists, and hidden for read-only forms */}

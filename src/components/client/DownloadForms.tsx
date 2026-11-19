@@ -77,6 +77,7 @@ interface SubmittedFile {
   fileName: string;
   downloadURL: string;
   storagePath: string;
+  size?: number;
   uploadedAt: Timestamp | null;
   acknowledgedByAdmin?: boolean;
   acknowledgedAt?: Timestamp | null;
@@ -149,6 +150,7 @@ export default function DownloadForms({
             fileName: data.fileName,
             downloadURL: data.downloadURL,
             storagePath: data.storagePath,
+            size: typeof data.size === "number" ? data.size : undefined,
             uploadedAt: data.uploadedAt ?? null,
             acknowledgedByAdmin: data.acknowledgedByAdmin ?? false,
             acknowledgedAt: data.acknowledgedAt ?? null,
@@ -243,19 +245,41 @@ export default function DownloadForms({
       await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(fileRef);
 
-      await addDoc(collection(db, "clientFormSubmissions"), {
-        projectId,
-        formKey: form.formKey,
-        formLabel: form.label,
-        fileName: file.name,
-        storagePath,
-        downloadURL,
-        uploadedAt: serverTimestamp(),
-        uploadedBy: user?.email ?? "client",
-        ...(user?.uid ? { uuid: user.uid } : {}),
-        acknowledgedByAdmin: false,
-      });
+      const uploadedDoc = await addDoc(
+        collection(db, "clientFormSubmissions"),
+        {
+          projectId,
+          formKey: form.formKey,
+          formLabel: form.label,
+          fileName: file.name,
+          storagePath,
+          downloadURL,
+          size: file.size,
+          uploadedAt: serverTimestamp(),
+          uploadedBy: user?.email ?? "client",
+          ...(user?.uid ? { uuid: user.uid } : {}),
+          acknowledgedByAdmin: false,
+        },
+      );
 
+      setSubmittedFiles((previous) => ({
+        ...previous,
+        [form.formKey]: [
+          {
+            id: uploadedDoc.id,
+            fileName: file.name,
+            downloadURL,
+            storagePath,
+            size: file.size,
+            uploadedAt: Timestamp.now(),
+            acknowledgedByAdmin: false,
+            acknowledgedAt: null,
+          },
+          ...(previous[form.formKey] ?? []).filter(
+            (submitted) => submitted.downloadURL !== downloadURL,
+          ),
+        ],
+      }));
       toast.success(`"${file.name}" uploaded successfully.`);
       setAttachedFiles((prev) => ({ ...prev, [form.formKey]: null }));
     } catch (err) {
@@ -280,6 +304,13 @@ export default function DownloadForms({
       } catch {
         // Storage file may already be gone — ignore
       }
+      setSubmittedFiles((previous) => {
+        const next = { ...previous };
+        for (const key of Object.keys(next)) {
+          next[key] = next[key].filter((submitted) => submitted.id !== fileId);
+        }
+        return next;
+      });
       toast.success(`"${fileName}" removed.`);
     } catch {
       toast.error("Could not remove the file. Please try again.");
@@ -477,14 +508,13 @@ export default function DownloadForms({
                             )}
                           >
                             {referenceClientDesign
-                              ? `Submitted ${
-                                  f.uploadedAt
-                                    ? format(
-                                        f.uploadedAt.toDate(),
-                                        "MMM d, yyyy · h:mm a",
-                                      )
+                              ? `PDF · ${
+                                  typeof f.size === "number"
+                                    ? f.size >= 1024 * 1024
+                                      ? `${(f.size / (1024 * 1024)).toFixed(1)} MB`
+                                      : `${(f.size / 1024).toFixed(1)} KB`
                                     : "—"
-                                }`
+                                } · Submitted`
                               : f.uploadedAt
                                 ? format(
                                     f.uploadedAt.toDate(),
@@ -493,43 +523,7 @@ export default function DownloadForms({
                                 : "—"}
                           </span>
                         </div>
-                        {f.acknowledgedByAdmin ? (
-                          <span
-                            className={cn(
-                              "flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0 shrink-0 h-5",
-                              referenceClientDesign &&
-                                "h-auto rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] text-emerald-800",
-                            )}
-                          >
-                            {referenceClientDesign && (
-                              <CheckCircle2 className="h-3 w-3" />
-                            )}
-                            Acknowledged
-                            {f.acknowledgedAt && !referenceClientDesign && (
-                              <span className="font-normal text-emerald-500 opacity-80">
-                                ·{" "}
-                                {format(
-                                  f.acknowledgedAt.toDate(),
-                                  "MMM d, yyyy h:mm a",
-                                )}
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span
-                            className={cn(
-                              "text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0 shrink-0 h-5",
-                              referenceClientDesign &&
-                                "inline-flex h-auto items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] text-amber-900",
-                            )}
-                          >
-                            {referenceClientDesign && (
-                              <Clock className="h-3 w-3" />
-                            )}
-                            Pending
-                          </span>
-                        )}
-                        {referenceClientDesign && (
+                        {referenceClientDesign && !f.acknowledgedByAdmin && (
                           <div className="flex shrink-0 items-center gap-1">
                             <a
                               href={f.downloadURL}
@@ -619,49 +613,48 @@ export default function DownloadForms({
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className={cn(referenceClientDesign && "space-y-0")}>
                       <div
                         className={cn(
                           "flex items-center gap-2 p-2 bg-blue-50/50 border border-blue-200 rounded-lg",
                           referenceClientDesign &&
-                            "gap-2.5 rounded-lg border-slate-200 bg-white p-2.5",
+                            "flex-col items-stretch gap-2 rounded-lg border-slate-200 bg-white p-2.5 sm:flex-row sm:items-center sm:gap-2.5",
                         )}
                       >
-                        <span
-                          className={cn(
-                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-50",
-                            referenceClientDesign
-                              ? "h-9 w-9 rounded-lg bg-[#fff1ed]"
-                              : "hidden",
-                          )}
-                        >
-                          {referenceClientDesign ? (
+                        {referenceClientDesign ? (
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#fff1ed]">
                             <span className="relative flex h-7 w-6 items-center justify-center">
                               <FileText className="h-7 w-6 text-red-600" />
                               <span className="absolute bottom-0.5 rounded-sm bg-white px-0.5 text-[7px] font-bold leading-3 text-red-700">
                                 PDF
                               </span>
                             </span>
-                          ) : (
-                            <FileText className="h-4 w-4 text-orange-700" />
-                          )}
-                        </span>
-                        {!referenceClientDesign && (
+                          </span>
+                        ) : (
                           <FileText className="h-4 w-4 shrink-0 text-blue-600" />
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="truncate text-xs font-semibold text-slate-900">
                             {attachedFile.name}
                           </p>
-                          <p className="text-[11px] leading-5 text-slate-500">
-                            {referenceClientDesign
-                              ? `PDF · ${
-                                  attachedFile.size >= 1024 * 1024
-                                    ? `${(attachedFile.size / (1024 * 1024)).toFixed(1)} MB`
-                                    : `${(attachedFile.size / 1024).toFixed(1)} KB`
-                                } · Ready to upload`
-                              : `${(attachedFile.size / 1024).toFixed(1)} KB`}
-                          </p>
+                          {referenceClientDesign ? (
+                            <p className="flex flex-wrap items-center gap-x-1.5 text-[11px] leading-5 text-slate-500">
+                              <span>
+                                PDF ·{" "}
+                                {attachedFile.size >= 1024 * 1024
+                                  ? `${(attachedFile.size / (1024 * 1024)).toFixed(1)} MB`
+                                  : `${(attachedFile.size / 1024).toFixed(1)} KB`}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-emerald-700">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Ready to upload
+                              </span>
+                            </p>
+                          ) : (
+                            <p className="text-[11px] leading-5 text-slate-500">
+                              {(attachedFile.size / 1024).toFixed(1)} KB
+                            </p>
+                          )}
                         </div>
                         <a
                           href={URL.createObjectURL(attachedFile)}
@@ -671,7 +664,7 @@ export default function DownloadForms({
                           className={cn(
                             "p-1 hover:bg-blue-100 rounded transition-colors",
                             referenceClientDesign &&
-                              "rounded-lg p-2 hover:bg-slate-100",
+                              "self-end rounded-md p-1.5 hover:bg-slate-100 sm:self-auto",
                           )}
                           title="Preview file"
                           aria-label={`Preview ${attachedFile.name}`}
@@ -691,7 +684,7 @@ export default function DownloadForms({
                           className={cn(
                             "p-1 hover:bg-red-100 rounded transition-colors",
                             referenceClientDesign &&
-                              "rounded-md p-1.5 hover:bg-slate-100",
+                              "self-end rounded-md p-1.5 hover:bg-slate-100 sm:self-auto",
                           )}
                           title="Remove attachment"
                           aria-label={`Remove ${attachedFile.name}`}
@@ -702,30 +695,44 @@ export default function DownloadForms({
                             <X className="h-3.5 w-3.5 text-red-600" />
                           )}
                         </button>
+                        {referenceClientDesign && (
+                          <>
+                            <span className="hidden h-7 w-px shrink-0 bg-slate-200 sm:block" />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleUpload(form);
+                              }}
+                              disabled={isUploading}
+                              className="inline-flex h-9 w-full shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#92351f] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#7f2d1a] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                            >
+                              {isUploading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Upload className="h-4 w-4" />
+                              )}
+                              {isUploading ? "Uploading…" : "Upload form"}
+                            </button>
+                          </>
+                        )}
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUpload(form);
-                        }}
-                        disabled={isUploading}
-                        className={cn(
-                          "flex items-center gap-1.5 text-[11px] font-medium text-white bg-[#166FB5] hover:bg-[#0e4f8a] rounded-full px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center",
-                          referenceClientDesign &&
-                            "h-11 rounded-lg bg-[#92351f] text-sm font-semibold hover:bg-[#7f2d1a]",
-                        )}
-                      >
-                        {isUploading ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Upload className="h-3 w-3" />
-                        )}
-                        {isUploading
-                          ? "Uploading…"
-                          : referenceClientDesign
-                            ? "Upload form"
-                            : "Upload"}
-                      </button>
+                      {!referenceClientDesign && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleUpload(form);
+                          }}
+                          disabled={isUploading}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-full bg-[#166FB5] px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[#0e4f8a] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isUploading ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Upload className="h-3 w-3" />
+                          )}
+                          {isUploading ? "Uploading…" : "Upload"}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

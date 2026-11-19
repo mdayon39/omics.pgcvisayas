@@ -10146,6 +10146,19 @@ export default function ClientPortalPage() {
         cancelLabel="Go Back"
       >
         <div className="space-y-4">
+          {!isReferenceSidebarClient && (
+            <div className="mb-3 flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 bg-blue-100 text-blue-800"
+              >
+                <CheckCircle2 className="h-3 w-3" />
+                Step 2 of 3
+              </Badge>
+              <span className="text-xs text-slate-500">Review Team Members</span>
+            </div>
+          )}
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800 font-bold mb-3 border-b border-blue-100 pb-1">
               Other Member/s:
@@ -10175,12 +10188,13 @@ export default function ClientPortalPage() {
       </ConfirmationModalLayout>
 
       {/* Submit project for approval confirmation modal */}
-      <Dialog
-        open={showSubmitProjectModal}
-        onOpenChange={(open) => {
-          if (!open) setShowSubmitProjectModal(false);
-        }}
-      >
+      {isReferenceSidebarClient ? (
+        <Dialog
+          open={showSubmitProjectModal}
+          onOpenChange={(open) => {
+            if (!open) setShowSubmitProjectModal(false);
+          }}
+        >
         <DialogContent className="max-h-[90vh] max-w-md gap-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-0 shadow-xl">
           <div className="px-5 pb-4 pt-5">
             <DialogHeader className="flex-row items-start gap-3 space-y-0 pr-8 text-left">
@@ -10327,7 +10341,112 @@ export default function ClientPortalPage() {
             </Button>
           </div>
         </DialogContent>
-      </Dialog>
+        </Dialog>
+      ) : (
+        <ConfirmationModalLayout
+          open={showSubmitProjectModal}
+          onConfirm={handleConfirmSubmitProject}
+          onCancel={() => {
+            setShowSubmitProjectModal(false);
+          }}
+          loading={submitting}
+          title="📋 Final Review & Confirmation"
+          description="Please review your project and member information below before final submission to administrators."
+          confirmLabel="Submit to Administrator"
+          cancelLabel="Go Back"
+        >
+          <div className="space-y-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 bg-blue-100 text-blue-800"
+              >
+                <CheckCircle2 className="h-3 w-3" />
+                Step 2 of 3
+              </Badge>
+              <span className="text-xs text-slate-500">
+                Review Project Details
+              </span>
+            </div>
+
+            {projectRequest && (
+              <div className="space-y-2 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
+                <p className="mb-2 text-sm font-semibold text-blue-900">
+                  Project Details:
+                </p>
+                <div className="space-y-1 text-xs text-blue-800">
+                  <div>
+                    <strong>Title:</strong> {projectRequest.title}
+                  </div>
+                  <div>
+                    <strong>Lead:</strong> {projectRequest.projectLead}
+                  </div>
+                  <div>
+                    <strong>Sending Institution:</strong>{" "}
+                    {projectRequest.sendingInstitution}
+                  </div>
+                  <div>
+                    <strong>Funding Institution:</strong>{" "}
+                    {projectRequest.fundingInstitution}
+                  </div>
+                </div>
+              </div>
+            )}
+            {primaryMember && (
+              <div className="space-y-2 rounded-lg border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4">
+                <p className="mb-2 text-sm font-semibold text-green-900">
+                  Primary Member:
+                </p>
+                <div className="space-y-1 text-xs text-green-800">
+                  <div>
+                    <strong>Name:</strong> {primaryMember.formData.name}
+                  </div>
+                  <div>
+                    <strong>Email:</strong> {primaryMember.formData.email}
+                  </div>
+                  <div>
+                    <strong>Affiliation:</strong>{" "}
+                    {primaryMember.formData.affiliation}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {members.filter((m) => !m.isPrimary && m.isDraft).length > 0 && (
+              <div className="space-y-3 rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 p-4">
+                <p className="border-b border-slate-200 pb-1 text-sm font-bold text-slate-900">
+                  Other Member/s:
+                </p>
+                <div className="space-y-4">
+                  {members
+                    .filter((m) => !m.isPrimary && m.isDraft)
+                    .map((member) => (
+                      <div
+                        key={member.id}
+                        className="space-y-1 text-xs text-slate-700"
+                      >
+                        <div>
+                          <strong className="text-slate-900">Name:</strong>{" "}
+                          {member.formData.name || "—"}
+                        </div>
+                        <div>
+                          <strong className="text-slate-900">Email:</strong>{" "}
+                          {member.formData.email || "—"}
+                        </div>
+                        <div>
+                          <strong className="text-slate-900">
+                            Affiliation:
+                          </strong>{" "}
+                          {member.formData.affiliation || "—"}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </ConfirmationModalLayout>
+      )}
 
       {/* Client Conforme — must be agreed before final submission */}
       <ClientConformeModal
@@ -10358,6 +10477,8 @@ export default function ClientPortalPage() {
         clientUid={user?.uid ?? undefined}
         projectPid={selectedProjectPid ?? undefined}
         projectRequestId={currentProjectRequestId ?? undefined}
+        hideProgressIndicator={isReferenceSidebarClient}
+        professionalLayout={isReferenceSidebarClient}
       />
 
       {/* Proceed with Service Confirmation Modal */}

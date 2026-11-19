@@ -582,16 +582,27 @@ export default function DownloadForms({
                         className={cn(
                           "flex items-center gap-2 p-2 bg-blue-50/50 border border-blue-200 rounded-lg",
                           referenceClientDesign &&
-                            "gap-3 rounded-xl border-slate-200 bg-white p-3",
+                            "gap-2.5 rounded-lg border-slate-200 bg-white p-2.5",
                         )}
                       >
                         <span
                           className={cn(
                             "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-50",
-                            !referenceClientDesign && "hidden",
+                            referenceClientDesign
+                              ? "h-9 w-9 rounded-lg bg-[#fff1ed]"
+                              : "hidden",
                           )}
                         >
-                          <FileText className="h-4 w-4 text-orange-700" />
+                          {referenceClientDesign ? (
+                            <span className="relative flex h-7 w-6 items-center justify-center">
+                              <FileText className="h-7 w-6 text-red-600" />
+                              <span className="absolute bottom-0.5 rounded-sm bg-white px-0.5 text-[7px] font-bold leading-3 text-red-700">
+                                PDF
+                              </span>
+                            </span>
+                          ) : (
+                            <FileText className="h-4 w-4 text-orange-700" />
+                          )}
                         </span>
                         {!referenceClientDesign && (
                           <FileText className="h-4 w-4 shrink-0 text-blue-600" />
@@ -600,9 +611,13 @@ export default function DownloadForms({
                           <p className="truncate text-xs font-semibold text-slate-900">
                             {attachedFile.name}
                           </p>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] leading-5 text-slate-500">
                             {referenceClientDesign
-                              ? `PDF · ${(attachedFile.size / 1024).toFixed(1)} KB · Ready to upload`
+                              ? `PDF · ${
+                                  attachedFile.size >= 1024 * 1024
+                                    ? `${(attachedFile.size / (1024 * 1024)).toFixed(1)} MB`
+                                    : `${(attachedFile.size / 1024).toFixed(1)} KB`
+                                } · Ready to upload`
                               : `${(attachedFile.size / 1024).toFixed(1)} KB`}
                           </p>
                         </div>
@@ -622,7 +637,7 @@ export default function DownloadForms({
                           <Eye
                             className={cn(
                               "h-3.5 w-3.5 text-blue-600",
-                              referenceClientDesign && "text-slate-600",
+                              referenceClientDesign && "h-4 w-4 text-slate-700",
                             )}
                           />
                         </a>
@@ -634,7 +649,7 @@ export default function DownloadForms({
                           className={cn(
                             "p-1 hover:bg-red-100 rounded transition-colors",
                             referenceClientDesign &&
-                              "rounded-lg p-2 hover:bg-red-50",
+                              "rounded-md p-1.5 hover:bg-slate-100",
                           )}
                           title="Remove attachment"
                           aria-label={`Remove ${attachedFile.name}`}
@@ -655,7 +670,7 @@ export default function DownloadForms({
                         className={cn(
                           "flex items-center gap-1.5 text-[11px] font-medium text-white bg-[#166FB5] hover:bg-[#0e4f8a] rounded-full px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center",
                           referenceClientDesign &&
-                            "h-11 rounded-xl bg-orange-700 text-sm font-semibold hover:bg-orange-800",
+                            "h-11 rounded-lg bg-[#92351f] text-sm font-semibold hover:bg-[#7f2d1a]",
                         )}
                       >
                         {isUploading ? (

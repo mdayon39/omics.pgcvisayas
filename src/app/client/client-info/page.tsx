@@ -9984,59 +9984,153 @@ export default function ClientPortalPage() {
       )}
 
       {/* Delete confirmation modal */}
-      <ConfirmationModalLayout
-        open={showDeleteModal}
-        onConfirm={confirmRemoveMember}
-        onCancel={() => {
-          setShowDeleteModal(false);
-          setMemberToDelete(null);
-        }}
-        loading={false}
-        title="Remove Member"
-        description="Are you sure you want to remove this team member from the project?"
-        confirmLabel="Remove Member"
-        cancelLabel="Cancel"
-        className="max-w-xl"
-      >
-        {memberToDelete &&
-          (() => {
-            const member = members.find((m) => m.id === memberToDelete);
-            if (!member) return null;
-            return (
-              <div className="space-y-4">
-                {/* Profile Header Card - Compact */}
-                <div className="flex items-center gap-4 bg-red-50 p-3 rounded-xl border border-red-100">
-                  <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center shadow-sm flex-shrink-0">
-                    <Trash2 className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-base text-slate-800 truncate">
-                      {member.formData.name || "Unnamed Member"}
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Mail className="h-3 w-3" />
-                      <span className="truncate">
-                        {member.formData.email || "No email provided"}
-                      </span>
+      {isReferenceSidebarClient ? (
+        <Dialog
+          open={showDeleteModal}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowDeleteModal(false);
+              setMemberToDelete(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-md gap-0 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+            <DialogHeader className="space-y-1 pr-8 text-left">
+              <DialogTitle className="text-base font-semibold leading-6 text-slate-900">
+                Remove Member
+              </DialogTitle>
+              <DialogDescription className="text-sm leading-5 text-slate-600">
+                Are you sure you want to remove this team member from the
+                project?
+              </DialogDescription>
+            </DialogHeader>
+
+            {memberToDelete &&
+              (() => {
+                const member = members.find((m) => m.id === memberToDelete);
+                if (!member) return null;
+                return (
+                  <div className="mt-5 space-y-3">
+                    <div className="flex min-w-0 items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-semibold text-slate-900">
+                          {member.formData.name || "Unnamed Member"}
+                        </h3>
+                        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          <span className="truncate">
+                            {member.formData.email || "No email provided"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2 rounded-lg bg-amber-200/80 px-3 py-3 text-amber-900">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                      <p className="text-xs leading-5">
+                        This will remove{" "}
+                        <strong>
+                          {member.formData.name || "this member"}
+                        </strong>{" "}
+                        from the current list.
+                        {member.isDraft
+                          ? " Since this is a draft, the data will be permanently deleted."
+                          : " If this member has already been submitted, this request will need approval."}
+                      </p>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowDeleteModal(false);
+                          setMemberToDelete(null);
+                        }}
+                        className="h-9 border-slate-300 px-5 text-slate-700"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={confirmRemoveMember}
+                        className="h-9 bg-[#D93636] px-5 text-white hover:bg-[#C92F2F]"
+                      >
+                        Remove Member
+                      </Button>
                     </div>
                   </div>
-                </div>
+                );
+              })()}
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <ConfirmationModalLayout
+          open={showDeleteModal}
+          onConfirm={confirmRemoveMember}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setMemberToDelete(null);
+          }}
+          loading={false}
+          title="Remove Member"
+          description="Are you sure you want to remove this team member from the project?"
+          confirmLabel="Remove Member"
+          cancelLabel="Cancel"
+          className="max-w-xl"
+        >
+          {memberToDelete &&
+            (() => {
+              const member = members.find((m) => m.id === memberToDelete);
+              if (!member) return null;
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 rounded-xl border border-red-100 bg-red-50 p-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 shadow-sm">
+                      <Trash2 className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-base font-bold text-slate-800">
+                        {member.formData.name || "Unnamed Member"}
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <Mail className="h-3 w-3" />
+                        <span className="truncate">
+                          {member.formData.email || "No email provided"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-                {/* Warning Message */}
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <p className="text-sm text-slate-600">
-                    This will remove{" "}
-                    <strong>{member.formData.name || "this member"}</strong>{" "}
-                    from the current list.
-                    {member.isDraft
-                      ? " Since this is a draft, the data will be permanently deleted."
-                      : " If this member has already been submitted, this request will need approval."}
-                  </p>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-sm text-slate-600">
+                      This will remove{" "}
+                      <strong>{member.formData.name || "this member"}</strong>{" "}
+                      from the current list.
+                      {member.isDraft
+                        ? " Since this is a draft, the data will be permanently deleted."
+                        : " If this member has already been submitted, this request will need approval."}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })()}
-      </ConfirmationModalLayout>
+              );
+            })()}
+        </ConfirmationModalLayout>
+      )}
 
       {/* Submit for approval confirmation modal */}
       <ConfirmationModalLayout

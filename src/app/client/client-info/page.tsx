@@ -4698,6 +4698,17 @@ export default function ClientPortalPage() {
                     <button
                       key={inq.id}
                       onClick={() => {
+                        setExpandedProjectDocs(new Set());
+                        setExpandedDocSections(new Set());
+                        setActiveDocPanel(null);
+                        setIsProjectInfoExpanded(false);
+                        setExpandedMembers(new Set());
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem(
+                            "expandedMembers",
+                            JSON.stringify([]),
+                          );
+                        }
                         if (inq.id === inquiryIdParam) return;
                         userSelectedInquiryRef.current = true;
                         userWantsWorkspaceRef.current = true;

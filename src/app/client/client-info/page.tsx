@@ -6633,7 +6633,7 @@ export default function ClientPortalPage() {
                                         className={cn(
                                           "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex items-center justify-between gap-3 flex-wrap hover:bg-slate-50 transition-colors",
                                           isReferenceSidebarClient &&
-                                            "relative flex-col items-stretch border-slate-200 bg-white p-4",
+                                            "relative flex-col items-stretch border-slate-200 bg-white p-0",
                                         )}
                                       >
                                         <div
@@ -6915,17 +6915,23 @@ export default function ClientPortalPage() {
                                       <div
                                         key={chargeSlip.id}
                                         className={cn(
-                                          "rounded-xl border border-slate-100 bg-slate-50/50 p-4 space-y-3 hover:bg-slate-50 transition-colors",
+                                          "rounded-xl border border-slate-100 bg-slate-50/50 p-3 space-y-3 hover:bg-slate-50 transition-colors",
                                           isReferenceSidebarClient &&
                                             "relative overflow-hidden border-slate-200 bg-white p-0 hover:bg-white",
                                         )}
                                       >
-                                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                                        <div
+                                          className={cn(
+                                            "flex items-center justify-between gap-3 flex-wrap",
+                                            isReferenceSidebarClient &&
+                                              "grid w-full grid-cols-1 items-center gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(70px,0.7fr)_minmax(140px,1.4fr)_auto] sm:gap-4",
+                                          )}
+                                        >
                                           <div
                                             className={cn(
                                               "flex items-center gap-2 flex-wrap min-w-0",
                                               isReferenceSidebarClient &&
-                                                "grid w-full grid-cols-1 items-center gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1.25fr)_minmax(70px,0.65fr)_minmax(130px,1.15fr)_auto]",
+                                                "contents",
                                             )}
                                           >
                                             {isReferenceSidebarClient && (
@@ -6961,7 +6967,7 @@ export default function ClientPortalPage() {
                                             {isReferenceSidebarClient ? (
                                               <>
                                                 <div>
-                                                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                  <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
                                                     Total
                                                   </p>
                                                   <p
@@ -6981,7 +6987,7 @@ export default function ClientPortalPage() {
                                                   </p>
                                                 </div>
                                                 <div>
-                                                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                  <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
                                                     Issued
                                                   </p>
                                                   {csIssuedDate ? (
@@ -7024,7 +7030,7 @@ export default function ClientPortalPage() {
                                           <div
                                             className={cn(
                                               isReferenceSidebarClient &&
-                                                "absolute right-5 top-[44px]",
+                                                "justify-self-start sm:justify-self-end",
                                             )}
                                           >
                                             {csPaid ? (
@@ -7035,7 +7041,13 @@ export default function ClientPortalPage() {
                                                     "px-2.5 py-1 text-[11px]",
                                                 )}
                                               >
-                                                <CheckCircle2 className="h-3 w-3" />{" "}
+                                                <CheckCircle2
+                                                  className={cn(
+                                                    "h-3 w-3",
+                                                    isReferenceSidebarClient &&
+                                                      "h-3.5 w-3.5",
+                                                  )}
+                                                />{" "}
                                                 Paid
                                               </span>
                                             ) : csCancelled ? (

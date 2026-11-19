@@ -362,6 +362,19 @@ const SENDING_INSTITUTIONS = [
 
 const ANNOUNCEMENT_DURATION_MS = 15 * 1000;
 
+const isSampleSubmissionForm = (data: {
+  formKey?: unknown;
+  formLabel?: unknown;
+}) => {
+  const formKey = String(data.formKey ?? "")
+    .trim()
+    .toLowerCase();
+  const formLabel = String(data.formLabel ?? "")
+    .trim()
+    .toLowerCase();
+  return formKey === "ssf" || formLabel.includes("sample submission form");
+};
+
 export default function ClientPortalPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -614,7 +627,7 @@ export default function ClientPortalPage() {
         sampleForms: SampleFormSummary[];
         serviceReports: ServiceReport[];
         officialReceipts: any[];
-        formSubmissions: number;
+        sampleSubmissionCount: number;
         loading: boolean;
       }
     >
@@ -3076,7 +3089,7 @@ export default function ClientPortalPage() {
           sampleForms: [],
           serviceReports: [],
           officialReceipts: [],
-          formSubmissions: 0,
+          sampleSubmissionCount: 0,
           loading: true,
         }),
       );
@@ -3107,8 +3120,10 @@ export default function ClientPortalPage() {
                 ),
               )
             : null;
-        const formSubmissions = formSubmissionsSnapshot
-          ? formSubmissionsSnapshot.size
+        const sampleSubmissionCount = formSubmissionsSnapshot
+          ? formSubmissionsSnapshot.docs.filter((submission) =>
+              isSampleSubmissionForm(submission.data()),
+            ).length
           : 0;
 
         let officialReceipts: any[] = [];
@@ -3152,7 +3167,7 @@ export default function ClientPortalPage() {
               : sampleForms,
             serviceReports,
             officialReceipts,
-            formSubmissions,
+            sampleSubmissionCount,
             loading: false,
           }),
         );
@@ -3166,7 +3181,7 @@ export default function ClientPortalPage() {
             sampleForms: [],
             serviceReports: [],
             officialReceipts: [],
-            formSubmissions: 0,
+            sampleSubmissionCount: 0,
             loading: false,
           }),
         );
@@ -3600,12 +3615,7 @@ export default function ClientPortalPage() {
   }, [isReferenceSidebarClient, workflowProjectPid]);
 
   useEffect(() => {
-    if (
-      !isReferenceSidebarClient ||
-      !workflowProjectPid ||
-      workflowProjectPid === "DRAFT" ||
-      workflowProjectPid.startsWith("PENDING-")
-    ) {
+    if (!isReferenceSidebarClient) {
       setHasUploadedSampleSubmission(false);
       setHasAcknowledgedUploadedSampleSubmission(false);
       return;
@@ -3613,42 +3623,60 @@ export default function ClientPortalPage() {
 
     setHasUploadedSampleSubmission(false);
     setHasAcknowledgedUploadedSampleSubmission(false);
-    const submissionsQuery = query(
-      collection(db, "clientFormSubmissions"),
-      where("projectId", "==", workflowProjectPid),
+    const projectIds = Array.from(
+      new Set(
+        [...projects.map((project) => project.pid), workflowProjectPid].filter(
+          (pid): pid is string =>
+            typeof pid === "string" &&
+            pid !== "DRAFT" &&
+            !pid.startsWith("PENDING-"),
+        ),
+      ),
+    );
+    const unsubscribers = projectIds.map((projectId) =>
+      onSnapshot(
+        query(
+          collection(db, "clientFormSubmissions"),
+          where("projectId", "==", projectId),
+        ),
+        (snapshot) => {
+          const sampleSubmissions = snapshot.docs.filter((submission) =>
+            isSampleSubmissionForm(submission.data()),
+          );
+          setProjectDocuments((previous) => {
+            const existing = previous.get(projectId);
+            if (!existing) return previous;
+            const next = new Map(previous);
+            next.set(projectId, {
+              ...existing,
+              sampleSubmissionCount: sampleSubmissions.length,
+            });
+            return next;
+          });
+
+          if (projectId === workflowProjectPid) {
+            setHasUploadedSampleSubmission(sampleSubmissions.length > 0);
+            setHasAcknowledgedUploadedSampleSubmission(
+              sampleSubmissions.some(
+                (submission) => submission.data().acknowledgedByAdmin === true,
+              ),
+            );
+          }
+        },
+        (error) => {
+          console.error(
+            `Failed to listen for uploaded sample submission forms for project ${projectId}:`,
+            error,
+          );
+          if (projectId === workflowProjectPid) {
+            toast.error("Could not update sample form progress.");
+          }
+        },
+      ),
     );
 
-    return onSnapshot(
-      submissionsQuery,
-      (snapshot) => {
-        const sampleSubmissions = snapshot.docs.filter((submission) => {
-          const data = submission.data();
-          const formKey = String(data.formKey ?? "")
-            .trim()
-            .toLowerCase();
-          const formLabel = String(data.formLabel ?? "")
-            .trim()
-            .toLowerCase();
-          return (
-            formKey === "ssf" || formLabel.includes("sample submission form")
-          );
-        });
-        setHasUploadedSampleSubmission(sampleSubmissions.length > 0);
-        setHasAcknowledgedUploadedSampleSubmission(
-          sampleSubmissions.some(
-            (submission) => submission.data().acknowledgedByAdmin === true,
-          ),
-        );
-      },
-      (error) => {
-        console.error(
-          "Failed to listen for uploaded sample submission forms:",
-          error,
-        );
-        toast.error("Could not update sample form progress.");
-      },
-    );
-  }, [isReferenceSidebarClient, workflowProjectPid]);
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  }, [isReferenceSidebarClient, projects, workflowProjectPid]);
 
   useEffect(() => {
     if (
@@ -3726,7 +3754,7 @@ export default function ClientPortalPage() {
             sampleForms,
             serviceReports: existing?.serviceReports ?? [],
             officialReceipts: existing?.officialReceipts ?? [],
-            formSubmissions: existing?.formSubmissions ?? 0,
+            sampleSubmissionCount: existing?.sampleSubmissionCount ?? 0,
             loading: existing?.loading ?? false,
           });
           return next;
@@ -4855,11 +4883,11 @@ export default function ClientPortalPage() {
                 const docs = projectDocuments.get(project.pid);
                 const quotationCount = docs?.quotations.length || 0;
                 const chargeSlipCount = docs?.chargeSlips.length || 0;
-                const formSubmissionCount = docs?.formSubmissions || 0;
+                const sampleSubmissionCount = docs?.sampleSubmissionCount || 0;
                 const serviceReportCount = docs?.serviceReports?.length || 0;
                 const totalDocumentCount =
                   quotationCount +
-                  formSubmissionCount +
+                  sampleSubmissionCount +
                   chargeSlipCount +
                   serviceReportCount;
                 const officialReceiptCount =
@@ -5125,8 +5153,8 @@ export default function ClientPortalPage() {
                                       )}
                                     >
                                       {isReferenceSidebarClient
-                                        ? formSubmissionCount
-                                        : `(${formSubmissionCount})`}
+                                        ? sampleSubmissionCount
+                                        : `(${sampleSubmissionCount})`}
                                     </span>
                                     <ChevronRight
                                       className={cn(

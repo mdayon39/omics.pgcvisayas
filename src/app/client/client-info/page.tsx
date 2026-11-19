@@ -964,7 +964,7 @@ export default function ClientPortalPage() {
           sendingInstitution: projectData.sendingInstitution || "Not specified",
           fundingInstitution: projectData.fundingInstitution || "Not specified",
           status: projectData.status || "Pending",
-          inquiryId: projectData.iid || inquiryIdParam || "",
+          inquiryId: inquiryIdParam,
         } as ProjectDetails;
       });
       setFetchedApprovedProjects(approved);
@@ -3550,7 +3550,12 @@ export default function ClientPortalPage() {
     selectedProjectPid,
   ]);
 
-  const workflowProjectPid = selectedProjectPid || projects[0]?.pid;
+  const workflowInquiryProjects = inquiryIdParam
+    ? projects.filter((project) => project.inquiryId === inquiryIdParam)
+    : [];
+  const workflowProjectPid =
+    workflowInquiryProjects.find((project) => project.pid === selectedProjectPid)
+      ?.pid || workflowInquiryProjects[0]?.pid;
   const [hasValidatedOfficialReceipt, setHasValidatedOfficialReceipt] =
     useState(false);
   const [hasWorkflowSampleForm, setHasWorkflowSampleForm] = useState(false);
@@ -3764,10 +3769,13 @@ export default function ClientPortalPage() {
       (quotation) =>
         quotation.status === "selected" || quotation.status === "completed",
     );
+    const hasCurrentInquiryProject =
+      projectRequest?.inquiryId === inquiryIdParam ||
+      projectDetails?.inquiryId === inquiryIdParam;
     const hasProceeded =
       hasApprovedQuotation ||
       currentInquiry?.status === "In Progress" ||
-      Boolean(projectRequest || projectDetails) ||
+      hasCurrentInquiryProject ||
       hasSubmittedSampleInformation ||
       hasChargeSlips ||
       hasUploadedOfficialReceipts ||
@@ -3819,6 +3827,7 @@ export default function ClientPortalPage() {
     hasUploadedSampleSubmission,
     hasValidatedOfficialReceipt,
     hasWorkflowSampleForm,
+    inquiryIdParam,
     inquiryQuotations,
     projectDetails,
     projectDocuments,

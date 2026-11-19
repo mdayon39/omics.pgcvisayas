@@ -6220,11 +6220,19 @@ export default function ClientPortalPage() {
                             "h-12 px-8 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-bold shadow-xl hover:shadow-2xl disabled:opacity-50 whitespace-nowrap",
                             isReferenceSidebarClient &&
                               "h-8 px-3 text-[9px] font-medium shadow-none disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-100",
+                            isReferenceSidebarClient &&
+                              (submitting ||
+                                members.some((m) => !m.isSubmitted)) &&
+                              "disabled:h-[42px] disabled:border disabled:border-slate-300 disabled:px-5 disabled:text-sm disabled:font-medium disabled:bg-none disabled:bg-slate-200 disabled:text-slate-600 disabled:shadow-none disabled:opacity-100 disabled:hover:bg-none disabled:hover:bg-slate-200",
                           )}
                         >
                           <Send className={cn(
                             "h-5 w-5 mr-2",
                             isReferenceSidebarClient && "mr-1 h-3 w-3",
+                            isReferenceSidebarClient &&
+                              (submitting ||
+                                members.some((m) => !m.isSubmitted)) &&
+                              "disabled:mr-2 disabled:h-4 disabled:w-4",
                           )} />
                           {projectDetails?.isDraft
                             ? "Submit Project & Team for Approval"

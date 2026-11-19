@@ -4683,6 +4683,8 @@ export default function ClientPortalPage() {
                               "shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold",
                               inq.status === "Approved"
                                 ? "bg-emerald-100/70 text-emerald-700"
+                                : inq.status === "In Progress"
+                                  ? "bg-[#F6E6D9] text-[#713B19]"
                                 : "bg-slate-100 text-slate-600",
                             )}
                           >
@@ -5655,11 +5657,12 @@ export default function ClientPortalPage() {
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
                           )}
-                        {isReferenceSidebarClient && (
-                          <span className="mr-1 text-[9px] font-medium text-slate-700">
-                            View details
-                          </span>
-                        )}
+                        {isReferenceSidebarClient &&
+                          !isProjectInfoExpanded && (
+                            <span className="mr-1 text-[9px] font-medium text-slate-700">
+                              View details
+                            </span>
+                          )}
                         <ChevronDown
                           className={cn(
                             "h-4 w-4 text-slate-400 transition-transform duration-200",

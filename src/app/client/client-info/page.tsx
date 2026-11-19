@@ -7276,28 +7276,25 @@ export default function ClientPortalPage() {
 
                                                 {isReferenceSidebarClient && (
                                                   <div className="hidden min-w-0 flex-col items-start justify-center gap-0.5 md:flex">
-                                                    <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                                      Status
-                                                    </span>
-                                                    {isReceived ? (
-                                                      <Badge
-                                                        variant="outline"
-                                                        className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800"
-                                                      >
-                                                        <CheckCircle2 className="h-3.5 w-3.5" />
-                                                        Received
-                                                      </Badge>
-                                                    ) : (
-                                                      <span className="text-sm font-medium text-slate-900">
-                                                        Awaiting receipt
-                                                      </span>
-                                                    )}
-                                                    {isReceived &&
-                                                      receivedDate && (
-                                                        <span className="text-[11px] text-slate-600">
-                                                          {receivedDate}
+                                                    {isReceived && (
+                                                      <>
+                                                        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                          Status
                                                         </span>
-                                                      )}
+                                                        <Badge
+                                                          variant="outline"
+                                                          className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800"
+                                                        >
+                                                          <CheckCircle2 className="h-3.5 w-3.5" />
+                                                          Received
+                                                        </Badge>
+                                                        {receivedDate && (
+                                                          <span className="text-[11px] text-slate-600">
+                                                            {receivedDate}
+                                                          </span>
+                                                        )}
+                                                      </>
+                                                    )}
                                                   </div>
                                                 )}
 

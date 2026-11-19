@@ -4,9 +4,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
-import { projectFormSchema, ProjectFormData } from "@/schemas/projectSchema"; 
+import { projectFormSchema, ProjectFormData } from "@/schemas/projectSchema";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -16,15 +16,39 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Check } from "lucide-react";
+import { CalendarIcon, Check, Save } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp, Timestamp, collection, query, where, getDocs } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+  Timestamp,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import ConfirmationModalLayout from "@/components/modal/ConfirmationModalLayout";
 import { getNextPid } from "@/services/projectsService";
-import { saveProjectRequest, getProjectRequest, getProjectRequestById, getProjectRequestsByInquiry } from "@/services/projectRequestService";
-import { updateQuotationStatus, markQuotationAsSelected } from "@/services/quotationService";
+import {
+  saveProjectRequest,
+  getProjectRequest,
+  getProjectRequestById,
+  getProjectRequestsByInquiry,
+} from "@/services/projectRequestService";
+import {
+  updateQuotationStatus,
+  markQuotationAsSelected,
+} from "@/services/quotationService";
 import { updateInquiryStatus } from "@/app/actions/inquiryActions";
 import useAuth from "@/hooks/useAuth";
 import { isReferenceClient } from "@/constants/referenceClients";
@@ -48,7 +72,9 @@ export default function ProjectForm() {
     fundingInstitution: "",
   });
   const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState<Partial<Record<keyof ProjectFormData, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof ProjectFormData, string>>
+  >({});
   const [startOpen, setStartOpen] = useState(false);
   // Confirmation modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -76,21 +102,36 @@ export default function ProjectForm() {
             title: existingRequest.title || "",
             projectLead: existingRequest.projectLead || "",
             startDate: existingRequest.startDate?.toDate?.() || new Date(),
-            sendingInstitution: (existingRequest.sendingInstitution || "Government") as "UP System" | "SUC/HEI" | "Government" | "Private/Local" | "International" | "N/A",
+            sendingInstitution: (existingRequest.sendingInstitution ||
+              "Government") as
+              | "UP System"
+              | "SUC/HEI"
+              | "Government"
+              | "Private/Local"
+              | "International"
+              | "N/A",
             fundingInstitution: existingRequest.fundingInstitution || "",
           });
           setIsDraft(true);
         } else if (existingRequest && existingRequest.status === "pending") {
-          console.log("⏳ Project is pending approval, redirecting to client-info");
+          console.log(
+            "⏳ Project is pending approval, redirecting to client-info",
+          );
           toast.info("Your project is currently pending approval.");
           const params = new URLSearchParams();
           if (email) params.set("email", email);
           if (inquiryId) params.set("inquiryId", inquiryId);
           router.push(`/client/client-info?${params.toString()}`);
           return;
-        } else if (existingRequest && existingRequest.status === "approved" && existingRequest.pid) {
+        } else if (
+          existingRequest &&
+          existingRequest.status === "approved" &&
+          existingRequest.pid
+        ) {
           // If already has approved project, redirect to client-info
-          console.log("✅ Project already approved, redirecting to client-info");
+          console.log(
+            "✅ Project already approved, redirecting to client-info",
+          );
           const params = new URLSearchParams();
           if (email) params.set("email", email);
           if (inquiryId) params.set("inquiryId", inquiryId);
@@ -133,7 +174,7 @@ export default function ProjectForm() {
         router.replace("/portal");
         return;
       }
-      
+
       // Verify inquiry exists
       const inquiryDocSnap = await getDoc(doc(db, "inquiries", inquiryId));
       if (!inquiryDocSnap.exists()) {
@@ -141,15 +182,20 @@ export default function ProjectForm() {
         router.replace("/portal");
         return;
       }
-      
+
       const inquiry = inquiryDocSnap.data();
-      
+
       // Verify email is associated with this inquiry (contact person or member)
       const emailLower = email.toLowerCase();
       const contactEmailLower = inquiry.email?.toLowerCase() || "";
-      const memberEmails = (inquiry.memberEmails || []).map((e: string) => e.toLowerCase());
-      
-      if (emailLower !== contactEmailLower && !memberEmails.includes(emailLower)) {
+      const memberEmails = (inquiry.memberEmails || []).map((e: string) =>
+        e.toLowerCase(),
+      );
+
+      if (
+        emailLower !== contactEmailLower &&
+        !memberEmails.includes(emailLower)
+      ) {
         toast.error("You do not have access to this inquiry.");
         router.replace("/portal");
         return;
@@ -194,7 +240,7 @@ export default function ProjectForm() {
 
     try {
       const result = projectFormSchema.safeParse(pendingData);
-      
+
       if (!result.success) {
         toast.error("Invalid data. Please review your entries.");
         setIsDraftSaveLocked(false);
@@ -231,26 +277,34 @@ export default function ProjectForm() {
         status: "draft",
       });
 
-      toast.success("Project draft saved! Now add your information as Primary Member.");
-      
+      toast.success(
+        "Project draft saved! Now add your information as Primary Member.",
+      );
+
       // Update quotation status if user proceeded from a quotation
-      const quotationRef = searchParams.get("quotationRef") || sessionStorage.getItem('selectedQuotationRef');
+      const quotationRef =
+        searchParams.get("quotationRef") ||
+        sessionStorage.getItem("selectedQuotationRef");
       if (quotationRef) {
         try {
           // Mark quotation as selected for this project/inquiry
           await markQuotationAsSelected(quotationRef, savedId || inquiryId);
-          console.log(`✅ Marked quotation ${quotationRef} as selected for project ${savedId || inquiryId}`);
+          console.log(
+            `✅ Marked quotation ${quotationRef} as selected for project ${savedId || inquiryId}`,
+          );
           if (inquiryId) {
             await updateInquiryStatus(inquiryId, "In Progress");
-            console.log(`✅ Updated inquiry ${inquiryId} status to In Progress`);
+            console.log(
+              `✅ Updated inquiry ${inquiryId} status to In Progress`,
+            );
           }
           // Clear from sessionStorage after use
-          sessionStorage.removeItem('selectedQuotationRef');
+          sessionStorage.removeItem("selectedQuotationRef");
         } catch (error) {
           console.warn("Could not update related statuses:", error);
         }
       }
-      
+
       setTimeout(() => {
         const params = new URLSearchParams();
         if (email) params.set("email", email);
@@ -292,7 +346,7 @@ export default function ProjectForm() {
     const currentSerialized = serializeForm(formData as ProjectFormData);
     if (initialSerialized !== currentSerialized) {
       const confirmLeave = window.confirm(
-        "You have unsaved changes. Are you sure you want to leave? All unsaved changes will be lost."
+        "You have unsaved changes. Are you sure you want to leave? All unsaved changes will be lost.",
       );
       if (!confirmLeave) return;
     }
@@ -301,7 +355,7 @@ export default function ProjectForm() {
     const params = new URLSearchParams();
     if (email) params.set("email", email);
     if (inquiryId) params.set("inquiryId", inquiryId);
-    
+
     router.push(`/client/client-info?${params.toString()}`);
   };
 
@@ -317,12 +371,20 @@ export default function ProjectForm() {
   // Show loading skeleton while fetching project data
   if (loading) {
     return (
-      <div className={usesReferenceDesign
-        ? "min-h-screen flex items-center justify-center p-6 bg-white"
-        : "min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50/50 to-blue-50/30"}>
-        <div className={usesReferenceDesign
-          ? "w-full max-w-4xl p-8 bg-white"
-          : "bg-white/80 p-8 rounded-2xl shadow-xl border border-white/50 backdrop-blur-sm"}>
+      <div
+        className={
+          usesReferenceDesign
+            ? "min-h-screen flex items-center justify-center p-6 bg-white"
+            : "min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50/50 to-blue-50/30"
+        }
+      >
+        <div
+          className={
+            usesReferenceDesign
+              ? "w-full max-w-4xl p-8 bg-white"
+              : "bg-white/80 p-8 rounded-2xl shadow-xl border border-white/50 backdrop-blur-sm"
+          }
+        >
           <div className="animate-pulse space-y-4">
             <div className="h-6 bg-slate-200 rounded w-48" />
             <div className="h-4 bg-slate-100 rounded w-64" />
@@ -334,15 +396,27 @@ export default function ProjectForm() {
 
   // Main form UI
   return (
-    <div className={usesReferenceDesign
-      ? "min-h-screen bg-white"
-      : "min-h-screen p-6 bg-gradient-to-br from-slate-50/50 to-blue-50/30"}>
-      <div className={usesReferenceDesign
-        ? "mx-auto flex min-h-screen w-full max-w-4xl flex-col px-5"
-        : "max-w-2xl mx-auto"}>
-        <div className={usesReferenceDesign
-          ? "flex-1 bg-white"
-          : "p-6 bg-white/80 rounded-2xl shadow-xl border border-white/50 backdrop-blur-sm"}>
+    <div
+      className={
+        usesReferenceDesign
+          ? "min-h-screen bg-white"
+          : "min-h-screen p-6 bg-gradient-to-br from-slate-50/50 to-blue-50/30"
+      }
+    >
+      <div
+        className={
+          usesReferenceDesign
+            ? "mx-auto flex min-h-screen w-full max-w-4xl flex-col px-5"
+            : "max-w-2xl mx-auto"
+        }
+      >
+        <div
+          className={
+            usesReferenceDesign
+              ? "flex-1 bg-white"
+              : "p-6 bg-white/80 rounded-2xl shadow-xl border border-white/50 backdrop-blur-sm"
+          }
+        >
           {/* Header and instructions */}
           {usesReferenceDesign ? (
             <>
@@ -361,10 +435,13 @@ export default function ProjectForm() {
               </header>
               <div className="py-5">
                 <p className="text-sm leading-6 text-[#18365d]">
-                  Thank you for partnering with us. To better understand and support your project,
-                  please complete this form.
+                  Thank you for partnering with us. To better understand and
+                  support your project, please complete this form.
                 </p>
-                <ol aria-label="Project setup progress" className="mt-4 grid grid-cols-3 gap-2">
+                <ol
+                  aria-label="Project setup progress"
+                  className="mt-4 grid grid-cols-3 gap-2"
+                >
                   {[
                     "Save project draft",
                     "Add yourself as Primary Member",
@@ -379,9 +456,13 @@ export default function ProjectForm() {
                           : "border-slate-200 bg-white text-slate-700"
                       }`}
                     >
-                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                        index === 0 ? "bg-blue-700 text-white" : "bg-slate-200 text-slate-700"
-                      }`}>
+                      <span
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                          index === 0
+                            ? "bg-blue-700 text-white"
+                            : "bg-slate-200 text-slate-700"
+                        }`}
+                      >
                         <Check className="h-3 w-3" aria-hidden="true" />
                       </span>
                       {step}
@@ -391,72 +472,127 @@ export default function ProjectForm() {
               </div>
             </>
           ) : (
-          <div className="mb-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-[#F69122] to-[#912ABD]" />
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent">
-                Project Information Form
-              </h1>
-              {isDraft && (
-                <div className="px-3 py-1 bg-orange-50 border border-orange-200 rounded-full text-xs font-semibold text-orange-600 ml-4">
-                  Draft
-                </div>
-              )}
+            <div className="mb-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-[#F69122] to-[#912ABD]" />
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent">
+                  Project Information Form
+                </h1>
+                {isDraft && (
+                  <div className="px-3 py-1 bg-orange-50 border border-orange-200 rounded-full text-xs font-semibold text-orange-600 ml-4">
+                    Draft
+                  </div>
+                )}
+              </div>
+              <div className="p-4 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <p className="text-slate-700 leading-relaxed mb-1.5">
+                  Thank you for partnering with Philippine Genome Center
+                  Visayas. To better understand and support your project, please
+                  fill out this form.
+                </p>
+                <p className="text-sm text-slate-600 italic">
+                  <strong>Note:</strong> This form creates a draft. After
+                  saving, you'll add yourself as the Primary Member, then submit
+                  for admin approval.
+                </p>
+              </div>
             </div>
-            <div className="p-4 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-              <p className="text-slate-700 leading-relaxed mb-1.5">
-                Thank you for partnering with Philippine Genome Center Visayas. To better understand and support your project, please fill out this form.
-              </p>
-              <p className="text-sm text-slate-600 italic">
-                <strong>Note:</strong> This form creates a draft. After saving, you'll add yourself as the Primary Member, then submit for admin approval.
-              </p>
-            </div>
-          </div>
           )}
 
           {/* Project form fields */}
-          <form onSubmit={handleSubmit} className={usesReferenceDesign ? "space-y-4 pb-5" : "space-y-4"}>
+          <form
+            onSubmit={handleSubmit}
+            className={usesReferenceDesign ? "space-y-4 pb-5" : "space-y-4"}
+          >
             {usesReferenceDesign && (
               <h2 className="text-sm font-bold text-slate-950">
-                Project details <span className="float-right font-normal text-slate-500"><span className="text-[#B9273A]">*</span> Required</span>
+                Project details{" "}
+                <span className="float-right font-normal text-slate-500">
+                  <span className="text-[#B9273A]">*</span> Required
+                </span>
               </h2>
             )}
             {/* Project Title – full width */}
             <div>
-              <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
-                {usesReferenceDesign ? "Project title" : "Project Title"} <span className="text-[#B9273A]">*</span>
+              <Label
+                className={
+                  usesReferenceDesign
+                    ? "text-sm font-medium text-slate-800"
+                    : "text-sm font-medium text-slate-700"
+                }
+              >
+                {usesReferenceDesign ? "Project title" : "Project Title"}{" "}
+                <span className="text-[#B9273A]">*</span>
               </Label>
               <Input
                 value={formData.title}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("title", e.target.value)}
-                placeholder={usesReferenceDesign ? "e.g. Coastal biodiversity genome survey" : "Enter your project title"}
-                className={usesReferenceDesign
-                  ? "mt-1 h-10 rounded-md border-slate-300 bg-white text-sm shadow-none placeholder:text-slate-400"
-                  : "mt-1"}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleChange("title", e.target.value)
+                }
+                placeholder={
+                  usesReferenceDesign
+                    ? "e.g. Coastal biodiversity genome survey"
+                    : "Enter your project title"
+                }
+                className={
+                  usesReferenceDesign
+                    ? "mt-1 h-10 rounded-md border-slate-300 bg-white text-sm shadow-none placeholder:text-slate-400"
+                    : "mt-1"
+                }
               />
-              {errors.title && <p className="text-[#B9273A] text-xs mt-0.5">{errors.title}</p>}
+              {errors.title && (
+                <p className="text-[#B9273A] text-xs mt-0.5">{errors.title}</p>
+              )}
             </div>
 
             {/* Project Lead + Start Date */}
-            <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${usesReferenceDesign ? "pt-0.5" : ""}`}>
+            <div
+              className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${usesReferenceDesign ? "pt-0.5" : ""}`}
+            >
               <div>
-                <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
-                  {usesReferenceDesign ? "Project lead" : "Project Lead"} <span className="text-[#B9273A]">*</span>
+                <Label
+                  className={
+                    usesReferenceDesign
+                      ? "text-sm font-medium text-slate-800"
+                      : "text-sm font-medium text-slate-700"
+                  }
+                >
+                  {usesReferenceDesign ? "Project lead" : "Project Lead"}{" "}
+                  <span className="text-[#B9273A]">*</span>
                 </Label>
                 <Input
                   value={formData.projectLead}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("projectLead", e.target.value)}
-                  placeholder={usesReferenceDesign ? "Full name" : "Enter project lead name"}
-                  className={usesReferenceDesign
-                    ? "mt-1 h-10 rounded-md border-slate-300 bg-white text-sm shadow-none placeholder:text-slate-400"
-                    : "mt-1"}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleChange("projectLead", e.target.value)
+                  }
+                  placeholder={
+                    usesReferenceDesign
+                      ? "Full name"
+                      : "Enter project lead name"
+                  }
+                  className={
+                    usesReferenceDesign
+                      ? "mt-1 h-10 rounded-md border-slate-300 bg-white text-sm shadow-none placeholder:text-slate-400"
+                      : "mt-1"
+                  }
                 />
-                {errors.projectLead && <p className="text-[#B9273A] text-xs mt-0.5">{errors.projectLead}</p>}
+                {errors.projectLead && (
+                  <p className="text-[#B9273A] text-xs mt-0.5">
+                    {errors.projectLead}
+                  </p>
+                )}
               </div>
 
               <div>
-                <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
-                  {usesReferenceDesign ? "Start date" : "Start Date"} <span className="text-[#B9273A]">*</span>
+                <Label
+                  className={
+                    usesReferenceDesign
+                      ? "text-sm font-medium text-slate-800"
+                      : "text-sm font-medium text-slate-700"
+                  }
+                >
+                  {usesReferenceDesign ? "Start date" : "Start Date"}{" "}
+                  <span className="text-[#B9273A]">*</span>
                 </Label>
                 <Popover open={startOpen} onOpenChange={setStartOpen}>
                   <PopoverTrigger asChild>
@@ -464,16 +600,24 @@ export default function ProjectForm() {
                       <Input
                         value={formatDate(formData.startDate)}
                         readOnly
-                        className={usesReferenceDesign
-                          ? "h-10 rounded-md border-slate-300 bg-white pr-10 text-sm shadow-none"
-                          : "pr-10"}
+                        className={
+                          usesReferenceDesign
+                            ? "h-10 rounded-md border-slate-300 bg-white pr-10 text-sm shadow-none"
+                            : "pr-10"
+                        }
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
                       >
-                        <CalendarIcon className={usesReferenceDesign ? "size-4 text-slate-700" : "size-4 text-[#166FB5]"} />
+                        <CalendarIcon
+                          className={
+                            usesReferenceDesign
+                              ? "size-4 text-slate-700"
+                              : "size-4 text-[#166FB5]"
+                          }
+                        />
                       </Button>
                     </div>
                   </PopoverTrigger>
@@ -490,27 +634,50 @@ export default function ProjectForm() {
                     />
                   </PopoverContent>
                 </Popover>
-                {errors.startDate && <p className="text-[#B9273A] text-xs mt-0.5">{errors.startDate}</p>}
+                {errors.startDate && (
+                  <p className="text-[#B9273A] text-xs mt-0.5">
+                    {errors.startDate}
+                  </p>
+                )}
               </div>
             </div>
 
-            {usesReferenceDesign && <div className="border-t border-slate-200 pt-4">
-              <h2 className="mb-2 text-xs font-bold text-slate-950">Institutions</h2>
-            </div>}
+            {usesReferenceDesign && (
+              <div className="border-t border-slate-200 pt-4">
+                <h2 className="mb-2 text-xs font-bold text-slate-950">
+                  Institutions
+                </h2>
+              </div>
+            )}
 
             {/* Sending Institution + Funding Institution */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
-                  {usesReferenceDesign ? "Sending institution type" : "Sending Institution"} <span className="text-[#B9273A]">*</span>
+                <Label
+                  className={
+                    usesReferenceDesign
+                      ? "text-sm font-medium text-slate-800"
+                      : "text-sm font-medium text-slate-700"
+                  }
+                >
+                  {usesReferenceDesign
+                    ? "Sending institution type"
+                    : "Sending Institution"}{" "}
+                  <span className="text-[#B9273A]">*</span>
                 </Label>
                 <Select
                   value={formData.sendingInstitution}
-                  onValueChange={(val: string) => handleChange("sendingInstitution", val)}
+                  onValueChange={(val: string) =>
+                    handleChange("sendingInstitution", val)
+                  }
                 >
-                  <SelectTrigger className={usesReferenceDesign
-                    ? "mt-1 h-10 w-full rounded-md border-slate-300 bg-white text-sm shadow-none"
-                    : "w-full mt-1"}>
+                  <SelectTrigger
+                    className={
+                      usesReferenceDesign
+                        ? "mt-1 h-10 w-full rounded-md border-slate-300 bg-white text-sm shadow-none"
+                        : "w-full mt-1"
+                    }
+                  >
                     <SelectValue placeholder="Select institution type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -522,53 +689,92 @@ export default function ProjectForm() {
                     <SelectItem value="N/A">N/A</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.sendingInstitution && <p className="text-[#B9273A] text-xs mt-0.5">{errors.sendingInstitution}</p>}
+                {errors.sendingInstitution && (
+                  <p className="text-[#B9273A] text-xs mt-0.5">
+                    {errors.sendingInstitution}
+                  </p>
+                )}
               </div>
 
               <div>
-                <Label className={usesReferenceDesign ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-700"}>
-                  {usesReferenceDesign ? "Funding institution" : "Funding Institution"} <span className="text-[#B9273A]">*</span>
+                <Label
+                  className={
+                    usesReferenceDesign
+                      ? "text-sm font-medium text-slate-800"
+                      : "text-sm font-medium text-slate-700"
+                  }
+                >
+                  {usesReferenceDesign
+                    ? "Funding institution"
+                    : "Funding Institution"}{" "}
+                  <span className="text-[#B9273A]">*</span>
                 </Label>
                 <Input
                   value={formData.fundingInstitution}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("fundingInstitution", e.target.value)}
-                  placeholder={usesReferenceDesign ? "Name of funding body" : "Enter funding institution"}
-                  className={usesReferenceDesign
-                    ? "mt-1 h-10 rounded-md border-slate-300 bg-white text-sm shadow-none placeholder:text-slate-400"
-                    : "mt-1"}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleChange("fundingInstitution", e.target.value)
+                  }
+                  placeholder={
+                    usesReferenceDesign
+                      ? "Name of funding body"
+                      : "Enter funding institution"
+                  }
+                  className={
+                    usesReferenceDesign
+                      ? "mt-1 h-10 rounded-md border-slate-300 bg-white text-sm shadow-none placeholder:text-slate-400"
+                      : "mt-1"
+                  }
                 />
-                {errors.fundingInstitution && <p className="text-[#B9273A] text-xs mt-0.5">{errors.fundingInstitution}</p>}
+                {errors.fundingInstitution && (
+                  <p className="text-[#B9273A] text-xs mt-0.5">
+                    {errors.fundingInstitution}
+                  </p>
+                )}
                 {usesReferenceDesign && (
-                  <p className="mt-1 text-[10px] text-slate-600">Enter “None” if self-funded.</p>
+                  <p className="mt-1 text-[10px] text-slate-600">
+                    Enter “None” if self-funded.
+                  </p>
                 )}
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className={usesReferenceDesign
-              ? "sticky bottom-0 -mx-5 mt-4 flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-5 py-3"
-              : "flex justify-end gap-3 pt-4 border-t border-slate-100"}>
+            <div
+              className={
+                usesReferenceDesign
+                  ? "sticky bottom-0 -mx-5 mt-4 flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-5 py-3"
+                  : "flex justify-end gap-3 pt-4 border-t border-slate-100"
+              }
+            >
               <Button
                 type="button"
                 onClick={handleGoBack}
                 disabled={isDraftSaveLocked || isSavingDraft}
-                className={usesReferenceDesign
-                  ? "h-10 border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-100"
-                  : "h-9 px-5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition"}
+                className={
+                  usesReferenceDesign
+                    ? "h-10 border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-100"
+                    : "h-9 px-5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition"
+                }
               >
                 Go Back
               </Button>
               {usesReferenceDesign && (
-                <span className="hidden text-[10px] text-slate-600 sm:inline">You can edit this draft later</span>
+                <span className="hidden text-[10px] text-slate-600 sm:inline">
+                  You can edit this draft later
+                </span>
               )}
               <Button
                 type="submit"
                 disabled={isDraftSaveLocked || isSavingDraft}
-                className={usesReferenceDesign
-                  ? "h-10 bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800"
-                  : "h-9 px-6 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300"}
+                className={
+                  usesReferenceDesign
+                    ? "h-10 bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800"
+                    : "h-9 px-6 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+                }
               >
-                {usesReferenceDesign ? "Save project draft" : "Save Project Draft"}
+                {usesReferenceDesign
+                  ? "Save project draft"
+                  : "Save Project Draft"}
               </Button>
             </div>
           </form>
@@ -584,14 +790,26 @@ export default function ProjectForm() {
         description="Review your project information below. You can edit this later before submitting for approval."
         confirmLabel="Save Draft"
         cancelLabel="Go Back"
+        headerIcon={<Save className="h-5 w-5 text-violet-700" />}
+        className="max-w-xl"
       >
         {pendingData && (
-          <div className="space-y-2 text-slate-800 text-sm">
-            <div><span className="font-semibold">Project Title:</span> {pendingData.title}</div>
-            <div><span className="font-semibold">Project Lead:</span> {pendingData.projectLead}</div>
-            <div><span className="font-semibold">Start Date:</span> {formatDate(pendingData.startDate)}</div>
-            <div><span className="font-semibold">Sending Institution:</span> {pendingData.sendingInstitution}</div>
-            <div><span className="font-semibold">Funding Institution:</span> {pendingData.fundingInstitution}</div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+            {[
+              ["Project Title", pendingData.title],
+              ["Project Lead", pendingData.projectLead],
+              ["Start Date", formatDate(pendingData.startDate)],
+              ["Sending Institution", pendingData.sendingInstitution],
+              ["Funding Institution", pendingData.fundingInstitution],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="grid grid-cols-[150px_minmax(0,1fr)] items-start gap-3 py-1.5"
+              >
+                <span className="text-slate-600">{label}:</span>
+                <span className="font-bold text-slate-900">{value}</span>
+              </div>
+            ))}
           </div>
         )}
       </ConfirmationModalLayout>

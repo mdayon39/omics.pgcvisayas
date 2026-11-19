@@ -6223,7 +6223,7 @@ export default function ClientPortalPage() {
                             isReferenceSidebarClient &&
                               (submitting ||
                                 members.some((m) => !m.isSubmitted)) &&
-                              "disabled:h-[42px] disabled:border disabled:border-slate-300 disabled:px-5 disabled:text-sm disabled:font-medium disabled:bg-none disabled:bg-slate-200 disabled:text-slate-600 disabled:shadow-none disabled:opacity-100 disabled:hover:bg-none disabled:hover:bg-slate-200",
+                              "disabled:h-9 disabled:border disabled:border-slate-300 disabled:px-4 disabled:text-xs disabled:font-medium disabled:bg-none disabled:bg-slate-200 disabled:text-slate-600 disabled:shadow-none disabled:opacity-100 disabled:hover:bg-none disabled:hover:bg-slate-200",
                           )}
                         >
                           <Send className={cn(
@@ -6232,7 +6232,7 @@ export default function ClientPortalPage() {
                             isReferenceSidebarClient &&
                               (submitting ||
                                 members.some((m) => !m.isSubmitted)) &&
-                              "disabled:mr-2 disabled:h-4 disabled:w-4",
+                              "disabled:mr-1.5 disabled:h-3.5 disabled:w-3.5",
                           )} />
                           {projectDetails?.isDraft
                             ? "Submit Project & Team for Approval"

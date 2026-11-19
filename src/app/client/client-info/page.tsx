@@ -5201,7 +5201,7 @@ export default function ClientPortalPage() {
                                     }}
                                   >
                                     {isReferenceSidebarClient ? (
-                                      <Receipt className="h-4 w-4 flex-shrink-0 text-green-600" />
+                                      <Receipt className="h-3 w-3 flex-shrink-0 text-green-600" />
                                     ) : (
                                       <div className="flex items-center justify-center w-3 h-3 flex-shrink-0">
                                         <span
@@ -5315,7 +5315,7 @@ export default function ClientPortalPage() {
                                       }}
                                     >
                                       {isReferenceSidebarClient ? (
-                                        <ClipboardCheck className="h-4 w-4 flex-shrink-0 text-blue-500" />
+                                        <ClipboardCheck className="h-3 w-3 flex-shrink-0 text-blue-500" />
                                       ) : (
                                         <ShieldEllipsis
                                           className={cn(

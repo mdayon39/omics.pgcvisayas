@@ -1,5 +1,4 @@
 const REFERENCE_CLIENT_EMAILS = [
-  "dayonmerlitojr@gmail.com",
   "ping.biason@gmail.com",
   "carmjavier@gmail.com",
 ] as const;

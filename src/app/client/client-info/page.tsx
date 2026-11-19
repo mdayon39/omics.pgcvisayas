@@ -6506,9 +6506,9 @@ export default function ClientPortalPage() {
                           icon: (
                             <span
                               className={cn(
-                                "text-sm font-bold",
+                                "flex items-center justify-center text-sm font-bold",
                                 isReferenceSidebarClient
-                                  ? "text-[#08724f]"
+                                  ? "h-4 w-4 text-base leading-none text-[#08724f]"
                                   : "text-green-600",
                               )}
                             >
@@ -6556,7 +6556,7 @@ export default function ClientPortalPage() {
                                     panelSection === "chargeSlips" &&
                                     "bg-[#d8eee4]",
                                   isReferenceSidebarClient &&
-                                    "rounded-xl p-2.5",
+                                    "flex h-9 w-9 items-center justify-center rounded-xl p-0",
                                 )}
                               >
                                 {meta.icon}

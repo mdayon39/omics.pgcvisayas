@@ -36,6 +36,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Receipt {
   id: string;
@@ -56,6 +57,7 @@ interface Receipt {
 interface UploadReceiptProps {
   projectId: string;
   hasChargeSlip: boolean;
+  referenceClientDesign?: boolean;
   /** When provided, only show/upload receipts for this specific charge slip */
   chargeSlipNumber?: string;
   /** When false, hides upload controls — receipts are shown as read-only reference (e.g. for paid slips) */
@@ -89,7 +91,13 @@ function extractStoragePath(url: string): string | null {
   }
 }
 
-export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumber: csNum, uploadAllowed = true }: UploadReceiptProps) {
+export default function UploadReceipt({
+  projectId,
+  hasChargeSlip,
+  chargeSlipNumber: csNum,
+  uploadAllowed = true,
+  referenceClientDesign = false,
+}: UploadReceiptProps) {
   const { user } = useAuth();
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loadingReceipts, setLoadingReceipts] = useState(true);
@@ -101,7 +109,9 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // Replace-on-return state
   const [replacingId, setReplacingId] = useState<string | null>(null); // receipt being replaced
-  const [replacePendingFile, setReplacePendingFile] = useState<File | null>(null);
+  const [replacePendingFile, setReplacePendingFile] = useState<File | null>(
+    null,
+  );
   const [replaceOrNumber, setReplaceOrNumber] = useState("");
   const [replaceOrDate, setReplaceOrDate] = useState("");
   const [replaceUploading, setReplaceUploading] = useState(false);
@@ -110,7 +120,11 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!projectId || projectId === "DRAFT" || projectId.startsWith("PENDING-")) {
+    if (
+      !projectId ||
+      projectId === "DRAFT" ||
+      projectId.startsWith("PENDING-")
+    ) {
       setLoadingReceipts(false);
       return;
     }
@@ -121,7 +135,9 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
     const unsub = onSnapshot(
       q,
       (snap) => {
-        setReceipts(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Receipt)));
+        setReceipts(
+          snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Receipt),
+        );
         setLoadingReceipts(false);
       },
       () => setLoadingReceipts(false),
@@ -135,11 +151,16 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
     : receipts;
 
   // View-only mode (e.g. paid slip): hide upload controls; if no receipts, render nothing
-  if (!uploadAllowed && !loadingReceipts && visibleReceipts.length === 0) return null;
+  if (!uploadAllowed && !loadingReceipts && visibleReceipts.length === 0)
+    return null;
 
   // Locked if any receipt is awaiting admin action (not yet acknowledged and not returned)
-  const hasPendingReceipt = visibleReceipts.some((r) => !r.acknowledgedByAdmin && !r.returnedByAdmin);
-  const verifiedCount = visibleReceipts.filter((r) => r.acknowledgedByAdmin).length;
+  const hasPendingReceipt = visibleReceipts.some(
+    (r) => !r.acknowledgedByAdmin && !r.returnedByAdmin,
+  );
+  const verifiedCount = visibleReceipts.filter(
+    (r) => r.acknowledgedByAdmin,
+  ).length;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelecting(false);
@@ -211,7 +232,13 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
         : `receipts/${projectId}`;
       const downloadURL = await uploadFile(replacePendingFile, folder);
       // Overwrite the existing Firestore receipt doc (same ID — no new document)
-      const receiptRef = doc(db, "projects", projectId, "officialReceipts", receipt.id);
+      const receiptRef = doc(
+        db,
+        "projects",
+        projectId,
+        "officialReceipts",
+        receipt.id,
+      );
       await updateDoc(receiptRef, {
         fileName: replacePendingFile.name,
         contentType: replacePendingFile.type,
@@ -228,33 +255,43 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
       const orId = replaceOrNumber.trim()
         ? `OR-${replaceOrNumber.trim().replace(/\s+/g, "-")}`
         : `OR-${projectId}-${receipt.id}`;
-      await setDoc(doc(db, "receipts", orId), {
-        orId,
-        projectId,
-        date: serverTimestamp(),
-        orNo: replaceOrNumber.trim() || null,
-        orDate: replaceOrDate || null,
-        uploadStatus: "pending_validation",
-        fileLink: downloadURL,
-        uploadedBy: user?.email || "anonymous",
-        receiptDocId: receipt.id,
-      }, { merge: true });
+      await setDoc(
+        doc(db, "receipts", orId),
+        {
+          orId,
+          projectId,
+          date: serverTimestamp(),
+          orNo: replaceOrNumber.trim() || null,
+          orDate: replaceOrDate || null,
+          uploadStatus: "pending_validation",
+          fileLink: downloadURL,
+          uploadedBy: user?.email || "anonymous",
+          receiptDocId: receipt.id,
+        },
+        { merge: true },
+      );
 
       // Delete the old file from Firebase Storage
       if (receipt.downloadURL) {
         const oldPath = extractStoragePath(receipt.downloadURL);
         if (oldPath) {
-          try { await deleteObject(storageRef(storage, oldPath)); } catch { /* non-critical */ }
+          try {
+            await deleteObject(storageRef(storage, oldPath));
+          } catch {
+            /* non-critical */
+          }
         }
       }
       // Mark the charge slip as having a pending OR again after replacement
       if (csNum) {
         try {
-          await updateDoc(doc(db, "chargeSlips", csNum), { 
+          await updateDoc(doc(db, "chargeSlips", csNum), {
             orStatus: "Pending",
-            status: "pending" 
+            status: "pending",
           });
-        } catch { /* non-critical */ }
+        } catch {
+          /* non-critical */
+        }
       }
 
       await logActivity({
@@ -266,11 +303,15 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
         entityId: projectId,
         description: `Replaced returned receipt: ${replacePendingFile.name} (OR No. ${replaceOrNumber.trim()})`,
       });
-      toast.success("Receipt replaced successfully. Awaiting admin validation.");
+      toast.success(
+        "Receipt replaced successfully. Awaiting admin validation.",
+      );
       handleCancelReplace();
     } catch (err) {
       console.error("Replace upload failed:", err);
-      toast.error(err instanceof Error ? err.message : "Upload failed. Please try again.");
+      toast.error(
+        err instanceof Error ? err.message : "Upload failed. Please try again.",
+      );
     } finally {
       setReplaceUploading(false);
     }
@@ -293,44 +334,53 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
         ? `receipts/${projectId}/${csNum}`
         : `receipts/${projectId}`;
       const downloadURL = await uploadFile(pendingFile, folder);
-      const newReceiptRef = await addDoc(collection(db, "projects", projectId, "officialReceipts"), {
-        fileName: pendingFile.name,
-        contentType: pendingFile.type,
-        size: pendingFile.size,
-        downloadURL,
-        uploadedBy: user?.email || "anonymous",
-        uploadedAt: serverTimestamp(),
-        orNumber: orNumber.trim(),
-        orDate,
-        acknowledgedByAdmin: false,
-        returnedByAdmin: false,
-        ...(csNum ? { chargeSlipNumber: csNum } : {}),
-      });
+      const newReceiptRef = await addDoc(
+        collection(db, "projects", projectId, "officialReceipts"),
+        {
+          fileName: pendingFile.name,
+          contentType: pendingFile.type,
+          size: pendingFile.size,
+          downloadURL,
+          uploadedBy: user?.email || "anonymous",
+          uploadedAt: serverTimestamp(),
+          orNumber: orNumber.trim(),
+          orDate,
+          acknowledgedByAdmin: false,
+          returnedByAdmin: false,
+          ...(csNum ? { chargeSlipNumber: csNum } : {}),
+        },
+      );
 
       // Also write to the canonical 'receipts' top-level collection
       const orId = orNumber.trim()
         ? `OR-${orNumber.trim().replace(/\s+/g, "-")}`
         : `OR-${projectId}-${newReceiptRef.id}`;
-      await setDoc(doc(db, "receipts", orId), {
-        orId,
-        projectId,
-        date: serverTimestamp(),
-        orNo: orNumber.trim() || null,
-        orDate: orDate || null,
-        uploadStatus: "pending_validation",
-        fileLink: downloadURL,
-        uploadedBy: user?.email || "anonymous",
-        receiptDocId: newReceiptRef.id,
-      }, { merge: true });
+      await setDoc(
+        doc(db, "receipts", orId),
+        {
+          orId,
+          projectId,
+          date: serverTimestamp(),
+          orNo: orNumber.trim() || null,
+          orDate: orDate || null,
+          uploadStatus: "pending_validation",
+          fileLink: downloadURL,
+          uploadedBy: user?.email || "anonymous",
+          receiptDocId: newReceiptRef.id,
+        },
+        { merge: true },
+      );
 
       // Mark the charge slip as having a pending OR (awaiting admin validation)
       if (csNum) {
         try {
-          await updateDoc(doc(db, "chargeSlips", csNum), { 
+          await updateDoc(doc(db, "chargeSlips", csNum), {
             orStatus: "Pending",
-            status: "pending" 
+            status: "pending",
           });
-        } catch { /* non-critical */ }
+        } catch {
+          /* non-critical */
+        }
       }
 
       await logActivity({
@@ -342,7 +392,9 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
         entityId: projectId,
         description: `Uploaded official receipt: ${pendingFile.name} (OR No. ${orNumber.trim()})`,
       });
-      toast.success("Receipt uploaded successfully. Awaiting admin validation.");
+      toast.success(
+        "Receipt uploaded successfully. Awaiting admin validation.",
+      );
 
       // === EMAIL NOTIFICATION ===
       // Notify receipt notification recipients (non-blocking, non-critical)
@@ -353,15 +405,21 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
             getDoc(doc(db, "settings", "appConfig")),
           ]);
 
-          const csData = csSnap.exists() ? (csSnap.data() as Record<string, any>) : null;
-          const configData = configSnap.exists() ? (configSnap.data() as Record<string, any>) : null;
+          const csData = csSnap.exists()
+            ? (csSnap.data() as Record<string, any>)
+            : null;
+          const configData = configSnap.exists()
+            ? (configSnap.data() as Record<string, any>)
+            : null;
           const recipients: string[] =
-            Array.isArray(configData?.receiptNotifications) && configData.receiptNotifications.length > 0
+            Array.isArray(configData?.receiptNotifications) &&
+            configData.receiptNotifications.length > 0
               ? configData.receiptNotifications
               : ["madayon1@up.edu.ph"];
 
           if (csData) {
-            const clientName = csData.clientInfo?.name || user?.displayName || "Client";
+            const clientName =
+              csData.clientInfo?.name || user?.displayName || "Client";
             const clientEmail = csData.clientInfo?.email || "";
             const affiliation = csData.clientInfo?.institution || "";
             const designation = csData.clientInfo?.designation || "";
@@ -369,12 +427,16 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
             const services: any[] = csData.services || [];
 
             const servicesHtml = services.length
-              ? services.map((s: any) => `
+              ? services
+                  .map(
+                    (s: any) => `
                 <tr>
                   <td style="padding: 4px 0; color: #334155;">${s.name || "—"}</td>
                   <td style="padding: 4px 0; text-align: right; color: #334155;">${s.quantity ?? 1}</td>
                   <td style="padding: 4px 0; text-align: right; color: #334155;">&#8369;${(s.price ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
-                </tr>`).join("")
+                </tr>`,
+                  )
+                  .join("")
               : `<tr><td colspan="3" style="color: #94a3b8; font-style: italic;">No services listed</td></tr>`;
 
             const emailHtml = `
@@ -441,7 +503,10 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
               `Designation: ${designation}`,
               "",
               "Service Details:",
-              ...services.map((s: any) => `  - ${s.name ?? "Service"} x${s.quantity ?? 1} @ \u20B1${(s.price ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`),
+              ...services.map(
+                (s: any) =>
+                  `  - ${s.name ?? "Service"} x${s.quantity ?? 1} @ \u20B1${(s.price ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+              ),
               "",
               `Amount Paid: \u20B1${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
               "",
@@ -474,7 +539,9 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
       setOrDate("");
     } catch (err) {
       console.error("Upload failed:", err);
-      toast.error(err instanceof Error ? err.message : "Upload failed. Please try again.");
+      toast.error(
+        err instanceof Error ? err.message : "Upload failed. Please try again.",
+      );
     } finally {
       setUploading(false);
     }
@@ -483,17 +550,23 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
   const handleDelete = async (receipt: Receipt) => {
     // Block delete if acknowledged by admin (permanent lock)
     if (receipt.acknowledgedByAdmin) {
-      toast.error("This receipt has been acknowledged by the admin and cannot be deleted.");
+      toast.error(
+        "This receipt has been acknowledged by the admin and cannot be deleted.",
+      );
       return;
     }
     // Block delete if still pending admin action (not returned yet)
     if (!receipt.returnedByAdmin) {
-      toast.error("This receipt is pending admin review and cannot be deleted yet.");
+      toast.error(
+        "This receipt is pending admin review and cannot be deleted yet.",
+      );
       return;
     }
     setDeletingId(receipt.id);
     try {
-      await deleteDoc(doc(db, "projects", projectId, "officialReceipts", receipt.id));
+      await deleteDoc(
+        doc(db, "projects", projectId, "officialReceipts", receipt.id),
+      );
       if (receipt.downloadURL) {
         const path = extractStoragePath(receipt.downloadURL);
         if (path) {
@@ -504,18 +577,20 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
           }
         }
       }
-      
+
       // If deleting a returned receipt and no other receipts remain for this charge slip,
       // reset the charge slip status back to Processing.
       if (csNum) {
         try {
           // Check remaining receipts for this projects/{projectId}/officialReceipts subcollection
           // that match this csNum. Since we just deleted one, we count what's left.
-          const remainingForCs = visibleReceipts.filter(r => r.id !== receipt.id);
+          const remainingForCs = visibleReceipts.filter(
+            (r) => r.id !== receipt.id,
+          );
           if (remainingForCs.length === 0) {
-            await updateDoc(doc(db, "chargeSlips", csNum), { 
+            await updateDoc(doc(db, "chargeSlips", csNum), {
               status: "processing",
-              orStatus: null 
+              orStatus: null,
             });
           }
         } catch (e) {
@@ -542,12 +617,19 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
   };
 
   return (
-    <div className="relative space-y-2 mt-1">
+    <div
+      className={cn(
+        "relative space-y-2 mt-1",
+        referenceClientDesign && "mt-0 border-t border-slate-200 px-5 py-3",
+      )}
+    >
       {/* ── Upload processing overlay — blocks UI while file is uploading ── */}
       {uploading && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-white/85 backdrop-blur-sm">
           <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
-          <p className="text-[11px] font-semibold text-slate-700">Uploading receipt…</p>
+          <p className="text-[11px] font-semibold text-slate-700">
+            Uploading receipt…
+          </p>
           <p className="text-[10px] text-slate-400 text-center px-4">
             Please wait. Do not close or refresh this page.
           </p>
@@ -561,16 +643,26 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
           Loading receipts…
         </div>
       ) : visibleReceipts.length === 0 ? (
-        <p className="text-xs text-slate-400 ml-5">No official receipts yet</p>
+        <p
+          className={cn(
+            "text-xs text-slate-400 ml-5",
+            referenceClientDesign && "hidden",
+          )}
+        >
+          No official receipts yet
+        </p>
       ) : (
         <div className="space-y-1.5 ml-5">
           <p className="text-[9px] text-slate-400">
-            {verifiedCount} of {visibleReceipts.length} receipt{visibleReceipts.length !== 1 ? "s" : ""} verified
+            {verifiedCount} of {visibleReceipts.length} receipt
+            {visibleReceipts.length !== 1 ? "s" : ""} verified
           </p>
           {visibleReceipts.map((receipt) => {
             const isVerified = receipt.acknowledgedByAdmin;
-            const isReturned = receipt.returnedByAdmin && !receipt.acknowledgedByAdmin;
-            const isPending = !receipt.acknowledgedByAdmin && !receipt.returnedByAdmin;
+            const isReturned =
+              receipt.returnedByAdmin && !receipt.acknowledgedByAdmin;
+            const isPending =
+              !receipt.acknowledgedByAdmin && !receipt.returnedByAdmin;
 
             return (
               <div key={receipt.id} className="space-y-1.5">
@@ -581,7 +673,9 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
                     <span className="text-[10px] font-medium text-slate-600 truncate">
                       {[
                         receipt.orNumber ? `OR No. ${receipt.orNumber}` : null,
-                        receipt.orDate ? format(new Date(receipt.orDate), "MMM d, yyyy") : null,
+                        receipt.orDate
+                          ? format(new Date(receipt.orDate), "MMM d, yyyy")
+                          : null,
                         formatFileSize(receipt.size),
                       ]
                         .filter(Boolean)
@@ -599,7 +693,6 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
                           <Lock className="h-3 w-3 text-amber-300" />
                         </span>
                       )}
-
                     </div>
                   </div>
 
@@ -634,7 +727,11 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
                         Verified
                         {receipt.acknowledgedAt && (
                           <span className="font-normal text-emerald-500 opacity-80">
-                            · {format(receipt.acknowledgedAt.toDate(), "MMM d, yyyy h:mm a")}
+                            ·{" "}
+                            {format(
+                              receipt.acknowledgedAt.toDate(),
+                              "MMM d, yyyy h:mm a",
+                            )}
                           </span>
                         )}
                       </span>
@@ -685,8 +782,12 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
                         <div className="flex items-center gap-2">
                           <FileText className="h-3.5 w-3.5 text-rose-500 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-[11px] font-semibold text-slate-700 truncate">{replacePendingFile.name}</p>
-                            <p className="text-[9px] text-slate-400">{formatFileSize(replacePendingFile.size)}</p>
+                            <p className="text-[11px] font-semibold text-slate-700 truncate">
+                              {replacePendingFile.name}
+                            </p>
+                            <p className="text-[9px] text-slate-400">
+                              {formatFileSize(replacePendingFile.size)}
+                            </p>
                           </div>
                           <button
                             type="button"
@@ -704,7 +805,11 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
                             </Label>
                             <Input
                               value={replaceOrNumber}
-                              onChange={(e) => setReplaceOrNumber(e.target.value.replace(/\D/g, ""))}
+                              onChange={(e) =>
+                                setReplaceOrNumber(
+                                  e.target.value.replace(/\D/g, ""),
+                                )
+                              }
                               placeholder="e.g. 0012345"
                               className="h-7 text-xs"
                               maxLength={20}
@@ -726,7 +831,11 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
                         </div>
                         <Button
                           size="sm"
-                          disabled={replaceUploading || !replaceOrNumber.trim() || !replaceOrDate}
+                          disabled={
+                            replaceUploading ||
+                            !replaceOrNumber.trim() ||
+                            !replaceOrDate
+                          }
                           onClick={() => handleReplaceUpload(receipt)}
                           className="w-full h-7 text-[11px] bg-rose-600 hover:bg-rose-700 text-white gap-1"
                         >
@@ -735,7 +844,9 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
                           ) : (
                             <Upload className="h-3 w-3" />
                           )}
-                          {replaceUploading ? "Uploading…" : "Submit replacement"}
+                          {replaceUploading
+                            ? "Uploading…"
+                            : "Submit replacement"}
                         </Button>
                       </div>
                     ) : (
@@ -744,7 +855,10 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
                         type="button"
                         onClick={() => {
                           setReplacingId(receipt.id);
-                          setTimeout(() => replaceFileInputRef.current?.click(), 0);
+                          setTimeout(
+                            () => replaceFileInputRef.current?.click(),
+                            0,
+                          );
                         }}
                         className="inline-flex items-center gap-1.5 text-[11px] font-medium border border-dashed border-rose-300 rounded-lg px-2.5 py-1.5 text-rose-600 bg-white hover:bg-rose-50 hover:border-rose-400 transition-colors"
                       >
@@ -767,8 +881,12 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
           <div className="flex items-center gap-2">
             <FileText className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-slate-700 truncate">{pendingFile.name}</p>
-              <p className="text-[9px] text-slate-400">{formatFileSize(pendingFile.size)}</p>
+              <p className="text-[11px] font-semibold text-slate-700 truncate">
+                {pendingFile.name}
+              </p>
+              <p className="text-[9px] text-slate-400">
+                {formatFileSize(pendingFile.size)}
+              </p>
             </div>
             <button
               type="button"
@@ -827,7 +945,12 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
 
       {/* ── Attach button — shown when no new-upload is pending; one pending at a time ── */}
       {uploadAllowed && !pendingFile && !hasPendingReceipt && (
-        <div className="ml-5">
+        <div
+          className={cn(
+            "ml-5",
+            referenceClientDesign && "ml-0 flex items-center gap-3",
+          )}
+        >
           <input
             ref={fileInputRef}
             type="file"
@@ -840,12 +963,23 @@ export default function UploadReceipt({ projectId, hasChargeSlip, chargeSlipNumb
             type="button"
             disabled={uploading || !hasChargeSlip}
             onClick={() => fileInputRef.current?.click()}
-            title={!hasChargeSlip ? "A Charge Slip must be issued first before attaching a receipt." : "Attach an official receipt"}
-            className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-white hover:bg-emerald-600 hover:text-white border border-emerald-500 rounded-full px-3 py-1 transition-all shrink-0 disabled:opacity-50"
+            title={
+              !hasChargeSlip
+                ? "A Charge Slip must be issued first before attaching a receipt."
+                : "Attach an official receipt"
+            }
+            className={cn(
+              "flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-white hover:bg-emerald-600 hover:text-white border border-emerald-500 rounded-full px-3 py-1 transition-all shrink-0 disabled:opacity-50",
+              referenceClientDesign &&
+                "h-10 rounded-lg px-3.5 hover:bg-emerald-50 hover:text-emerald-700",
+            )}
           >
             <Paperclip className="h-3.5 w-3.5" />
             Attach Receipt
           </button>
+          {referenceClientDesign && (
+            <p className="text-xs text-slate-600">No official receipts yet</p>
+          )}
           {!hasChargeSlip && (
             <p className="text-[9px] text-slate-400 mt-1">
               A Charge Slip must be issued first.

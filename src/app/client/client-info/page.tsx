@@ -6917,7 +6917,7 @@ export default function ClientPortalPage() {
                                         className={cn(
                                           "rounded-xl border border-slate-100 bg-slate-50/50 p-4 space-y-3 hover:bg-slate-50 transition-colors",
                                           isReferenceSidebarClient &&
-                                            "relative border-slate-200 bg-white p-4 hover:bg-slate-50",
+                                            "relative overflow-hidden border-slate-200 bg-white p-0 hover:bg-white",
                                         )}
                                       >
                                         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -6925,38 +6925,48 @@ export default function ClientPortalPage() {
                                             className={cn(
                                               "flex items-center gap-2 flex-wrap min-w-0",
                                               isReferenceSidebarClient &&
-                                                "w-full",
+                                                "grid w-full grid-cols-1 items-center gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1.25fr)_minmax(70px,0.65fr)_minmax(130px,1.15fr)_auto]",
                                             )}
                                           >
                                             {isReferenceSidebarClient && (
-                                              <p className="w-full text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                                Charge Slip No.
-                                              </p>
+                                              <div className="min-w-0">
+                                                <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                  Charge Slip No.
+                                                </p>
+                                                <a
+                                                  href={`/client/view-document?type=charge-slip&ref=${chargeSlip.id}`}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-[#d8eee4] px-2.5 py-1.5 text-[11px] font-semibold text-[#075f45] transition hover:bg-[#c8e5d7]"
+                                                >
+                                                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                                                  <span className="truncate">
+                                                    {
+                                                      chargeSlip.chargeSlipNumber
+                                                    }
+                                                  </span>
+                                                </a>
+                                              </div>
                                             )}
-                                            <a
-                                              href={`/client/view-document?type=charge-slip&ref=${chargeSlip.id}`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className={cn(
-                                                "flex items-center gap-1 text-[11px] font-bold text-green-700 bg-white hover:bg-green-700 hover:text-white border border-green-600 rounded-full px-2.5 py-0.5 transition-all shadow-sm",
-                                                isReferenceSidebarClient &&
-                                                  "rounded-lg border-0 bg-[#d8eee4] px-3 py-2 text-sm text-[#075f45] shadow-none hover:bg-[#c8e5d7] hover:text-[#075f45]",
-                                              )}
-                                            >
-                                              {isReferenceSidebarClient && (
-                                                <FileText className="h-4 w-4 shrink-0" />
-                                              )}
-                                              {chargeSlip.chargeSlipNumber}
-                                            </a>
+                                            {!isReferenceSidebarClient && (
+                                              <a
+                                                href={`/client/view-document?type=charge-slip&ref=${chargeSlip.id}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-1 text-[11px] font-bold text-green-700 bg-white hover:bg-green-700 hover:text-white border border-green-600 rounded-full px-2.5 py-0.5 transition-all shadow-sm"
+                                              >
+                                                {chargeSlip.chargeSlipNumber}
+                                              </a>
+                                            )}
                                             {isReferenceSidebarClient ? (
-                                              <div className="order-3 grid w-full grid-cols-1 gap-4 rounded-xl bg-slate-50 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] sm:gap-6">
+                                              <>
                                                 <div>
-                                                  <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
                                                     Total
                                                   </p>
                                                   <p
                                                     className={cn(
-                                                      "text-base font-bold text-slate-900",
+                                                      "text-sm font-bold text-slate-900",
                                                       csCancelled &&
                                                         "line-through",
                                                     )}
@@ -6970,20 +6980,22 @@ export default function ClientPortalPage() {
                                                     )}
                                                   </p>
                                                 </div>
-                                                {csIssuedDate && (
-                                                  <div>
-                                                    <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                                      Issued
-                                                    </p>
-                                                    <p className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                                                      {isReferenceSidebarClient && (
-                                                        <Calendar className="h-4 w-4 text-slate-500" />
-                                                      )}
+                                                <div>
+                                                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                    Issued
+                                                  </p>
+                                                  {csIssuedDate ? (
+                                                    <p className="flex items-center gap-1.5 text-sm font-medium text-slate-900">
+                                                      <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-500" />
                                                       {csIssuedDate}
                                                     </p>
-                                                  </div>
-                                                )}
-                                              </div>
+                                                  ) : (
+                                                    <p className="text-sm text-slate-500">
+                                                      —
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              </>
                                             ) : (
                                               <>
                                                 <span className="text-xs text-slate-500">
@@ -7012,7 +7024,7 @@ export default function ClientPortalPage() {
                                           <div
                                             className={cn(
                                               isReferenceSidebarClient &&
-                                                "absolute right-4 top-4",
+                                                "absolute right-5 top-[44px]",
                                             )}
                                           >
                                             {csPaid ? (
@@ -7080,6 +7092,9 @@ export default function ClientPortalPage() {
                                           }
                                           uploadAllowed={
                                             !csPaid && !csCancelled
+                                          }
+                                          referenceClientDesign={
+                                            isReferenceSidebarClient
                                           }
                                         />
                                       </div>

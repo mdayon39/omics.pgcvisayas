@@ -4683,6 +4683,8 @@ export default function ClientPortalPage() {
                               "shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold",
                               inq.status === "Approved"
                                 ? "bg-emerald-100/70 text-emerald-700"
+                                : inq.status === "Approved Client"
+                                  ? "bg-[#E3F5EC] text-emerald-800"
                                 : inq.status === "In Progress"
                                   ? "bg-[#F6E6D9] text-[#713B19]"
                                 : "bg-slate-100 text-slate-600",

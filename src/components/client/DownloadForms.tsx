@@ -426,16 +426,27 @@ export default function DownloadForms({
                         className={cn(
                           "flex items-center gap-1.5 rounded-md bg-slate-50 border border-slate-100 px-2 py-0.5",
                           referenceClientDesign &&
-                            "gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5",
+                            "gap-2.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2",
                         )}
                       >
                         <span
                           className={cn(
                             "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-50",
-                            !referenceClientDesign && "hidden",
+                            referenceClientDesign
+                              ? "h-9 w-9 rounded-lg bg-[#fff1ed]"
+                              : "hidden",
                           )}
                         >
-                          <FileText className="h-4 w-4 text-orange-700" />
+                          {referenceClientDesign ? (
+                            <span className="relative flex h-7 w-6 items-center justify-center">
+                              <FileText className="h-7 w-6 text-red-600" />
+                              <span className="absolute bottom-0.5 rounded-sm bg-white px-0.5 text-[7px] font-bold leading-3 text-red-700">
+                                PDF
+                              </span>
+                            </span>
+                          ) : (
+                            <FileText className="h-4 w-4 text-orange-700" />
+                          )}
                         </span>
                         {!referenceClientDesign &&
                           (f.acknowledgedByAdmin ? (
@@ -487,7 +498,7 @@ export default function DownloadForms({
                             className={cn(
                               "flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0 shrink-0 h-5",
                               referenceClientDesign &&
-                                "h-auto rounded-full border-0 px-2.5 py-1 text-[10px] text-emerald-800",
+                                "h-auto rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] text-emerald-800",
                             )}
                           >
                             {referenceClientDesign && (
@@ -509,7 +520,7 @@ export default function DownloadForms({
                             className={cn(
                               "text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0 shrink-0 h-5",
                               referenceClientDesign &&
-                                "inline-flex h-auto items-center gap-1 rounded-full border-0 px-2.5 py-1 text-[10px] text-amber-900",
+                                "inline-flex h-auto items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] text-amber-900",
                             )}
                           >
                             {referenceClientDesign && (
@@ -517,6 +528,37 @@ export default function DownloadForms({
                             )}
                             Pending
                           </span>
+                        )}
+                        {referenceClientDesign && (
+                          <div className="flex shrink-0 items-center gap-1">
+                            <a
+                              href={f.downloadURL}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
+                              title="Preview file"
+                              aria-label={`Preview ${f.fileName}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleDelete(
+                                  f.id,
+                                  f.storagePath,
+                                  f.fileName,
+                                );
+                              }}
+                              className="rounded-md p-1.5 text-red-600 hover:bg-slate-100"
+                              title="Remove file"
+                              aria-label={`Remove ${f.fileName}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         )}
                       </div>
                       {referenceClientDesign &&

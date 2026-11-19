@@ -281,8 +281,7 @@ export default function ClientConformeModal({
       <DialogContent
         className={cn(
           "flex h-[90vh] max-h-[90vh] w-full max-w-4xl flex-col gap-0 overflow-hidden p-0",
-          professionalLayout &&
-            "h-[80vh] max-h-[620px] max-w-[640px] rounded-xl",
+          professionalLayout && "rounded-xl",
         )}
       >
         <DialogHeader

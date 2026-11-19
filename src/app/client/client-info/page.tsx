@@ -64,6 +64,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getNextCid } from "@/services/clientService";
 import {
   saveMemberApproval,
@@ -140,6 +147,7 @@ import {
   Settings,
   Key,
   Info,
+  Lock,
   Pause,
   Play,
   Mail,
@@ -2358,6 +2366,16 @@ export default function ClientPortalPage() {
       setActiveSavingId(null);
       setPendingMemberId(null);
     }
+  };
+
+  const handleCancelConfirm = () => {
+    if (submitting) return;
+    setShowConfirmModal(false);
+    setPendingMemberId(null);
+    if (pendingMemberId) {
+      savingDraftIdsRef.current.delete(pendingMemberId);
+    }
+    setActiveSavingId(null);
   };
 
   const handleSaveDraft = async (memberId: string) => {
@@ -9612,174 +9630,347 @@ export default function ClientPortalPage() {
       {/* ═════ MODALS ═════ */}
 
       {/* Confirm save modal */}
-      <ConfirmationModalLayout
-        open={showConfirmModal}
-        onConfirm={handleConfirmSave}
-        onCancel={() => {
-          setShowConfirmModal(false);
-          setPendingMemberId(null);
-          // Re-enable draft button for this member if it was disabled
-          if (pendingMemberId) {
-            savingDraftIdsRef.current.delete(pendingMemberId);
-          }
-          setActiveSavingId(null);
-        }}
-        loading={submitting}
-        title="Confirm Member Information"
-        description="Review the details below carefully. Once confirmed, the form will be locked and can no longer be edited directly."
-        confirmLabel="Yes, Confirm & Lock"
-        cancelLabel="Not Yet — Go Back"
-        className="max-w-2xl"
-      >
-        {pendingMemberId &&
-          (() => {
-            const member = members.find((m) => m.id === pendingMemberId);
-            if (!member) return null;
-            return (
-              <div className="space-y-4">
-                {/* Profile Header Card - Compact */}
-                <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#166FB5] to-[#4038AF] flex items-center justify-center shadow-md flex-shrink-0">
-                    <User className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                    <div>
-                      <h3 className="font-bold text-base text-slate-800 truncate">
-                        {member.formData.name || "Unnamed Member"}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <Mail className="h-3 w-3" />
-                        <span className="truncate">
-                          {member.formData.email || "No email provided"}
-                        </span>
+      {isReferenceSidebarClient ? (
+        <Dialog
+          open={showConfirmModal}
+          onOpenChange={(open) => {
+            if (!open) handleCancelConfirm();
+          }}
+        >
+        <DialogContent className="max-h-[90vh] max-w-xl gap-0 overflow-y-auto rounded-xl border-slate-200 bg-white p-0 shadow-2xl">
+          <div className="px-5 pb-4 pt-5">
+            <DialogHeader className="flex-row items-start gap-3 space-y-0 pr-8 text-left">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#166FB5]">
+                <Lock className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 space-y-1">
+                <DialogTitle className="text-lg font-bold text-slate-900">
+                  Confirm Member Information
+                </DialogTitle>
+                <DialogDescription className="text-sm leading-5 text-slate-600">
+                  Review the details below carefully. Once confirmed, the form
+                  will be locked and can no longer be edited directly.
+                </DialogDescription>
+              </div>
+            </DialogHeader>
+          </div>
+
+          <div className="space-y-4 px-5 pb-5">
+            {pendingMemberId &&
+              (() => {
+                const member = members.find((m) => m.id === pendingMemberId);
+                if (!member) return null;
+                const memberName = member.formData.name?.trim() || "Unnamed Member";
+                const nameParts = memberName.split(/\s+/);
+                const initials =
+                  nameParts.length > 1
+                    ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`
+                    : `${memberName[0]}${memberName.length > 1 ? memberName[memberName.length - 1] : ""}`;
+
+                return (
+                  <>
+                    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#166FB5] to-[#4038AF] text-sm font-bold text-white shadow-sm">
+                        {initials.toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-sm font-bold text-slate-900">
+                          {memberName}
+                        </h3>
+                        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+                          <Mail className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">
+                            {member.formData.email || "No email provided"}
+                          </span>
+                        </div>
+                      </div>
+                      {member.isPrimary && (
+                        <Badge className="shrink-0 border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700 hover:bg-blue-50">
+                          Primary Contact
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 text-sm">
+                      <div className="border-b border-r border-slate-200 px-4 py-3">
+                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                          <Building2 className="h-3.5 w-3.5" />
+                          <span className="text-[10px] font-semibold uppercase tracking-wide">
+                            Affiliation
+                          </span>
+                        </div>
+                        <p
+                          className="break-words text-xs font-medium text-slate-800 sm:text-sm"
+                          title={member.formData.affiliation}
+                        >
+                          {member.formData.affiliation || "—"}
+                        </p>
+                      </div>
+                      <div className="border-b border-slate-200 px-4 py-3">
+                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                          <Briefcase className="h-3.5 w-3.5" />
+                          <span className="text-[10px] font-semibold uppercase tracking-wide">
+                            Designation
+                          </span>
+                        </div>
+                        <p
+                          className="break-words text-xs font-medium text-slate-800 sm:text-sm"
+                          title={member.formData.designation}
+                        >
+                          {member.formData.designation || "—"}
+                        </p>
+                      </div>
+                      <div className="border-b border-r border-slate-200 px-4 py-3">
+                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                          <Smartphone className="h-3.5 w-3.5" />
+                          <span className="text-[10px] font-semibold uppercase tracking-wide">
+                            Mobile
+                          </span>
+                        </div>
+                        <p className="break-words font-mono text-xs font-medium text-slate-800 sm:text-sm">
+                          {member.formData.phoneNumber || "—"}
+                        </p>
+                      </div>
+                      <div className="border-b border-slate-200 px-4 py-3">
+                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                          <User className="h-3.5 w-3.5" />
+                          <span className="text-[10px] font-semibold uppercase tracking-wide">
+                            Sex
+                          </span>
+                        </div>
+                        <p className="text-xs font-medium text-slate-800 sm:text-sm">
+                          {member.formData.sex === "M"
+                            ? "Male"
+                            : member.formData.sex === "F"
+                              ? "Female"
+                              : member.formData.sex || "—"}
+                        </p>
+                      </div>
+                      <div className="col-span-2 px-4 py-3">
+                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                          <MapPin className="h-3.5 w-3.5" />
+                          <span className="text-[10px] font-semibold uppercase tracking-wide">
+                            Affiliation Address
+                          </span>
+                        </div>
+                        <p
+                          className="break-words text-xs font-medium text-slate-800 sm:text-sm"
+                          title={member.formData.affiliationAddress}
+                        >
+                          {member.formData.affiliationAddress || "—"}
+                        </p>
                       </div>
                     </div>
-                    {member.isPrimary && (
-                      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200 text-[10px] px-2 py-0.5 h-auto self-start sm:self-center">
-                        Primary Contact
-                      </Badge>
-                    )}
+
+                    <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold leading-snug text-amber-800">
+                          This action will lock the form.
+                        </p>
+                        <p className="text-xs leading-snug text-amber-700">
+                          Once confirmed, all fields will be read-only and
+                          cannot be edited. If you&apos;re not yet sure, click{" "}
+                          <span className="font-semibold">
+                            &quot;Not Yet — Go Back&quot;
+                          </span>{" "}
+                          and use the{" "}
+                          <span className="font-semibold">
+                            &quot;Save Draft&quot;
+                          </span>{" "}
+                          button instead to save your progress without locking.
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={handleCancelConfirm}
+              disabled={submitting}
+              className="border-slate-300 bg-white text-slate-700"
+            >
+              Not Yet — Go Back
+            </Button>
+            <Button
+              onClick={handleConfirmSave}
+              disabled={submitting}
+              className="bg-[#166FB5] font-semibold text-white hover:bg-[#125e99]"
+            >
+              <Lock className="mr-2 h-4 w-4" />
+              {submitting ? "Saving..." : "Yes, Confirm & Lock"}
+            </Button>
+          </div>
+        </DialogContent>
+        </Dialog>
+      ) : (
+        <ConfirmationModalLayout
+          open={showConfirmModal}
+          onConfirm={handleConfirmSave}
+          onCancel={handleCancelConfirm}
+          loading={submitting}
+          title="Confirm Member Information"
+          description="Review the details below carefully. Once confirmed, the form will be locked and can no longer be edited directly."
+          confirmLabel="Yes, Confirm & Lock"
+          cancelLabel="Not Yet — Go Back"
+          className="max-w-2xl"
+        >
+          {pendingMemberId &&
+            (() => {
+              const member = members.find((m) => m.id === pendingMemberId);
+              if (!member) return null;
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#166FB5] to-[#4038AF] shadow-md">
+                      <User className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="truncate text-base font-bold text-slate-800">
+                          {member.formData.name || "Unnamed Member"}
+                        </h3>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <Mail className="h-3 w-3" />
+                          <span className="truncate">
+                            {member.formData.email || "No email provided"}
+                          </span>
+                        </div>
+                      </div>
+                      {member.isPrimary && (
+                        <Badge className="h-auto self-start border-blue-200 bg-blue-100 px-2 py-0.5 text-[10px] text-blue-700 hover:bg-blue-100 sm:self-center">
+                          Primary Contact
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+                    <div className="rounded-lg border border-slate-100 bg-white p-2.5 shadow-sm">
+                      <div className="mb-0.5 flex items-center gap-1.5 text-slate-400">
+                        <Building2 className="h-3 w-3" />
+                        <span className="text-[10px] font-bold uppercase tracking-wide">
+                          Affiliation
+                        </span>
+                      </div>
+                      <p
+                        className="truncate text-xs font-medium text-slate-700 sm:text-sm"
+                        title={member.formData.affiliation}
+                      >
+                        {member.formData.affiliation || "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-100 bg-white p-2.5 shadow-sm">
+                      <div className="mb-0.5 flex items-center gap-1.5 text-slate-400">
+                        <Briefcase className="h-3 w-3" />
+                        <span className="text-[10px] font-bold uppercase tracking-wide">
+                          Designation
+                        </span>
+                      </div>
+                      <p
+                        className="truncate text-xs font-medium text-slate-700 sm:text-sm"
+                        title={member.formData.designation}
+                      >
+                        {member.formData.designation || "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-100 bg-white p-2.5 shadow-sm">
+                      <div className="mb-0.5 flex items-center gap-1.5 text-slate-400">
+                        <Smartphone className="h-3 w-3" />
+                        <span className="text-[10px] font-bold uppercase tracking-wide">
+                          Mobile
+                        </span>
+                      </div>
+                      <p className="font-mono text-xs font-medium text-slate-700 sm:text-sm">
+                        {member.formData.phoneNumber || "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-100 bg-white p-2.5 shadow-sm">
+                      <div className="mb-0.5 flex items-center gap-1.5 text-slate-400">
+                        <User className="h-3 w-3" />
+                        <span className="text-[10px] font-bold uppercase tracking-wide">
+                          Sex
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-slate-700 sm:text-sm">
+                        {member.formData.sex === "M"
+                          ? "Male"
+                          : member.formData.sex === "F"
+                            ? "Female"
+                            : member.formData.sex || "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-100 bg-white p-2.5 shadow-sm sm:col-span-2">
+                      <div className="mb-0.5 flex items-center gap-1.5 text-slate-400">
+                        <MapPin className="h-3 w-3" />
+                        <span className="text-[10px] font-bold uppercase tracking-wide">
+                          Affiliation Address
+                        </span>
+                      </div>
+                      <p
+                        className="truncate text-xs font-medium text-slate-700 sm:text-sm"
+                        title={member.formData.affiliationAddress}
+                      >
+                        {member.formData.affiliationAddress || "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-semibold leading-snug text-amber-700">
+                        This action will lock the form.
+                      </p>
+                      <p className="text-[11px] leading-snug text-amber-600">
+                        Once confirmed, all fields will be read-only and cannot
+                        be edited. If you&apos;re not yet sure, click{" "}
+                        <span className="font-semibold">
+                          &quot;Not Yet — Go Back&quot;
+                        </span>{" "}
+                        and use the{" "}
+                        <span className="font-semibold">
+                          &quot;Save Draft&quot;
+                        </span>{" "}
+                        button instead to save your progress without locking.
+                      </p>
+                    </div>
                   </div>
                 </div>
-
-                {/* Details Grid - 3 Columns for wider layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                  {/* Affiliation */}
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
-                    <div className="flex items-center gap-1.5 text-slate-400 mb-0.5">
-                      <Building2 className="h-3 w-3" />
-                      <span className="text-[10px] font-bold uppercase tracking-wide">
-                        Affiliation
-                      </span>
-                    </div>
-                    <p
-                      className="font-medium text-slate-700 truncate text-xs sm:text-sm"
-                      title={member.formData.affiliation}
-                    >
-                      {member.formData.affiliation || "—"}
-                    </p>
-                  </div>
-
-                  {/* Designation */}
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
-                    <div className="flex items-center gap-1.5 text-slate-400 mb-0.5">
-                      <Briefcase className="h-3 w-3" />
-                      <span className="text-[10px] font-bold uppercase tracking-wide">
-                        Designation
-                      </span>
-                    </div>
-                    <p
-                      className="font-medium text-slate-700 truncate text-xs sm:text-sm"
-                      title={member.formData.designation}
-                    >
-                      {member.formData.designation || "—"}
-                    </p>
-                  </div>
-
-                  {/* Mobile Number */}
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
-                    <div className="flex items-center gap-1.5 text-slate-400 mb-0.5">
-                      <Smartphone className="h-3 w-3" />
-                      <span className="text-[10px] font-bold uppercase tracking-wide">
-                        Mobile
-                      </span>
-                    </div>
-                    <p className="font-medium text-slate-700 font-mono text-xs sm:text-sm">
-                      {member.formData.phoneNumber || "—"}
-                    </p>
-                  </div>
-
-                  {/* Sex */}
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
-                    <div className="flex items-center gap-1.5 text-slate-400 mb-0.5">
-                      <User className="h-3 w-3" />
-                      <span className="text-[10px] font-bold uppercase tracking-wide">
-                        Sex
-                      </span>
-                    </div>
-                    <p className="font-medium text-slate-700 text-xs sm:text-sm">
-                      {member.formData.sex === "M"
-                        ? "Male"
-                        : member.formData.sex === "F"
-                          ? "Female"
-                          : member.formData.sex || "—"}
-                    </p>
-                  </div>
-
-                  {/* Address - Spans 2 cols */}
-                  <div className="sm:col-span-2 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
-                    <div className="flex items-center gap-1.5 text-slate-400 mb-0.5">
-                      <MapPin className="h-3 w-3" />
-                      <span className="text-[10px] font-bold uppercase tracking-wide">
-                        Affiliation Address
-                      </span>
-                    </div>
-                    <p
-                      className="font-medium text-slate-700 truncate text-xs sm:text-sm"
-                      title={member.formData.affiliationAddress}
-                    >
-                      {member.formData.affiliationAddress || "—"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-start gap-2.5">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 text-amber-500 mt-0.5 shrink-0"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                    <line x1="12" y1="9" x2="12" y2="13" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                  <div className="space-y-1">
-                    <p className="text-[11px] font-semibold text-amber-700 leading-snug">
-                      This action will lock the form.
-                    </p>
-                    <p className="text-[11px] text-amber-600 leading-snug">
-                      Once confirmed, all fields will be read-only and cannot be
-                      edited. If you&apos;re not yet sure, click{" "}
-                      <span className="font-semibold">
-                        &quot;Not Yet — Go Back&quot;
-                      </span>{" "}
-                      and use the{" "}
-                      <span className="font-semibold">
-                        &quot;Save Draft&quot;
-                      </span>{" "}
-                      button instead to save your progress without locking.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-      </ConfirmationModalLayout>
+              );
+            })()}
+        </ConfirmationModalLayout>
+      )}
 
       {/* Delete confirmation modal */}
       <ConfirmationModalLayout

@@ -7655,6 +7655,9 @@ export default function ClientPortalPage() {
                                 isOngoingQuotationReferenceClient &&
                                   "bg-[#E1F1FD]",
                                 isInProgressReferenceClient && "bg-[#F6E6D9]",
+                                isReferenceSidebarClient &&
+                                  currentInquiry.status === "Quotation Only" &&
+                                  "bg-slate-100",
                               )}
                             >
                               {isReferenceSidebarClient &&

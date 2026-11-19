@@ -520,7 +520,7 @@ export default function DownloadForms({
                                         f.acknowledgedAt
                                           ? format(
                                               f.acknowledgedAt.toDate(),
-                                              "MMM d, yyyy · h:mm a",
+                                              "MMM d, yyyy",
                                             )
                                           : "—"
                                       }`

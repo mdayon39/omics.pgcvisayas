@@ -533,14 +533,14 @@ export default function DownloadForms({
                                   )
                                 : "—"}
                           </span>
+                          {referenceClientDesign && !f.acknowledgedByAdmin && (
+                            <p className="text-[11px] leading-4 text-slate-600">
+                              We&apos;ll notify you once the admin acknowledges
+                              your form.
+                            </p>
+                          )}
                         </div>
                       </div>
-                      {referenceClientDesign && !f.acknowledgedByAdmin && (
-                        <p className="px-1 text-xs leading-5 text-slate-600">
-                          We&apos;ll notify you once the admin acknowledges your
-                          form.
-                        </p>
-                      )}
                     </div>
                   ))}
                 </div>

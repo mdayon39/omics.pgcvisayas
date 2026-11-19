@@ -7038,7 +7038,7 @@ export default function ClientPortalPage() {
                                                 className={cn(
                                                   "inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-0.5",
                                                   isReferenceSidebarClient &&
-                                                    "px-2.5 py-1 text-[11px]",
+                                                    "border-0 px-2.5 py-1 text-[11px]",
                                                 )}
                                               >
                                                 <CheckCircle2
@@ -7088,7 +7088,7 @@ export default function ClientPortalPage() {
                                                 className={cn(
                                                   "inline-flex text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-3 py-0.5",
                                                   isReferenceSidebarClient &&
-                                                    "px-2.5 py-1 text-[11px]",
+                                                    "border-0 px-2.5 py-1 text-[11px]",
                                                 )}
                                               >
                                                 Processing

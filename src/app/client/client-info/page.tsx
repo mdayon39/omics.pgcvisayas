@@ -10146,18 +10146,6 @@ export default function ClientPortalPage() {
         cancelLabel="Go Back"
       >
         <div className="space-y-4">
-          {/* Progress Indicator */}
-          <div className="flex items-center gap-2 mb-3">
-            <Badge
-              variant="secondary"
-              className="bg-blue-100 text-blue-800 flex items-center gap-1"
-            >
-              <CheckCircle2 className="h-3 w-3" />
-              Step 2 of 3
-            </Badge>
-            <span className="text-xs text-slate-500">Review Team Members</span>
-          </div>
-
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800 font-bold mb-3 border-b border-blue-100 pb-1">
               Other Member/s:
@@ -10187,109 +10175,159 @@ export default function ClientPortalPage() {
       </ConfirmationModalLayout>
 
       {/* Submit project for approval confirmation modal */}
-      <ConfirmationModalLayout
+      <Dialog
         open={showSubmitProjectModal}
-        onConfirm={handleConfirmSubmitProject}
-        onCancel={() => {
-          setShowSubmitProjectModal(false);
+        onOpenChange={(open) => {
+          if (!open) setShowSubmitProjectModal(false);
         }}
-        loading={submitting}
-        title="📋 Final Review & Confirmation"
-        description="Please review your project and member information below before final submission to administrators."
-        confirmLabel="Submit to Administrator"
-        cancelLabel="Go Back"
       >
-        <div className="space-y-4">
-          {/* Progress Indicator */}
-          <div className="flex items-center gap-2 mb-3">
-            <Badge
-              variant="secondary"
-              className="bg-blue-100 text-blue-800 flex items-center gap-1"
-            >
-              <CheckCircle2 className="h-3 w-3" />
-              Step 2 of 3
-            </Badge>
-            <span className="text-xs text-slate-500">
-              Review Project Details
-            </span>
+        <DialogContent className="max-h-[90vh] max-w-md gap-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-0 shadow-xl">
+          <div className="px-5 pb-4 pt-5">
+            <DialogHeader className="flex-row items-start gap-3 space-y-0 pr-8 text-left">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                <ClipboardCheck className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 space-y-1">
+                <DialogTitle className="text-base font-semibold leading-5 text-slate-900">
+                  Final Review &amp; Confirmation
+                </DialogTitle>
+                <DialogDescription className="text-sm leading-5 text-slate-600">
+                  Please review your project and member information below
+                  before final submission to administrators.
+                </DialogDescription>
+              </div>
+            </DialogHeader>
           </div>
 
-          {projectRequest && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-semibold text-blue-900 mb-2">
-                Project Details:
-              </p>
-              <div className="space-y-1 text-xs text-blue-800">
-                <div>
-                  <strong>Title:</strong> {projectRequest.title}
+          <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 pb-5">
+            {projectRequest && (
+              <section className="overflow-hidden rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-3">
+                  <FolderOpen className="h-4 w-4 text-slate-600" />
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Project Details:
+                  </h3>
                 </div>
-                <div>
-                  <strong>Lead:</strong> {projectRequest.projectLead}
+                <div className="space-y-2 px-4 py-3 text-[13px]">
+                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                    <span className="text-slate-500">Title:</span>
+                    <span className="break-words text-slate-900">
+                      {projectRequest.title || "—"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                    <span className="text-slate-500">Lead:</span>
+                    <span className="break-words text-slate-900">
+                      {projectRequest.projectLead || "—"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                    <span className="text-slate-500">Sending Institution:</span>
+                    <span className="break-words text-slate-900">
+                      {projectRequest.sendingInstitution || "—"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                    <span className="text-slate-500">Funding Institution:</span>
+                    <span className="break-words text-slate-900">
+                      {projectRequest.fundingInstitution || "—"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <strong>Sending Institution:</strong>{" "}
-                  {projectRequest.sendingInstitution}
-                </div>
-                <div>
-                  <strong>Funding Institution:</strong>{" "}
-                  {projectRequest.fundingInstitution}
-                </div>
-              </div>
-            </div>
-          )}
-          {primaryMember && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-semibold text-green-900 mb-2">
-                Primary Member:
-              </p>
-              <div className="space-y-1 text-xs text-green-800">
-                <div>
-                  <strong>Name:</strong> {primaryMember.formData.name}
-                </div>
-                <div>
-                  <strong>Email:</strong> {primaryMember.formData.email}
-                </div>
-                <div>
-                  <strong>Affiliation:</strong>{" "}
-                  {primaryMember.formData.affiliation}
-                </div>
-              </div>
-            </div>
-          )}
+              </section>
+            )}
 
-          {members.filter((m) => !m.isPrimary && m.isDraft).length > 0 && (
-            <div className="bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200 rounded-lg p-4 space-y-3">
-              <p className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-1">
-                Other Member/s:
-              </p>
-              <div className="space-y-4">
-                {members
-                  .filter((m) => !m.isDraft || !m.isPrimary) // Adjusted filter to be more reliable
-                  .filter((m) => !m.isPrimary && m.isDraft) // Keeping existing logic for clarity
-                  .map((m) => (
-                    <div
-                      key={m.id}
-                      className="space-y-1 text-xs text-slate-700"
-                    >
-                      <div>
-                        <strong className="text-slate-900">Name:</strong>{" "}
-                        {m.formData.name || "—"}
+            {primaryMember && (
+              <section className="overflow-hidden rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-3">
+                  <User className="h-4 w-4 text-slate-600" />
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Primary Member:
+                  </h3>
+                </div>
+                <div className="space-y-2 px-4 py-3 text-[13px]">
+                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                    <span className="text-slate-500">Name:</span>
+                    <span className="break-words text-slate-900">
+                      {primaryMember.formData.name || "—"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                    <span className="text-slate-500">Email:</span>
+                    <span className="break-words text-slate-900">
+                      {primaryMember.formData.email || "—"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                    <span className="text-slate-500">Affiliation:</span>
+                    <span className="break-words text-slate-900">
+                      {primaryMember.formData.affiliation || "—"}
+                    </span>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {members.filter((m) => !m.isPrimary && m.isDraft).length > 0 && (
+              <section className="overflow-hidden rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-3">
+                  <Users className="h-4 w-4 text-slate-600" />
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Other Member/s:
+                  </h3>
+                </div>
+                <div className="divide-y divide-slate-200 px-4">
+                  {members
+                    .filter((m) => !m.isPrimary && m.isDraft)
+                    .map((member) => (
+                      <div
+                        key={member.id}
+                        className="space-y-2 py-3 text-[13px]"
+                      >
+                        <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                          <span className="text-slate-500">Name:</span>
+                          <span className="break-words text-slate-900">
+                            {member.formData.name || "—"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                          <span className="text-slate-500">Email:</span>
+                          <span className="break-words text-slate-900">
+                            {member.formData.email || "—"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                          <span className="text-slate-500">Affiliation:</span>
+                          <span className="break-words text-slate-900">
+                            {member.formData.affiliation || "—"}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <strong className="text-slate-900">Email:</strong>{" "}
-                        {m.formData.email || "—"}
-                      </div>
-                      <div>
-                        <strong className="text-slate-900">Affiliation:</strong>{" "}
-                        {m.formData.affiliation || "—"}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </ConfirmationModalLayout>
+                    ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowSubmitProjectModal(false)}
+              disabled={submitting}
+              className="border-slate-300 bg-white text-slate-700"
+            >
+              Go Back
+            </Button>
+            <Button
+              onClick={handleConfirmSubmitProject}
+              disabled={submitting}
+              className="bg-blue-600 font-semibold text-white hover:bg-blue-700"
+            >
+              {submitting ? "Saving..." : "Submit to Administrator"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Client Conforme — must be agreed before final submission */}
       <ClientConformeModal

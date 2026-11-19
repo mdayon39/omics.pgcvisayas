@@ -10,8 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, FileText, CheckCircle2, ChevronDown } from "lucide-react";
+import { Loader2, CheckCircle2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
@@ -268,17 +267,8 @@ export default function ClientConformeModal({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleCancel()}>
       <DialogContent className="max-w-4xl w-full flex flex-col h-[90vh] max-h-[90vh] p-0 gap-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-3 border-b border-slate-200 shrink-0">
-          {/* Progress Indicator */}
-          <div className="flex items-center gap-2 mb-3">
-            <Badge
-              variant="default"
-              className="bg-[#166FB5] text-white flex items-center gap-1"
-            >
-              <FileText className="h-3 w-3" />
-              Step 1 of 3
-            </Badge>
-          </div>
+        <DialogHeader className="sr-only">
+          <DialogTitle>Client Conforme</DialogTitle>
         </DialogHeader>
 
         {/* Scrollable document body */}

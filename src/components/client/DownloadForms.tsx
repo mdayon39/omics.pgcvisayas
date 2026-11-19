@@ -290,7 +290,8 @@ export default function DownloadForms({
     <div
       className={cn(
         "ml-5 mb-2 space-y-2",
-        referenceClientDesign && "m-0 space-y-3",
+        referenceClientDesign &&
+          "m-0 overflow-hidden rounded-xl border border-slate-200 bg-white",
       )}
     >
       {PORTAL_FORMS.map((form, i) => {
@@ -307,36 +308,35 @@ export default function DownloadForms({
             key={form.formKey}
             className={cn(
               "rounded-lg border border-slate-100 bg-slate-50 overflow-hidden",
-              referenceClientDesign && "rounded-xl border-slate-200 bg-white",
+              referenceClientDesign &&
+                "border-0 border-b border-slate-200 bg-white last:border-b-0",
             )}
           >
             {/* Header row */}
             <div
               className={cn(
                 "w-full flex items-center justify-between gap-2 px-3 py-1.5",
-                referenceClientDesign && "flex-wrap items-start gap-3 p-4",
+                referenceClientDesign &&
+                  "flex-wrap items-start gap-3 px-4 py-3",
               )}
             >
               {referenceClientDesign ? (
                 <>
-                  <div className="flex min-w-0 items-start gap-3">
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-50 text-xs font-semibold text-orange-700">
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-semibold leading-5 text-slate-900">
-                        {form.label}
-                      </h3>
-                      <p className="text-xs text-slate-500">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold leading-5 text-slate-900">
+                      {form.label}
+                    </h3>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <p className="text-xs leading-5 text-slate-600">
                         {form.portalDescription}
                       </p>
-                      <span className="mt-3 inline-flex rounded-md bg-orange-50 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-orange-700">
+                      <span className="font-mono text-[11px] font-medium text-[#b23a24]">
                         {form.revision}
                       </span>
                     </div>
                   </div>
                   {loading ? (
-                    <Loader2 className="mt-1 h-4 w-4 shrink-0 animate-spin text-orange-500" />
+                    <Loader2 className="mt-1 h-4 w-4 shrink-0 animate-spin text-red-500" />
                   ) : error ? (
                     <span className="shrink-0 text-[10px] font-medium text-red-500">
                       Unavailable
@@ -351,7 +351,7 @@ export default function DownloadForms({
                       }}
                       aria-label={`View ${form.label}`}
                       className={cn(
-                        "inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-orange-500 px-4 text-xs font-semibold text-orange-700 transition-colors hover:bg-orange-50",
+                        "inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-[#ef9d91] px-4 text-xs font-semibold text-[#a62d1d] transition-colors hover:bg-red-50",
                         !url && "pointer-events-none opacity-50",
                       )}
                     >
@@ -413,8 +413,8 @@ export default function DownloadForms({
                 "border-t border-slate-100 px-3 py-2 bg-white/60 space-y-1.5",
                 referenceClientDesign &&
                   (uploaded.length > 0 || form.formKey !== "ssreq"
-                    ? "border-t px-4 pb-4 pt-3"
-                    : "border-t-0 px-4 pb-0 pt-0"),
+                    ? "border-t-0 px-4 pb-3 pt-0"
+                    : "hidden"),
               )}
             >
               {/* Uploaded files listed ABOVE the upload button */}
@@ -567,7 +567,7 @@ export default function DownloadForms({
                         className={cn(
                           "flex items-center gap-1.5 text-xs font-bold text-orange-600 bg-white hover:bg-orange-600 hover:text-white border border-orange-500 rounded-full px-3 py-1 transition-all shrink-0 disabled:opacity-50",
                           referenceClientDesign &&
-                            "rounded-xl px-4 py-2 hover:bg-orange-50 hover:text-orange-700",
+                            "h-10 rounded-lg border-[#9d3f24] bg-[#92351f] px-4 text-sm text-white hover:border-[#7f2d1a] hover:bg-[#7f2d1a]",
                         )}
                       >
                         <Paperclip className="h-3.5 w-3.5" />

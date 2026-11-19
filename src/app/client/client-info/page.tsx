@@ -168,9 +168,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import {
-  CLIENT_ANNOUNCEMENT_TARGET_EMAIL,
-} from "@/constants/clientAnnouncement";
+import { CLIENT_ANNOUNCEMENT_TARGET_EMAIL } from "@/constants/clientAnnouncement";
 import ClientConformeModal from "@/components/forms/ClientConformeModal";
 import UploadReceipt from "@/components/client/UploadReceipt";
 import DownloadForms from "@/components/client/DownloadForms";
@@ -368,13 +366,15 @@ export default function ClientPortalPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
-  const [clientAnnouncements, setClientAnnouncements] = useState<{
-    id: string;
-    title: string;
-    body: string;
-    startAt?: number;
-    endAt?: number;
-  }[]>([]);
+  const [clientAnnouncements, setClientAnnouncements] = useState<
+    {
+      id: string;
+      title: string;
+      body: string;
+      startAt?: number;
+      endAt?: number;
+    }[]
+  >([]);
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [isAnnouncementPlaying, setIsAnnouncementPlaying] = useState(true);
   const [announcementProgress, setAnnouncementProgress] = useState(0);
@@ -437,10 +437,7 @@ export default function ClientPortalPage() {
       setAnnouncementProgress(0);
       announcementElapsedRef.current = 0;
     };
-    const handleSnapshot = (
-      queryKey: string,
-      snapshot: QuerySnapshot,
-    ) => {
+    const handleSnapshot = (queryKey: string, snapshot: QuerySnapshot) => {
       const announcements = snapshot.docs
         .map((announcementDoc) => {
           const data = announcementDoc.data();
@@ -628,8 +625,7 @@ export default function ClientPortalPage() {
   const isPendingReferenceClient =
     isReferenceSidebarClient && currentInquiry?.status === "Pending";
   const isOngoingQuotationReferenceClient =
-    isReferenceSidebarClient &&
-    currentInquiry?.status === "Ongoing Quotation";
+    isReferenceSidebarClient && currentInquiry?.status === "Ongoing Quotation";
   const isInProgressReferenceClient =
     isReferenceSidebarClient && currentInquiry?.status === "In Progress";
   const [inquiryQuotations, setInquiryQuotations] = useState<QuotationRecord[]>(
@@ -3554,8 +3550,9 @@ export default function ClientPortalPage() {
     ? projects.filter((project) => project.inquiryId === inquiryIdParam)
     : [];
   const workflowProjectPid =
-    workflowInquiryProjects.find((project) => project.pid === selectedProjectPid)
-      ?.pid || workflowInquiryProjects[0]?.pid;
+    workflowInquiryProjects.find(
+      (project) => project.pid === selectedProjectPid,
+    )?.pid || workflowInquiryProjects[0]?.pid;
   const [hasValidatedOfficialReceipt, setHasValidatedOfficialReceipt] =
     useState(false);
   const [hasWorkflowSampleForm, setHasWorkflowSampleForm] = useState(false);
@@ -3626,11 +3623,14 @@ export default function ClientPortalPage() {
       (snapshot) => {
         const sampleSubmissions = snapshot.docs.filter((submission) => {
           const data = submission.data();
-          const formKey = String(data.formKey ?? "").trim().toLowerCase();
-          const formLabel = String(data.formLabel ?? "").trim().toLowerCase();
+          const formKey = String(data.formKey ?? "")
+            .trim()
+            .toLowerCase();
+          const formLabel = String(data.formLabel ?? "")
+            .trim()
+            .toLowerCase();
           return (
-            formKey === "ssf" ||
-            formLabel.includes("sample submission form")
+            formKey === "ssf" || formLabel.includes("sample submission form")
           );
         });
         setHasUploadedSampleSubmission(sampleSubmissions.length > 0);
@@ -3648,10 +3648,7 @@ export default function ClientPortalPage() {
         toast.error("Could not update sample form progress.");
       },
     );
-  }, [
-    isReferenceSidebarClient,
-    workflowProjectPid,
-  ]);
+  }, [isReferenceSidebarClient, workflowProjectPid]);
 
   useEffect(() => {
     if (
@@ -3687,11 +3684,7 @@ export default function ClientPortalPage() {
         toast.error("Could not update sample form progress.");
       },
     );
-  }, [
-    inquiryIdParam,
-    isReferenceSidebarClient,
-    portalFeatures.sampleForms,
-  ]);
+  }, [inquiryIdParam, isReferenceSidebarClient, portalFeatures.sampleForms]);
 
   useEffect(() => {
     if (
@@ -3880,7 +3873,9 @@ export default function ClientPortalPage() {
 
   const primaryMember = members.find((m) => m.isPrimary);
   const otherMembers = members.filter((m) => !m.isPrimary);
-  const savedMemberCount = members.filter((member) => member.isSubmitted).length;
+  const savedMemberCount = members.filter(
+    (member) => member.isSubmitted,
+  ).length;
 
   /** Renders the full member form (used inside expandable cards) */
   const renderMemberForm = (member: ClientMember) => {
@@ -3956,10 +3951,12 @@ export default function ClientPortalPage() {
                   "order-[2] min-[480px]:col-span-1 md:col-span-1",
               )}
             >
-              <Label className={cn(
-                "text-sm font-semibold text-slate-700 mb-1 block",
-                isReferenceSidebarClient && "text-xs font-medium",
-              )}>
+              <Label
+                className={cn(
+                  "text-sm font-semibold text-slate-700 mb-1 block",
+                  isReferenceSidebarClient && "text-xs font-medium",
+                )}
+              >
                 {isReferenceSidebarClient ? "Full name" : "Full Name"}{" "}
                 <span className="text-[#B9273A]">*</span>
               </Label>
@@ -3968,7 +3965,11 @@ export default function ClientPortalPage() {
                 onChange={(e) =>
                   handleChange(member.id, "name", e.target.value)
                 }
-                placeholder={isReferenceSidebarClient ? "First name, last name" : "Enter full name"}
+                placeholder={
+                  isReferenceSidebarClient
+                    ? "First name, last name"
+                    : "Enter full name"
+                }
                 disabled={
                   (!member.isDraft && member.isSubmitted) ||
                   projectDetails?.status === "Completed" ||
@@ -3995,20 +3996,24 @@ export default function ClientPortalPage() {
                   "order-[3] min-[480px]:col-span-1 md:col-span-1",
               )}
             >
-              <Label className={cn(
-                "text-sm font-semibold text-slate-700 mb-1 block",
-                isReferenceSidebarClient && "text-xs font-medium",
-              )}>
+              <Label
+                className={cn(
+                  "text-sm font-semibold text-slate-700 mb-1 block",
+                  isReferenceSidebarClient && "text-xs font-medium",
+                )}
+              >
                 {isReferenceSidebarClient ? "Email address" : "Email Address"}{" "}
                 {!(isReferenceSidebarClient && member.isPrimary) && (
                   <span className="text-[#B9273A]">*</span>
                 )}
                 {member.isPrimary && (
-                  <span className={cn(
-                    "ml-2 text-xs font-normal text-slate-400",
-                    isReferenceSidebarClient &&
-                      "rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700",
-                  )}>
+                  <span
+                    className={cn(
+                      "ml-2 text-xs font-normal text-slate-400",
+                      isReferenceSidebarClient &&
+                        "rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700",
+                    )}
+                  >
                     {isReferenceSidebarClient ? "Verified" : "(Verified)"}
                   </span>
                 )}
@@ -4055,10 +4060,12 @@ export default function ClientPortalPage() {
                   "order-[6] min-[480px]:col-span-1 md:col-span-1",
               )}
             >
-              <Label className={cn(
-                "text-sm font-semibold text-slate-700 mb-1 block",
-                isReferenceSidebarClient && "text-xs font-medium",
-              )}>
+              <Label
+                className={cn(
+                  "text-sm font-semibold text-slate-700 mb-1 block",
+                  isReferenceSidebarClient && "text-xs font-medium",
+                )}
+              >
                 {isReferenceSidebarClient
                   ? "Department & institution"
                   : "Affiliation (Department & Institution)"}{" "}
@@ -4069,9 +4076,11 @@ export default function ClientPortalPage() {
                 onChange={(e) =>
                   handleChange(member.id, "affiliation", e.target.value)
                 }
-                placeholder={isReferenceSidebarClient
-                  ? "e.g. Division of Biological Sciences, UPV CAS"
-                  : "e.g. Division of Biological Sciences - UPV CAS"}
+                placeholder={
+                  isReferenceSidebarClient
+                    ? "e.g. Division of Biological Sciences, UPV CAS"
+                    : "e.g. Division of Biological Sciences - UPV CAS"
+                }
                 disabled={
                   (!member.isDraft && member.isSubmitted) ||
                   projectDetails?.status === "Completed" ||
@@ -4091,14 +4100,18 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Designation */}
-            <div className={cn(
-              isReferenceSidebarClient &&
-                "order-[7] min-[480px]:col-span-1 md:col-span-1",
-            )}>
-              <Label className={cn(
-                "text-sm font-semibold text-slate-700 mb-1 block",
-                isReferenceSidebarClient && "text-xs font-medium",
-              )}>
+            <div
+              className={cn(
+                isReferenceSidebarClient &&
+                  "order-[7] min-[480px]:col-span-1 md:col-span-1",
+              )}
+            >
+              <Label
+                className={cn(
+                  "text-sm font-semibold text-slate-700 mb-1 block",
+                  isReferenceSidebarClient && "text-xs font-medium",
+                )}
+              >
                 Designation <span className="text-[#B9273A]">*</span>
               </Label>
               <Input
@@ -4126,14 +4139,18 @@ export default function ClientPortalPage() {
             </div>
 
             {/* Sex */}
-            <div className={cn(
-              isReferenceSidebarClient &&
-                "order-[4] min-[480px]:col-span-1 md:col-span-1",
-            )}>
-              <Label className={cn(
-                "text-sm font-semibold text-slate-700 mb-1 block",
-                isReferenceSidebarClient && "text-xs font-medium",
-              )}>
+            <div
+              className={cn(
+                isReferenceSidebarClient &&
+                  "order-[4] min-[480px]:col-span-1 md:col-span-1",
+              )}
+            >
+              <Label
+                className={cn(
+                  "text-sm font-semibold text-slate-700 mb-1 block",
+                  isReferenceSidebarClient && "text-xs font-medium",
+                )}
+              >
                 Assigned sex at birth <span className="text-[#B9273A]">*</span>
               </Label>
               <Select
@@ -4145,12 +4162,20 @@ export default function ClientPortalPage() {
                   projectDetails?.status === "Pending Approval"
                 }
               >
-                <SelectTrigger className={cn(
-                  "bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70",
-                  isReferenceSidebarClient &&
-                    "h-8 text-xs disabled:bg-slate-50 disabled:opacity-100",
-                )}>
-                  <SelectValue placeholder={isReferenceSidebarClient ? "Select an option" : "Select Sex at Birth"} />
+                <SelectTrigger
+                  className={cn(
+                    "bg-white border-slate-200 focus:border-[#166FB5] focus:ring-[#166FB5]/20 h-10 disabled:opacity-70",
+                    isReferenceSidebarClient &&
+                      "h-8 text-xs disabled:bg-slate-50 disabled:opacity-100",
+                  )}
+                >
+                  <SelectValue
+                    placeholder={
+                      isReferenceSidebarClient
+                        ? "Select an option"
+                        : "Select Sex at Birth"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="M">Male</SelectItem>
@@ -4171,10 +4196,12 @@ export default function ClientPortalPage() {
                   "order-[4] min-[480px]:col-span-1 md:col-span-1",
               )}
             >
-              <Label className={cn(
-                "text-sm font-semibold text-slate-700 mb-1 block",
-                isReferenceSidebarClient && "text-xs font-medium",
-              )}>
+              <Label
+                className={cn(
+                  "text-sm font-semibold text-slate-700 mb-1 block",
+                  isReferenceSidebarClient && "text-xs font-medium",
+                )}
+              >
                 {isReferenceSidebarClient ? "Mobile number" : "Mobile Number"}{" "}
                 <span className="text-[#B9273A]">*</span>
               </Label>
@@ -4183,7 +4210,11 @@ export default function ClientPortalPage() {
                 onChange={(e) =>
                   handleChange(member.id, "phoneNumber", e.target.value)
                 }
-                placeholder={isReferenceSidebarClient ? "09XX XXX XXXX" : "e.g. 09091234567"}
+                placeholder={
+                  isReferenceSidebarClient
+                    ? "09XX XXX XXXX"
+                    : "e.g. 09091234567"
+                }
                 disabled={
                   (!member.isDraft && member.isSubmitted) ||
                   projectDetails?.status === "Completed" ||
@@ -4206,15 +4237,18 @@ export default function ClientPortalPage() {
             <div
               className={cn(
                 "md:col-span-2",
-                isReferenceSidebarClient &&
-                  "order-[8] col-span-full",
+                isReferenceSidebarClient && "order-[8] col-span-full",
               )}
             >
-              <Label className={cn(
-                "text-sm font-semibold text-slate-700 mb-1 block",
-                isReferenceSidebarClient && "text-xs font-medium",
-              )}>
-                {isReferenceSidebarClient ? "Affiliation address" : "Affiliation Address"}{" "}
+              <Label
+                className={cn(
+                  "text-sm font-semibold text-slate-700 mb-1 block",
+                  isReferenceSidebarClient && "text-xs font-medium",
+                )}
+              >
+                {isReferenceSidebarClient
+                  ? "Affiliation address"
+                  : "Affiliation Address"}{" "}
                 <span className="text-[#B9273A]">*</span>
               </Label>
               <Textarea
@@ -4222,9 +4256,11 @@ export default function ClientPortalPage() {
                 onChange={(e) =>
                   handleChange(member.id, "affiliationAddress", e.target.value)
                 }
-                placeholder={isReferenceSidebarClient
-                  ? "Street, city, province, postal code"
-                  : "Enter complete address of your institution/organization"}
+                placeholder={
+                  isReferenceSidebarClient
+                    ? "Street, city, province, postal code"
+                    : "Enter complete address of your institution/organization"
+                }
                 disabled={
                   (!member.isDraft && member.isSubmitted) ||
                   projectDetails?.status === "Completed" ||
@@ -4245,11 +4281,13 @@ export default function ClientPortalPage() {
           </div>
 
           {/* Actions */}
-          <div className={cn(
-            "flex justify-between pt-3 border-t border-slate-100",
-            isReferenceSidebarClient &&
-              "-mx-4 -mb-4 mt-4 items-center bg-slate-50 px-4 py-3",
-          )}>
+          <div
+            className={cn(
+              "flex justify-between pt-3 border-t border-slate-100",
+              isReferenceSidebarClient &&
+                "-mx-4 -mb-4 mt-4 items-center bg-slate-50 px-4 py-3",
+            )}
+          >
             <Button
               type="button"
               onClick={() => handleSaveDraft(member.id)}
@@ -4304,10 +4342,10 @@ export default function ClientPortalPage() {
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving...
                 </>
+              ) : isReferenceSidebarClient ? (
+                `Save & confirm ${member.isPrimary ? "my" : "member"} details`
               ) : (
-                isReferenceSidebarClient
-                  ? `Save & confirm ${member.isPrimary ? "my" : "member"} details`
-                  : `${member.isPrimary ? "Save & Confirm My Details" : "Save & Confirm Member Details"}`
+                `${member.isPrimary ? "Save & Confirm My Details" : "Save & Confirm Member Details"}`
               )}
             </Button>
           </div>
@@ -4366,19 +4404,23 @@ export default function ClientPortalPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                  <span className={cn(
+                <span
+                  className={cn(
                     "truncate text-sm font-semibold text-slate-800",
                     isReferenceSidebarClient && "text-[11px]",
-                  )}>
+                  )}
+                >
                   {member.formData.name ||
                     (member.isPrimary ? "Primary Member" : "Unnamed Member")}
                 </span>
                 {member.isPrimary && (
-                  <Badge className={cn(
-                    "bg-[#166FB5]/10 text-[#166FB5] border-[#166FB5]/20 text-[10px] h-5 px-1.5",
-                    isReferenceSidebarClient &&
-                      "h-auto border-0 bg-transparent px-0 text-[10px] font-medium text-[#166FB5]",
-                  )}>
+                  <Badge
+                    className={cn(
+                      "bg-[#166FB5]/10 text-[#166FB5] border-[#166FB5]/20 text-[10px] h-5 px-1.5",
+                      isReferenceSidebarClient &&
+                        "h-auto border-0 bg-transparent px-0 text-[10px] font-medium text-[#166FB5]",
+                    )}
+                  >
                     Primary
                   </Badge>
                 )}
@@ -4387,19 +4429,23 @@ export default function ClientPortalPage() {
                 {member.cid &&
                   member.cid !== "pending" &&
                   member.cid !== "draft" && (
-                    <span className={cn(
-                      "text-[11px] font-mono text-[#166FB5]/70 bg-blue-50/50 px-1.5 rounded border border-blue-100/30",
-                      isReferenceSidebarClient &&
-                        "border-0 bg-transparent px-0 text-[10px] text-slate-600",
-                    )}>
+                    <span
+                      className={cn(
+                        "text-[11px] font-mono text-[#166FB5]/70 bg-blue-50/50 px-1.5 rounded border border-blue-100/30",
+                        isReferenceSidebarClient &&
+                          "border-0 bg-transparent px-0 text-[10px] text-slate-600",
+                      )}
+                    >
                       Client ID: {member.cid}
                     </span>
                   )}
                 {member.formData.email && (
-                  <span className={cn(
-                    "text-[11px] text-slate-400 truncate",
-                    isReferenceSidebarClient && "text-[10px] text-slate-700",
-                  )}>
+                  <span
+                    className={cn(
+                      "text-[11px] text-slate-400 truncate",
+                      isReferenceSidebarClient && "text-[10px] text-slate-700",
+                    )}
+                  >
                     {member.formData.email}
                   </span>
                 )}
@@ -4485,18 +4531,18 @@ export default function ClientPortalPage() {
         )}
       >
         {!isReferenceSidebarClient && (
-        <div className="flex justify-between items-center mb-4 pl-1">
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Client Portal
-          </h2>
-          {/* Mobile Close Button */}
-          <button
-            onClick={() => setMobileSidebarOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-slate-600 p-1"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          <div className="flex justify-between items-center mb-4 pl-1">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Client Portal
+            </h2>
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setMobileSidebarOpen(false)}
+              className="lg:hidden text-slate-400 hover:text-slate-600 p-1"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         )}
 
         {/* User Identity Card - Simple & Professional */}
@@ -4509,9 +4555,11 @@ export default function ClientPortalPage() {
               )}
             >
               <span className="font-bold text-sm">
-                {user?.displayName?.trim()
-                  ? user.displayName.trim().charAt(0).toUpperCase()
-                  : <User className="w-5 h-5" />}
+                {user?.displayName?.trim() ? (
+                  user.displayName.trim().charAt(0).toUpperCase()
+                ) : (
+                  <User className="w-5 h-5" />
+                )}
               </span>
             </div>
             {!isReferenceSidebarClient && (
@@ -4612,9 +4660,7 @@ export default function ClientPortalPage() {
               }
             >
               <div className="flex items-center gap-2 text-slate-600 group-hover:text-[#166FB5] transition-colors">
-                {!isReferenceSidebarClient && (
-                  <FileText className="h-4 w-4" />
-                )}
+                {!isReferenceSidebarClient && <FileText className="h-4 w-4" />}
                 <span
                   className={cn(
                     "text-sm font-bold",
@@ -4629,12 +4675,14 @@ export default function ClientPortalPage() {
                   </span>
                 )}
               </div>
-              {!isReferenceSidebarClient && <ChevronDown
-                className={cn(
-                  "h-3 w-3 text-slate-400 transition-transform",
-                  showInquiriesList && "rotate-180",
-                )}
-              />}
+              {!isReferenceSidebarClient && (
+                <ChevronDown
+                  className={cn(
+                    "h-3 w-3 text-slate-400 transition-transform",
+                    showInquiriesList && "rotate-180",
+                  )}
+                />
+              )}
             </div>
 
             {showInquiriesList && (
@@ -4694,11 +4742,11 @@ export default function ClientPortalPage() {
                                 ? "bg-emerald-100/70 text-emerald-700"
                                 : inq.status === "Approved Client"
                                   ? "bg-[#E3F5EC] text-emerald-800"
-                                : inq.status === "Pending"
-                                  ? "bg-[#FFF1D6] text-amber-800"
-                                : inq.status === "In Progress"
-                                  ? "bg-[#F6E6D9] text-[#713B19]"
-                                : "bg-slate-100 text-slate-600",
+                                  : inq.status === "Pending"
+                                    ? "bg-[#FFF1D6] text-amber-800"
+                                    : inq.status === "In Progress"
+                                      ? "bg-[#F6E6D9] text-[#713B19]"
+                                      : "bg-slate-100 text-slate-600",
                             )}
                           >
                             {inq.status === "Approved" && (
@@ -4752,9 +4800,7 @@ export default function ClientPortalPage() {
           }
         >
           <div className="flex items-center gap-2 text-slate-600 group-hover:text-[#166FB5] transition-colors">
-            {!isReferenceSidebarClient && (
-              <FolderOpen className="h-4 w-4" />
-            )}
+            {!isReferenceSidebarClient && <FolderOpen className="h-4 w-4" />}
             <span className="text-sm font-medium">
               {isReferenceSidebarClient ? "Projects" : "My Projects"}
             </span>
@@ -4764,12 +4810,14 @@ export default function ClientPortalPage() {
               </span>
             )}
           </div>
-          {!isReferenceSidebarClient && <ChevronDown
-            className={cn(
-              "h-3 w-3 text-slate-400 transition-transform",
-              showProjectsList && "rotate-180",
-            )}
-          />}
+          {!isReferenceSidebarClient && (
+            <ChevronDown
+              className={cn(
+                "h-3 w-3 text-slate-400 transition-transform",
+                showProjectsList && "rotate-180",
+              )}
+            />
+          )}
         </div>
 
         {showProjectsList && (
@@ -4838,10 +4886,10 @@ export default function ClientPortalPage() {
                           ? "bg-white border-[#8DB9E3] shadow-sm"
                           : "bg-white border-slate-200 hover:border-[#8DB9E3]"
                         : isSelected
-                        ? "bg-blue-50/50 border-[#166FB5] shadow-sm"
-                        : isLinkedToCurrentInquiry
-                          ? "bg-amber-50/60 border-amber-300 shadow-sm"
-                          : "bg-white border-slate-200 hover:border-blue-200 hover:shadow-sm",
+                          ? "bg-blue-50/50 border-[#166FB5] shadow-sm"
+                          : isLinkedToCurrentInquiry
+                            ? "bg-amber-50/60 border-amber-300 shadow-sm"
+                            : "bg-white border-slate-200 hover:border-blue-200 hover:shadow-sm",
                     )}
                   >
                     {/* Project Header */}
@@ -5038,12 +5086,12 @@ export default function ClientPortalPage() {
                                       />
                                     ) : (
                                       <FileText
-                                      className={cn(
-                                        "h-3 w-3 flex-shrink-0",
-                                        isActive
-                                          ? "text-orange-600"
-                                          : "text-orange-500",
-                                      )}
+                                        className={cn(
+                                          "h-3 w-3 flex-shrink-0",
+                                          isActive
+                                            ? "text-orange-600"
+                                            : "text-orange-500",
+                                        )}
                                       />
                                     )}
                                     <span
@@ -5325,8 +5373,7 @@ export default function ClientPortalPage() {
           <div
             className={cn(
               "px-4 py-4 border-t border-slate-100 bg-slate-50/60",
-              isReferenceSidebarClient &&
-                "border-slate-200 bg-white px-3 py-3",
+              isReferenceSidebarClient && "border-slate-200 bg-white px-3 py-3",
             )}
           >
             <button
@@ -5436,1835 +5483,646 @@ export default function ClientPortalPage() {
         >
           <div className="flex min-h-full flex-col lg:flex-row">
             <div className="order-2 min-w-0 flex-1 lg:order-1">
-          {isReferenceSidebarClient && (
-            <ClientWorkflowTimeline
-              steps={clientWorkflowSteps}
-              loading={
-                !currentInquiry ||
-                loadingQuotations ||
-                Boolean(
-                  workflowProjectPid &&
-                    projectDocuments.get(workflowProjectPid)?.loading,
-                )
-              }
-            />
-          )}
-          {projectDetails ? (
-            <div
-              className={cn(
-                "p-3 lg:p-4 max-w-5xl mx-auto space-y-3",
-                isReferenceSidebarClient &&
-                  "max-w-4xl space-y-3 rounded-xl p-4 lg:p-4",
+              {isReferenceSidebarClient && (
+                <ClientWorkflowTimeline
+                  steps={clientWorkflowSteps}
+                  loading={
+                    !currentInquiry ||
+                    loadingQuotations ||
+                    Boolean(
+                      workflowProjectPid &&
+                        projectDocuments.get(workflowProjectPid)?.loading,
+                    )
+                  }
+                />
               )}
-            >
-              {/* Draft/Pending/Approved status banner */}
-              {(projectDetails?.isDraft ||
-                projectDetails?.status === "Ongoing" ||
-                projectDetails?.status === "Pending Approval" ||
-                projectDetails?.status === "Rejected" ||
-                projectDetails?.status === "Returned for Revision") && (
+              {projectDetails ? (
                 <div
-                  className={isReferenceSidebarClient &&
-                    projectDetails.status === "Draft"
-                    ? "rounded-lg border border-amber-300 bg-amber-50 p-3"
-                    : `rounded-lg p-3 border ${
-                    projectDetails.status === "Draft"
-                      ? "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200"
-                      : projectDetails.status === "Pending Approval"
-                        ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
-                        : projectDetails.status === "Ongoing"
-                          ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
-                          : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200"
-                  }`}
+                  className={cn(
+                    "p-3 lg:p-4 max-w-5xl mx-auto space-y-3",
+                    isReferenceSidebarClient &&
+                      "max-w-4xl space-y-3 rounded-xl p-4 lg:p-4",
+                  )}
                 >
-                  <div className="flex items-start">
-                    {isReferenceSidebarClient &&
-                      projectDetails.status === "Draft" && (
-                        <AlertCircle className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-amber-800" />
-                      )}
-                    <div className="flex-1 space-y-1">
-                      {projectDetails.status === "Draft" ? (
-                        <>
-                          <p className={cn(
-                            "text-xs font-semibold text-orange-900 leading-none",
-                            isReferenceSidebarClient && "text-[10px]",
-                          )}>
-                            {isReferenceSidebarClient
-                              ? "Action required: complete your project submission"
-                              : "Action Required: Complete Project Submission"}
-                          </p>
-                          <p className={cn(
-                            "text-xs text-orange-700 leading-relaxed",
-                            isReferenceSidebarClient && "text-[9px]",
-                          )}>
-                            {isReferenceSidebarClient ? (
-                              <>
-                                Add your details as the{" "}
-                                <strong>Primary Member</strong>, then select{" "}
-                              </>
-                            ) : members.some(
-                                (m) => m.isPrimary && !m.isSubmitted,
-                              ) ? (
-                              <>
-                                Please provide your details as the{" "}
-                                <strong>Primary Member</strong>.{" "}
-                              </>
-                            ) : (
-                              <>
-                                If you have additional team members, please add
-                                them now.{" "}
-                              </>
-                            )}
-                            {isReferenceSidebarClient
-                              ? ""
-                              : 'Once finished, scroll to the bottom and click "'}
-                            <strong>Submit Project & Team for Approval</strong>
-                            {isReferenceSidebarClient
-                              ? " to send your application for admin review. Once approved, you'll receive a Project ID and Client ID."
-                              : '" to send your application for admin review. After'}
-                            {!isReferenceSidebarClient && (
-                              <>
-                                approval, you will be assigned a{" "}
-                            <strong>Project ID</strong> and{" "}
-                            <strong>Client ID</strong>.
-                              </>
-                            )}
-                          </p>
-                        </>
-                      ) : projectDetails.status === "Pending Approval" ? (
-                        <>
-                          <p className="text-xs font-semibold text-blue-900 leading-none">
-                            Application Submitted & Under Review
-                          </p>
-                          <p className="text-xs text-blue-700 leading-relaxed">
-                            Your project and team details have been successfully
-                            submitted. Our team is currently reviewing your
-                            application. Please check this portal dashboard for
-                            your <strong>Project ID</strong>,{" "}
-                            <strong>Client ID</strong>, and approval
-                            notification.{" "}
-                            <strong>
-                              No further action is required at this time.
-                            </strong>
-                          </p>
-                        </>
-                      ) : projectDetails.status === "Ongoing" ? (
-                        <>
-                          <p className="text-xs font-semibold text-green-900 leading-none">
-                            Project Approved
-                          </p>
-                          <p className="text-xs text-green-700 leading-relaxed">
-                            Your project has been approved and is now active.
-                            You can now view your unique{" "}
-                            <strong>Project ID</strong> and{" "}
-                            <strong>Client IDs</strong>, and access all project
-                            documents below.
-                          </p>
-                        </>
-                      ) : projectDetails.status === "Returned for Revision" ? (
-                        <>
-                          <p className="text-xs font-semibold text-red-900 leading-none">
-                            Project Cancelled
-                          </p>
-                          <p className="text-xs text-red-700 leading-relaxed">
-                            Your project submission was not approved for the
-                            following reason:{" "}
-                            <strong>
-                              &ldquo;
-                              {projectRequest?.rejectionReason ||
-                                "No reason provided. Please contact the administrator for details."}
-                              &rdquo;
-                            </strong>{" "}
-                            Please update your information and resubmit.
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-xs font-semibold text-red-900 leading-none">
-                            Project Rejected
-                          </p>
-                          <p className="text-xs text-red-700 leading-relaxed">
-                            Your project submission was not approved. Please
-                            check your email or the feedback section for details
-                            on necessary corrections before resubmitting.
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Project Header ────────────────────────── */}
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2"></div>
-
-              {/* ── Project Information (collapsible) ────────────── */}
-              {(() => {
-                const canEditProjectInfo =
-                  !!projectDetails?.isDraft &&
-                  (projectDetails?.status === "Draft" ||
-                    projectDetails?.status === "Rejected");
-                return (
-                  <div
-                    className={cn(
-                      "border border-slate-100 rounded-2xl bg-white shadow-sm overflow-hidden",
-                      isReferenceSidebarClient &&
-                        "rounded-xl border-slate-200 shadow-none",
-                    )}
-                  >
-                    {/* Header row — use a div to allow an Edit button alongside the toggle */}
+                  {/* Draft/Pending/Approved status banner */}
+                  {(projectDetails?.isDraft ||
+                    projectDetails?.status === "Ongoing" ||
+                    projectDetails?.status === "Pending Approval" ||
+                    projectDetails?.status === "Rejected" ||
+                    projectDetails?.status === "Returned for Revision") && (
                     <div
-                      className={cn(
-                        "flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer select-none",
-                        isReferenceSidebarClient && "px-4 py-3",
-                      )}
-                      onClick={() => setIsProjectInfoExpanded((prev) => !prev)}
-                      role="button"
-                      aria-expanded={isProjectInfoExpanded}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FolderOpen
-                          className={cn(
-                            "h-4 w-4 text-blue-600 flex-shrink-0",
-                            isReferenceSidebarClient && "h-4 w-4 text-slate-600",
-                          )}
-                        />
-                        <div className="flex flex-col min-w-0">
-                          {isReferenceSidebarClient && (
-                            <span className="text-[8px] font-medium uppercase tracking-wide text-slate-500">
-                              Project
-                            </span>
-                          )}
-                          <span className={cn(
-                            "text-sm font-semibold text-slate-800 truncate",
-                            isReferenceSidebarClient && "text-xs",
-                          )}>
-                            {projectDetails.title || "Project Information"}
-                          </span>
-                          {projectDetails.pid &&
-                            projectDetails.status !== "Draft" &&
-                            projectDetails.status !== "Pending Approval" && (
-                              <span className={cn(
-                                "text-[11px] font-mono text-[#166FB5]/70 bg-blue-50/50 px-1.5 rounded border border-blue-100/30 w-fit",
-                                isReferenceSidebarClient &&
-                                  "border-0 bg-transparent px-0 text-[10px] text-slate-700",
-                              )}>
-                                Project ID: {projectDetails.pid}
-                              </span>
-                            )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {canEditProjectInfo &&
-                          isProjectInfoExpanded &&
-                          !isProjectInfoEditing && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStartEditProjectInfo();
-                              }}
-                              className="p-1 rounded hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600"
-                              title="Edit project information"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        {isReferenceSidebarClient &&
-                          !isProjectInfoExpanded && (
-                            <span className="mr-1 text-[9px] font-medium text-slate-700">
-                              View details
-                            </span>
-                          )}
-                        <ChevronDown
-                          className={cn(
-                            "h-4 w-4 text-slate-400 transition-transform duration-200",
-                            isProjectInfoExpanded && "rotate-180",
-                          )}
-                        />
-                      </div>
-                    </div>
-
-                    {isProjectInfoExpanded && (
-                      <div
-                        className={cn(
-                          "px-4 pb-4 pt-3 border-t border-slate-100",
-                          isReferenceSidebarClient && "px-5 pb-5 pt-4",
-                        )}
-                      >
-                        {isProjectInfoEditing ? (
-                          /* ── Edit mode ─────────────────────────── */
-                          <div className="space-y-3">
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
-                                Project Title
-                              </Label>
-                              <Input
-                                value={projectInfoForm.title}
-                                onChange={(e) =>
-                                  setProjectInfoForm((prev) => ({
-                                    ...prev,
-                                    title: e.target.value,
-                                  }))
-                                }
-                                className="h-8 text-xs"
-                                placeholder="Enter project title"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
-                                Project Lead
-                              </Label>
-                              <Input
-                                value={projectInfoForm.lead}
-                                onChange={(e) =>
-                                  setProjectInfoForm((prev) => ({
-                                    ...prev,
-                                    lead: e.target.value,
-                                  }))
-                                }
-                                className="h-8 text-xs"
-                                placeholder="Enter project lead name"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
-                                Start Date
-                              </Label>
-                              <Input
-                                type="date"
-                                value={projectInfoForm.startDate}
-                                onChange={(e) =>
-                                  setProjectInfoForm((prev) => ({
-                                    ...prev,
-                                    startDate: e.target.value,
-                                  }))
-                                }
-                                className="h-8 text-xs"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
-                                Sending Institution
-                              </Label>
-                              <Select
-                                value={projectInfoForm.sendingInstitution}
-                                onValueChange={(val) =>
-                                  setProjectInfoForm((prev) => ({
-                                    ...prev,
-                                    sendingInstitution: val,
-                                  }))
-                                }
-                              >
-                                <SelectTrigger className="h-8 text-xs">
-                                  <SelectValue placeholder="Select sending institution" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {SENDING_INSTITUTIONS.map((inst) => (
-                                    <SelectItem
-                                      key={inst}
-                                      value={inst}
-                                      className="text-xs"
-                                    >
-                                      {inst}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
-                                Funding Institution
-                              </Label>
-                              <Input
-                                value={projectInfoForm.fundingInstitution}
-                                onChange={(e) =>
-                                  setProjectInfoForm((prev) => ({
-                                    ...prev,
-                                    fundingInstitution: e.target.value,
-                                  }))
-                                }
-                                className="h-8 text-xs"
-                                placeholder="Enter funding institution"
-                              />
-                            </div>
-                            <div className="flex items-center gap-2 pt-1">
-                              <Button
-                                size="sm"
-                                onClick={handleSaveProjectInfo}
-                                disabled={isSavingProjectInfo}
-                                className="h-7 text-xs gap-1"
-                              >
-                                {isSavingProjectInfo ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <Save className="h-3 w-3" />
-                                )}
-                                Save
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setIsProjectInfoEditing(false)}
-                                disabled={isSavingProjectInfo}
-                                className="h-7 text-xs"
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          /* ── Read-only view ──────────────────────── */
-                          <div
-                            className={cn(
-                              "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3",
-                              isReferenceSidebarClient &&
-                                "grid-cols-2 gap-x-4 gap-y-4",
-                            )}
-                          >
-                            <div className={cn(
-                              "flex items-start gap-2",
-                              isReferenceSidebarClient && "gap-0",
-                            )}>
-                              <User className={cn(
-                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
-                                isReferenceSidebarClient && "hidden",
-                              )} />
-                              <div>
-                                <p className={cn(
-                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
-                                  isReferenceSidebarClient &&
-                                    "text-[11px] normal-case tracking-normal text-slate-700",
-                                )}>
-                                  Project Lead
-                                </p>
-                                <p className={cn(
-                                  "text-xs text-slate-700 font-medium",
-                                  isReferenceSidebarClient && "text-[11px] text-slate-900",
-                                )}>
-                                  {projectDetails.lead || "—"}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className={cn(
-                              "flex items-start gap-2",
-                              isReferenceSidebarClient && "gap-0",
-                            )}>
-                              <ShieldCheck className={cn(
-                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
-                                isReferenceSidebarClient && "hidden",
-                              )} />
-                              <div>
-                                <p className={cn(
-                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
-                                  isReferenceSidebarClient &&
-                                    "text-[11px] normal-case tracking-normal text-slate-700",
-                                )}>
-                                  Status
-                                </p>
-                                <p
-                                  className={cn(
-                                    "text-xs text-slate-700 font-medium",
-                                    isReferenceSidebarClient &&
-                                      projectDetails.status === "Cancelled" &&
-                                      "text-red-700",
-                                  )}
-                                >
-                                  {isReferenceSidebarClient &&
-                                    projectDetails.status === "Cancelled" && (
-                                      <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-red-600 align-middle" />
-                                    )}
-                                  {projectDetails.status || "—"}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className={cn(
-                              "flex items-start gap-2",
-                              isReferenceSidebarClient && "gap-0",
-                            )}>
-                              <Calendar className={cn(
-                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
-                                isReferenceSidebarClient && "hidden",
-                              )} />
-                              <div>
-                                <p className={cn(
-                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
-                                  isReferenceSidebarClient &&
-                                    "text-[11px] normal-case tracking-normal text-slate-700",
-                                )}>
-                                  Start Date
-                                </p>
-                                <p className={cn(
-                                  "text-xs text-slate-700 font-medium",
-                                  isReferenceSidebarClient && "text-[11px] text-slate-900",
-                                )}>
-                                  {projectDetails.startDate
-                                    ? (() => {
-                                        try {
-                                          const d =
-                                            projectDetails.startDate instanceof
-                                            Date
-                                              ? projectDetails.startDate
-                                              : new Date(
-                                                  projectDetails.startDate as string,
-                                                );
-                                          return isNaN(d.getTime())
-                                            ? "—"
-                                            : format(d, "MMM d, yyyy");
-                                        } catch {
-                                          return "—";
-                                        }
-                                      })()
-                                    : "—"}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className={cn(
-                              "flex items-start gap-2",
-                              isReferenceSidebarClient && "gap-0",
-                            )}>
-                              <Building2 className={cn(
-                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
-                                isReferenceSidebarClient && "hidden",
-                              )} />
-                              <div>
-                                <p className={cn(
-                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
-                                  isReferenceSidebarClient &&
-                                    "text-[11px] normal-case tracking-normal text-slate-700",
-                                )}>
-                                  Sending Institution
-                                </p>
-                                <p className={cn(
-                                  "text-xs text-slate-700 font-medium",
-                                  isReferenceSidebarClient && "text-[11px] text-slate-900",
-                                )}>
-                                  {projectDetails.sendingInstitution || "—"}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className={cn(
-                              "flex items-start gap-2",
-                              isReferenceSidebarClient && "gap-0",
-                            )}>
-                              <Briefcase className={cn(
-                                "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
-                                isReferenceSidebarClient && "hidden",
-                              )} />
-                              <div>
-                                <p className={cn(
-                                  "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
-                                  isReferenceSidebarClient &&
-                                    "text-[11px] normal-case tracking-normal text-slate-700",
-                                )}>
-                                  Funding Institution
-                                </p>
-                                <p className={cn(
-                                  "text-xs text-slate-700 font-medium",
-                                  isReferenceSidebarClient && "text-[11px] text-slate-900",
-                                )}>
-                                  {projectDetails.fundingInstitution || "—"}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* ── Request Progress Timeline ──────────────────── */}
-              {portalFeatures.requestProgressTimeline &&
-                !isReferenceSidebarClient && (
-                <Card className="border border-slate-100 shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">
-                          Request Progress
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          Track the current stage of your request from inquiry
-                          to delivery.
-                        </p>
-                      </div>
-                      {selectedProjectPid &&
-                        projectDocuments.get(selectedProjectPid)?.loading && (
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            <span>Loading documents</span>
-                          </div>
-                        )}
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      {timelineSteps.map((step) => (
-                        <div key={step.key} className="flex items-start gap-3">
-                          <div className="mt-0.5">
-                            {step.state === "complete" ? (
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                            ) : step.state === "current" ? (
-                              <Clock className="h-4 w-4 text-blue-500" />
-                            ) : (
-                              <span className="h-4 w-4 rounded-full border border-slate-300 block" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-semibold text-slate-700">
-                                {step.label}
-                              </p>
-                              {step.state === "current" && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                                  In progress
-                                </span>
-                              )}
-                              {step.state === "complete" && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                  Completed
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              {step.detail}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              <div
-                className={cn(
-                  "space-y-2",
-                  isReferenceSidebarClient &&
-                    "-mx-4 space-y-3 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm",
-                )}
-              >
-                {/* Section header */}
-                <div className={cn(
-                  "flex items-center justify-between gap-2 flex-wrap",
-                  isReferenceSidebarClient &&
-                    "border-b border-slate-100 pb-3",
-                )}>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        "p-1.5 bg-[#166FB5]/10 rounded-lg",
-                        isReferenceSidebarClient && "hidden",
-                      )}
-                    >
-                      <Users className="h-4 w-4 text-[#166FB5]" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-bold text-slate-800 leading-tight">
-                        Team Members
-                      </h2>
-                      <p
-                        className={cn(
-                          "text-[10px] text-slate-400 uppercase tracking-wider font-semibold",
-                          isReferenceSidebarClient &&
-                            "mt-1 flex items-center gap-2 text-[9px] font-normal normal-case tracking-normal text-slate-600",
-                        )}
-                      >
-                        {isReferenceSidebarClient ? (
-                          <>
-                            <span
-                              role="progressbar"
-                              aria-label="Saved team members"
-                              aria-valuemin={0}
-                              aria-valuemax={members.length}
-                              aria-valuenow={savedMemberCount}
-                              className="h-1 w-[72px] overflow-hidden rounded-full bg-slate-200"
-                            >
-                              <span
-                                className="block h-full rounded-full bg-blue-700 transition-[width]"
-                                style={{
-                                  width: `${members.length
-                                    ? (savedMemberCount / members.length) * 100
-                                    : 0}%`,
-                                }}
-                              />
-                            </span>
-                            <span>{savedMemberCount} of {members.length} saved</span>
-                          </>
-                        ) : (
-                          <>
-                            <strong>{savedMemberCount}</strong>{" "}
-                            / <strong>{members.length}</strong> Saved
-                          </>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {/* Add Member button (for all projects) */}
-                    <Button
-                      onClick={handleAddMember}
-                      variant="outline"
-                      size="sm"
-                      disabled={
-                        projectDetails?.status === "Completed" ||
-                        approvalStatus === "pending" ||
-                        projectDetails?.status === "Pending Approval"
-                      }
-                      className={cn(
-                        "border-[#166FB5] text-[#166FB5] hover:bg-[#166FB5] hover:text-white disabled:opacity-50",
+                      className={
                         isReferenceSidebarClient &&
-                          "h-8 rounded-lg px-3 text-[10px] hover:bg-[#166FB5] hover:text-white",
-                      )}
+                        projectDetails.status === "Draft"
+                          ? "rounded-lg border border-amber-300 bg-amber-50 p-3"
+                          : `rounded-lg p-3 border ${
+                              projectDetails.status === "Draft"
+                                ? "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200"
+                                : projectDetails.status === "Pending Approval"
+                                  ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+                                  : projectDetails.status === "Ongoing"
+                                    ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+                                    : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200"
+                            }`
+                      }
                     >
-                      <Plus className="h-4 w-4 mr-1" />
-                      New Member
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Primary member */}
-                {primaryMember && (
-                  <div className="space-y-1.5">
-                    {!isReferenceSidebarClient && (
-                      <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                        Primary Member
-                      </h3>
-                    )}
-                    {renderMemberCard(primaryMember)}
-                  </div>
-                )}
-
-                {/* Other members */}
-                {otherMembers.length > 0 && (
-                  <div className="space-y-1.5">
-                    <h3 className={cn(
-                      "px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400",
-                      isReferenceSidebarClient &&
-                        "text-[11px] normal-case tracking-normal text-slate-800",
-                    )}>
-                      Other Members ({otherMembers.length})
-                    </h3>
-                    <div className="space-y-1.5">
-                      {otherMembers.map((member) => renderMemberCard(member))}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Approval Banners (REMOVED) ────────────────────── */}
-
-                {approvalStatus === "rejected" && (
-                  <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl p-5">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-red-100 rounded-lg">
-                        <XCircle className="h-5 w-5 text-red-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-red-800">
-                          Submission Rejected
-                        </h4>
-                        <p className="text-sm text-red-700 mt-1">
-                          Please review and update the member information, then
-                          resubmit.
-                        </p>
-                        {approvalStatusData.reviewNotes && (
-                          <div className="bg-white/70 rounded-lg p-3 mt-2 border border-red-200">
-                            <p className="text-sm font-semibold text-red-800 mb-1">
-                              Reason for Rejection:
-                            </p>
-                            <p className="text-sm text-red-700">
-                              {approvalStatusData.reviewNotes}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Submit for Approval Button ─────────── */}
-                {projectDetails?.status !== "Completed" &&
-                  projectDetails?.status !== "Pending Approval" && // Hide if main project is pending
-                  approvalStatus !== "pending" &&
-                  (projectDetails?.isDraft ||
-                    members.some((m) => m.isDraft && !m.isPrimary)) && (
-                    <div className={cn(
-                      "pt-6 border-t-2 border-slate-200",
-                      isReferenceSidebarClient &&
-                        "sticky bottom-0 z-10 -mx-4 -mb-4 rounded-b-xl border-t border-slate-200 bg-white p-2",
-                    )}>
-                      <div className={cn(
-                        "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4",
-                        isReferenceSidebarClient && "gap-2",
-                      )}>
-                        <div className={cn(
-                          "text-sm text-slate-500",
-                          isReferenceSidebarClient && "text-[9px]",
-                        )}>
-                          {members.some((m) => !m.isSubmitted) ? (
-                            <span className={cn(
-                              "text-[#B9273A] font-semibold flex items-center gap-1.5",
-                              isReferenceSidebarClient && "text-amber-900",
-                            )}>
-                              <AlertCircle className={cn(
-                                "h-4 w-4",
-                                isReferenceSidebarClient && "h-3 w-3 text-amber-800",
-                              )} />
-                              {isReferenceSidebarClient
-                                ? "Save all member details to enable submission"
-                                : "Complete and save all member details to proceed"}
-                            </span>
-                          ) : projectDetails?.isDraft ? (
-                            <span className="flex items-center gap-1.5 text-blue-600 font-medium">
-                              <CheckCircle2 className="h-4 w-4" />
-                              Ready to submit project and team details
-                            </span>
+                      <div className="flex items-start">
+                        {isReferenceSidebarClient &&
+                          projectDetails.status === "Draft" && (
+                            <AlertCircle className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-amber-800" />
+                          )}
+                        <div className="flex-1 space-y-1">
+                          {projectDetails.status === "Draft" ? (
+                            <>
+                              <p
+                                className={cn(
+                                  "text-xs font-semibold text-orange-900 leading-none",
+                                  isReferenceSidebarClient && "text-[10px]",
+                                )}
+                              >
+                                {isReferenceSidebarClient
+                                  ? "Action required: complete your project submission"
+                                  : "Action Required: Complete Project Submission"}
+                              </p>
+                              <p
+                                className={cn(
+                                  "text-xs text-orange-700 leading-relaxed",
+                                  isReferenceSidebarClient && "text-[9px]",
+                                )}
+                              >
+                                {isReferenceSidebarClient ? (
+                                  <>
+                                    Add your details as the{" "}
+                                    <strong>Primary Member</strong>, then
+                                    select{" "}
+                                  </>
+                                ) : members.some(
+                                    (m) => m.isPrimary && !m.isSubmitted,
+                                  ) ? (
+                                  <>
+                                    Please provide your details as the{" "}
+                                    <strong>Primary Member</strong>.{" "}
+                                  </>
+                                ) : (
+                                  <>
+                                    If you have additional team members, please
+                                    add them now.{" "}
+                                  </>
+                                )}
+                                {isReferenceSidebarClient
+                                  ? ""
+                                  : 'Once finished, scroll to the bottom and click "'}
+                                <strong>
+                                  Submit Project & Team for Approval
+                                </strong>
+                                {isReferenceSidebarClient
+                                  ? " to send your application for admin review. Once approved, you'll receive a Project ID and Client ID."
+                                  : '" to send your application for admin review. After'}
+                                {!isReferenceSidebarClient && (
+                                  <>
+                                    approval, you will be assigned a{" "}
+                                    <strong>Project ID</strong> and{" "}
+                                    <strong>Client ID</strong>.
+                                  </>
+                                )}
+                              </p>
+                            </>
+                          ) : projectDetails.status === "Pending Approval" ? (
+                            <>
+                              <p className="text-xs font-semibold text-blue-900 leading-none">
+                                Application Submitted & Under Review
+                              </p>
+                              <p className="text-xs text-blue-700 leading-relaxed">
+                                Your project and team details have been
+                                successfully submitted. Our team is currently
+                                reviewing your application. Please check this
+                                portal dashboard for your{" "}
+                                <strong>Project ID</strong>,{" "}
+                                <strong>Client ID</strong>, and approval
+                                notification.{" "}
+                                <strong>
+                                  No further action is required at this time.
+                                </strong>
+                              </p>
+                            </>
+                          ) : projectDetails.status === "Ongoing" ? (
+                            <>
+                              <p className="text-xs font-semibold text-green-900 leading-none">
+                                Project Approved
+                              </p>
+                              <p className="text-xs text-green-700 leading-relaxed">
+                                Your project has been approved and is now
+                                active. You can now view your unique{" "}
+                                <strong>Project ID</strong> and{" "}
+                                <strong>Client IDs</strong>, and access all
+                                project documents below.
+                              </p>
+                            </>
+                          ) : projectDetails.status ===
+                            "Returned for Revision" ? (
+                            <>
+                              <p className="text-xs font-semibold text-red-900 leading-none">
+                                Project Cancelled
+                              </p>
+                              <p className="text-xs text-red-700 leading-relaxed">
+                                Your project submission was not approved for the
+                                following reason:{" "}
+                                <strong>
+                                  &ldquo;
+                                  {projectRequest?.rejectionReason ||
+                                    "No reason provided. Please contact the administrator for details."}
+                                  &rdquo;
+                                </strong>{" "}
+                                Please update your information and resubmit.
+                              </p>
+                            </>
                           ) : (
-                            "Submit your team members for admin review"
+                            <>
+                              <p className="text-xs font-semibold text-red-900 leading-none">
+                                Project Rejected
+                              </p>
+                              <p className="text-xs text-red-700 leading-relaxed">
+                                Your project submission was not approved. Please
+                                check your email or the feedback section for
+                                details on necessary corrections before
+                                resubmitting.
+                              </p>
+                            </>
                           )}
                         </div>
-                        <Button
-                          onClick={handleFinalSubmit}
-                          disabled={
-                            submitting || members.some((m) => !m.isSubmitted)
-                          }
-                          className={cn(
-                            "h-12 px-8 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-bold shadow-xl hover:shadow-2xl disabled:opacity-50 whitespace-nowrap",
-                            isReferenceSidebarClient &&
-                              "h-8 px-3 text-[9px] font-medium shadow-none disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-100",
-                            isReferenceSidebarClient &&
-                              (submitting ||
-                                members.some((m) => !m.isSubmitted)) &&
-                              "disabled:h-9 disabled:border disabled:border-slate-300 disabled:px-4 disabled:text-xs disabled:font-medium disabled:bg-none disabled:bg-slate-200 disabled:text-slate-600 disabled:shadow-none disabled:opacity-100 disabled:hover:bg-none disabled:hover:bg-slate-200",
-                          )}
-                        >
-                          <Send className={cn(
-                            "h-5 w-5 mr-2",
-                            isReferenceSidebarClient && "mr-1 h-3 w-3",
-                            isReferenceSidebarClient &&
-                              (submitting ||
-                                members.some((m) => !m.isSubmitted)) &&
-                              "disabled:mr-1.5 disabled:h-3.5 disabled:w-3.5",
-                          )} />
-                          {projectDetails?.isDraft
-                            ? "Submit Project & Team for Approval"
-                            : "Submit Team Members for Approval"}
-                        </Button>
                       </div>
                     </div>
                   )}
-              </div>
 
-              {/* ── Document Panel (shown below Team Members when a doc section is selected) ── */}
-              {selectedProjectPid &&
-                activeDocPanel &&
-                activeDocPanel.startsWith(selectedProjectPid + ":") &&
-                (() => {
-                  const panelSection = activeDocPanel
-                    .split(":")
-                    .slice(1)
-                    .join(":");
-                  const panelDocs = projectDocuments.get(selectedProjectPid);
-                  const panelChargeSlipCount =
-                    panelDocs?.chargeSlips.length || 0;
-                  const hasSettledChargeSlip =
-                    panelChargeSlipCount > 0 &&
-                    (panelDocs?.chargeSlips?.some((cs) => {
-                      const status = (cs.status ?? "").toLowerCase();
-                      return status === "paid" || status === "waived";
-                    }) ??
-                      false);
-                  const canReceiveServiceReport =
-                    Boolean(
-                      projectDetails?.allowServiceReportWithoutChargeSlip,
-                    ) || hasSettledChargeSlip;
-                  const sfParams = new URLSearchParams();
-                  if (emailParam) sfParams.set("email", emailParam);
-                  if (inquiryIdParam) sfParams.set("inquiryId", inquiryIdParam);
-                  sfParams.set("pid", selectedProjectPid);
-                  if (projectDetails?.title)
-                    sfParams.set("projectTitle", projectDetails.title);
-                  if (primaryMember?.formData?.name)
-                    sfParams.set("name", primaryMember.formData.name);
-                  if (primaryMember?.cid)
-                    sfParams.set("clientId", primaryMember.cid);
-                  const sfBaseHref = `/client/sample-form?${sfParams.toString()}`;
+                  {/* ── Project Header ────────────────────────── */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2"></div>
 
-                  const PANEL_META: Record<
-                    string,
-                    {
-                      icon: React.ReactNode;
-                      label: string;
-                      accent: string;
-                      iconBg: string;
-                    }
-                  > = {
-                    quotations: {
-                      icon: <FileText className="h-4 w-4 text-purple-600" />,
-                      label: "Quotations",
-                      accent: "text-purple-700",
-                      iconBg: "bg-purple-50",
-                    },
-                    sampleForm: {
-                      icon: <FileText className="h-4 w-4 text-orange-600" />,
-                      label: "Sample Submission Form",
-                      accent: "text-orange-700",
-                      iconBg: "bg-orange-50",
-                    },
-                    chargeSlips: {
-                      icon: (
-                        <span
-                          className={cn(
-                            "text-sm font-bold",
-                            isReferenceSidebarClient
-                              ? "text-[#08724f]"
-                              : "text-green-600",
-                          )}
-                        >
-                          ₱
-                        </span>
-                      ),
-                      label: "Charge Slips",
-                      accent: "text-green-700",
-                      iconBg: "bg-green-50",
-                    },
-                    serviceReports: {
-                      icon: (
-                        <ShieldEllipsis className="h-4 w-4 text-blue-600" />
-                      ),
-                      label: "Service Reports",
-                      accent: "text-blue-700",
-                      iconBg: "bg-blue-50",
-                    },
-                  };
-                  const meta = PANEL_META[panelSection];
-                  if (!meta) return null;
-
-                  return (
-                    <div
-                      className={cn(
-                        "bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4",
-                        isReferenceSidebarClient &&
-                          "space-y-0 overflow-hidden rounded-xl border-slate-200 p-0 shadow-sm",
-                      )}
-                    >
-                      {/* Panel header */}
+                  {/* ── Project Information (collapsible) ────────────── */}
+                  {(() => {
+                    const canEditProjectInfo =
+                      !!projectDetails?.isDraft &&
+                      (projectDetails?.status === "Draft" ||
+                        projectDetails?.status === "Rejected");
+                    return (
                       <div
                         className={cn(
-                          "flex items-center justify-between",
+                          "border border-slate-100 rounded-2xl bg-white shadow-sm overflow-hidden",
                           isReferenceSidebarClient &&
-                            "border-b border-slate-200 p-4",
+                            "rounded-xl border-slate-200 shadow-none",
                         )}
                       >
-                        <div className="flex items-center gap-3">
+                        {/* Header row — use a div to allow an Edit button alongside the toggle */}
+                        <div
+                          className={cn(
+                            "flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer select-none",
+                            isReferenceSidebarClient && "px-4 py-3",
+                          )}
+                          onClick={() =>
+                            setIsProjectInfoExpanded((prev) => !prev)
+                          }
+                          role="button"
+                          aria-expanded={isProjectInfoExpanded}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FolderOpen
+                              className={cn(
+                                "h-4 w-4 text-blue-600 flex-shrink-0",
+                                isReferenceSidebarClient &&
+                                  "h-4 w-4 text-slate-600",
+                              )}
+                            />
+                            <div className="flex flex-col min-w-0">
+                              {isReferenceSidebarClient && (
+                                <span className="text-[8px] font-medium uppercase tracking-wide text-slate-500">
+                                  Project
+                                </span>
+                              )}
+                              <span
+                                className={cn(
+                                  "text-sm font-semibold text-slate-800 truncate",
+                                  isReferenceSidebarClient && "text-xs",
+                                )}
+                              >
+                                {projectDetails.title || "Project Information"}
+                              </span>
+                              {projectDetails.pid &&
+                                projectDetails.status !== "Draft" &&
+                                projectDetails.status !==
+                                  "Pending Approval" && (
+                                  <span
+                                    className={cn(
+                                      "text-[11px] font-mono text-[#166FB5]/70 bg-blue-50/50 px-1.5 rounded border border-blue-100/30 w-fit",
+                                      isReferenceSidebarClient &&
+                                        "border-0 bg-transparent px-0 text-[10px] text-slate-700",
+                                    )}
+                                  >
+                                    Project ID: {projectDetails.pid}
+                                  </span>
+                                )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {canEditProjectInfo &&
+                              isProjectInfoExpanded &&
+                              !isProjectInfoEditing && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartEditProjectInfo();
+                                  }}
+                                  className="p-1 rounded hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600"
+                                  title="Edit project information"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            {isReferenceSidebarClient &&
+                              !isProjectInfoExpanded && (
+                                <span className="mr-1 text-[9px] font-medium text-slate-700">
+                                  View details
+                                </span>
+                              )}
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 text-slate-400 transition-transform duration-200",
+                                isProjectInfoExpanded && "rotate-180",
+                              )}
+                            />
+                          </div>
+                        </div>
+
+                        {isProjectInfoExpanded && (
                           <div
                             className={cn(
-                              "p-1.5 rounded-lg",
-                              meta.iconBg,
-                              isReferenceSidebarClient &&
-                                panelSection === "chargeSlips" &&
-                                "bg-[#d8eee4]",
-                              isReferenceSidebarClient && "rounded-xl p-2.5",
+                              "px-4 pb-4 pt-3 border-t border-slate-100",
+                              isReferenceSidebarClient && "px-5 pb-5 pt-4",
                             )}
                           >
-                            {meta.icon}
-                          </div>
-                          <div>
-                            <h2
-                              className={cn(
-                                "text-base font-bold leading-tight",
-                                meta.accent,
-                                isReferenceSidebarClient && "text-slate-900",
-                              )}
-                            >
-                              {meta.label}
-                            </h2>
-                            <p
-                              className={cn(
-                                "text-xs text-slate-400",
-                                isReferenceSidebarClient && "text-slate-500",
-                              )}
-                            >
-                              Project:{" "}
-                              {isReferenceSidebarClient ? (
-                                <span className="font-medium text-slate-700">
-                                  {projectDetails?.pid || selectedProjectPid}
-                                </span>
-                              ) : (
-                                projectDetails?.pid || selectedProjectPid
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setActiveDocPanel(null)}
-                          className={cn(
-                            "text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors",
-                            isReferenceSidebarClient &&
-                              "rounded-full p-2 hover:bg-slate-100",
-                          )}
-                          title="Close panel"
-                          aria-label={
-                            isReferenceSidebarClient
-                              ? `Close ${meta.label} panel`
-                              : undefined
-                          }
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-
-                      {/* Quotations panel */}
-                      {panelSection === "quotations" && (
-                        <div
-                          className={cn(
-                            "space-y-2",
-                            isReferenceSidebarClient &&
-                              "space-y-3 bg-slate-50 p-4",
-                          )}
-                        >
-                          {panelDocs?.loading ? (
-                            <div className="flex items-center gap-2 py-6 justify-center text-slate-400">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="text-sm">
-                                Loading quotations…
-                              </span>
-                            </div>
-                          ) : (panelDocs?.quotations.length || 0) === 0 ? (
-                            <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                              <FileText className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                              <p className="text-sm text-slate-400 italic">
-                                No quotations issued for this project yet.
-                              </p>
-                            </div>
-                          ) : (
-                            <>
-                              {isReferenceSidebarClient && (
-                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                  {panelDocs?.quotations.length}{" "}
-                                  {panelDocs?.quotations.length === 1
-                                    ? "QUOTATION"
-                                    : "QUOTATIONS"}
-                                </p>
-                              )}
-                              {panelDocs?.quotations.map((quotation) => {
-                              const qCancelled =
-                                quotation.status === "cancelled";
-                              const qTotal =
-                                typeof quotation.total === "number"
-                                  ? quotation.total
-                                  : 0;
-                              const qRawDate = quotation.dateIssued;
-                              const qIssuedDate = qRawDate
-                                ? (qRawDate as any)?.toDate
-                                  ? formatDate((qRawDate as any).toDate())
-                                  : formatDate(qRawDate as string)
-                                : null;
-                              return (
-                                <div
-                                  key={quotation.id}
-                                  className={cn(
-                                    "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex items-center justify-between gap-3 flex-wrap hover:bg-slate-50 transition-colors",
-                                    isReferenceSidebarClient &&
-                                      "relative flex-col items-stretch border-slate-200 bg-white p-4",
-                                  )}
-                                >
-                                  <div
-                                    className={cn(
-                                      "flex items-center gap-2 flex-wrap min-w-0",
-                                      isReferenceSidebarClient &&
-                                        "w-full justify-between gap-x-3 gap-y-3",
-                                    )}
-                                  >
-                                    {!isReferenceSidebarClient && (
-                                      <a
-                                        href={`/client/view-document?type=quotation&ref=${quotation.referenceNumber}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[11px] font-bold text-purple-700 border border-purple-200 bg-white rounded-md px-2 py-0.5 hover:bg-purple-50 transition-colors"
-                                      >
-                                        {quotation.referenceNumber}
-                                      </a>
-                                    )}
-                                    {isReferenceSidebarClient ? (
-                                      <div className="grid w-full grid-cols-1 items-center gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(70px,0.7fr)_minmax(140px,1.4fr)_auto] sm:gap-4">
-                                        <div className="min-w-0">
-                                          <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                            Quotation No.
-                                          </p>
-                                          <a
-                                            href={`/client/view-document?type=quotation&ref=${quotation.referenceNumber}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-violet-100 px-2.5 py-1.5 text-[11px] font-semibold text-violet-800 transition hover:bg-violet-200"
-                                          >
-                                            <FileText className="h-3.5 w-3.5 shrink-0" />
-                                            <span className="truncate">
-                                              {quotation.referenceNumber}
-                                            </span>
-                                          </a>
-                                        </div>
-                                        <div>
-                                          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                            Total
-                                          </p>
-                                          <p
-                                            className={cn(
-                                              "text-sm font-bold text-slate-900",
-                                              qCancelled && "line-through",
-                                            )}
-                                          >
-                                            ₱
-                                            {qTotal.toLocaleString("en-US", {
-                                              minimumFractionDigits: 2,
-                                            })}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                            Issued
-                                          </p>
-                                          {qIssuedDate ? (
-                                            <p className="flex items-center gap-1.5 text-sm font-medium text-slate-900">
-                                              <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                                              {qIssuedDate}
-                                            </p>
-                                          ) : (
-                                            <p className="text-sm text-slate-500">—</p>
-                                          )}
-                                        </div>
-                                        <div className="justify-self-start sm:justify-self-end">
-                                          {qCancelled ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
-                                              <XCircle className="h-3.5 w-3.5" />
-                                              Cancelled
-                                            </span>
-                                          ) : quotation.status === "selected" ||
-                                            quotation.selectedForProject ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
-                                              <CheckCircle2 className="h-3.5 w-3.5" />
-                                              Selected
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        <span className="text-xs text-slate-500">
-                                          Total:{" "}
-                                          <span className="font-semibold text-slate-700">
-                                            ₱
-                                            {qTotal.toLocaleString("en-US", {
-                                              minimumFractionDigits: 2,
-                                            })}
-                                          </span>
-                                        </span>
-                                        {qIssuedDate && (
-                                          <span className="text-xs text-slate-500">
-                                            Issued:{" "}
-                                            <span className="font-medium text-slate-600">
-                                              {qIssuedDate}
-                                            </span>
-                                          </span>
-                                        )}
-                                      </>
-                                    )}
-                                  </div>
-                                  {!isReferenceSidebarClient && (
-                                    <div
-                                      className={cn(
-                                        "flex-shrink-0",
-                                        isReferenceSidebarClient &&
-                                          "absolute right-4 top-4",
-                                      )}
-                                    >
-                                      {qCancelled ? (
-                                        <span className={cn(
-                                          "inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5",
-                                          isReferenceSidebarClient && "border-0 bg-slate-100 px-2.5 py-1 text-[11px] text-slate-700",
-                                        )}>
-                                          {isReferenceSidebarClient && (
-                                            <XCircle className="h-3 w-3" />
-                                          )}
-                                          Cancelled
-                                        </span>
-                                      ) : quotation.status === "selected" ||
-                                        quotation.selectedForProject ? (
-                                        <span className={cn(
-                                          "inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5",
-                                          isReferenceSidebarClient && "border-0 bg-emerald-100 px-2.5 py-1 text-[11px] text-emerald-800",
-                                        )}>
-                                          <CheckCircle2 className="h-3 w-3" />{" "}
-                                          Selected
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Sample Submission Form panel */}
-                      {panelSection === "sampleForm" && (
-                        <div
-                          className={cn(
-                            "space-y-4",
-                            isReferenceSidebarClient && "space-y-3 p-4",
-                          )}
-                        >
-                          <DownloadForms
-                            projectId={selectedProjectPid}
-                            referenceClientDesign={isReferenceSidebarClient}
-                          />
-                          {portalFeatures.sampleForms && (
-                            <>
-                              {!isReferenceSidebarClient && (
-                              <div className="pt-2 border-t border-slate-100">
-                                <a
-                                  href={sfBaseHref}
-                                  className="inline-flex items-center gap-2 text-sm text-[#166FB5] hover:underline font-semibold"
-                                >
-                                  <Plus className="h-4 w-4" /> Fill out Sample
-                                  Submission Form
-                                </a>
-                              </div>
-                              )}
-                              {(panelDocs?.sampleForms?.length || 0) > 0 && (
-                                <div
-                                  className={cn(
-                                    "space-y-2",
-                                    isReferenceSidebarClient && "space-y-3 p-4",
-                                  )}
-                                >
-                                  <p
-                                    className={cn(
-                                      "text-[10px] font-bold text-slate-400 uppercase tracking-wider",
-                                      isReferenceSidebarClient &&
-                                        "text-xs normal-case tracking-normal text-slate-700",
-                                    )}
-                                  >
-                                    Submitted Forms
-                                  </p>
-                                  {panelDocs?.sampleForms.map((item) => (
-                                    <a
-                                      key={item.id}
-                                      href={`${sfBaseHref}&formId=${item.id}`}
-                                      className={cn(
-                                        "flex items-center gap-2 text-sm text-slate-600 hover:text-orange-600 hover:underline py-1.5 px-3 rounded-lg hover:bg-orange-50 transition-colors",
-                                        isReferenceSidebarClient &&
-                                          "rounded-xl border border-slate-200 bg-white p-3",
-                                      )}
-                                    >
-                                      <FileSpreadsheet className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                                      {item.id} —{" "}
-                                      {item.totalNumberOfSamples || 0} samples
-                                    </a>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Charge Slips panel */}
-                      {panelSection === "chargeSlips" && (
-                        <div
-                          className={cn(
-                            "space-y-3",
-                            isReferenceSidebarClient && "space-y-3 bg-slate-50 p-4",
-                          )}
-                        >
-                          {panelDocs?.loading ? (
-                            <div className="flex items-center gap-2 py-6 justify-center text-slate-400">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="text-sm">
-                                Loading charge slips…
-                              </span>
-                            </div>
-                          ) : (panelDocs?.chargeSlips.length || 0) === 0 ? (
-                            <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                              <Receipt className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                              <p className="text-sm text-slate-400 italic">
-                                No charge slips issued for this project yet.
-                              </p>
-                            </div>
-                          ) : (
-                            <>
-                              {isReferenceSidebarClient && (
-                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                  {panelDocs?.chargeSlips.length}{" "}
-                                  {panelDocs?.chargeSlips.length === 1
-                                    ? "charge slip"
-                                    : "charge slips"}
-                                </p>
-                              )}
-                              {panelDocs?.chargeSlips.map((chargeSlip) => {
-                              const csPaid = chargeSlip.status === "paid";
-                              const csCancelled =
-                                chargeSlip.status === "cancelled";
-                              const csPending = chargeSlip.status === "pending";
-                              const csWaived = chargeSlip.status === "waived";
-                              const csTotal =
-                                typeof chargeSlip.total === "number"
-                                  ? chargeSlip.total
-                                  : 0;
-                              const csRawDate = chargeSlip.dateIssued;
-                              const csIssuedDate = csRawDate
-                                ? (csRawDate as any)?.toDate
-                                  ? formatDate((csRawDate as any).toDate())
-                                  : formatDate(csRawDate as string)
-                                : null;
-                              return (
-                                <div
-                                  key={chargeSlip.id}
-                                  className={cn(
-                                    "rounded-xl border border-slate-100 bg-slate-50/50 p-4 space-y-3 hover:bg-slate-50 transition-colors",
-                                    isReferenceSidebarClient &&
-                                      "relative border-slate-200 bg-white p-4 hover:bg-slate-50",
-                                  )}
-                                >
-                                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                                    <div
-                                      className={cn(
-                                        "flex items-center gap-2 flex-wrap min-w-0",
-                                        isReferenceSidebarClient && "w-full",
-                                      )}
-                                    >
-                                      {isReferenceSidebarClient && (
-                                        <p className="w-full text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                          Charge Slip No.
-                                        </p>
-                                      )}
-                                      <a
-                                        href={`/client/view-document?type=charge-slip&ref=${chargeSlip.id}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={cn(
-                                          "flex items-center gap-1 text-[11px] font-bold text-green-700 bg-white hover:bg-green-700 hover:text-white border border-green-600 rounded-full px-2.5 py-0.5 transition-all shadow-sm",
-                                          isReferenceSidebarClient &&
-                                            "rounded-lg border-0 bg-[#d8eee4] px-3 py-2 text-sm text-[#075f45] shadow-none hover:bg-[#c8e5d7] hover:text-[#075f45]",
-                                        )}
-                                      >
-                                        {isReferenceSidebarClient && (
-                                          <FileText className="h-4 w-4 shrink-0" />
-                                        )}
-                                        {chargeSlip.chargeSlipNumber}
-                                      </a>
-                                      {isReferenceSidebarClient ? (
-                                        <div className="order-3 grid w-full grid-cols-1 gap-4 rounded-xl bg-slate-50 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] sm:gap-6">
-                                          <div>
-                                            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                              Total
-                                            </p>
-                                            <p
-                                              className={cn(
-                                                "text-base font-bold text-slate-900",
-                                                csCancelled && "line-through",
-                                              )}
-                                            >
-                                              ₱
-                                              {csTotal.toLocaleString("en-US", {
-                                                minimumFractionDigits: 2,
-                                              })}
-                                            </p>
-                                          </div>
-                                          {csIssuedDate && (
-                                            <div>
-                                              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                                                Issued
-                                              </p>
-                                              <p className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                                                {isReferenceSidebarClient && (
-                                                  <Calendar className="h-4 w-4 text-slate-500" />
-                                                )}
-                                                {csIssuedDate}
-                                              </p>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <>
-                                          <span className="text-xs text-slate-500">
-                                            Total:{" "}
-                                            <span className="font-semibold text-slate-700">
-                                              ₱
-                                              {csTotal.toLocaleString("en-US", {
-                                                minimumFractionDigits: 2,
-                                              })}
-                                            </span>
-                                          </span>
-                                          {csIssuedDate && (
-                                            <span className="text-xs text-slate-500">
-                                              Issued:{" "}
-                                              <span className="font-medium text-slate-600">
-                                                {csIssuedDate}
-                                              </span>
-                                            </span>
-                                          )}
-                                        </>
-                                      )}
-                                    </div>
-                                    <div
-                                      className={cn(
-                                        isReferenceSidebarClient &&
-                                          "absolute right-4 top-4",
-                                      )}
-                                    >
-                                      {csPaid ? (
-                                        <span className={cn(
-                                          "inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-0.5",
-                                          isReferenceSidebarClient &&
-                                            "px-2.5 py-1 text-[11px]",
-                                        )}>
-                                          <CheckCircle2 className="h-3 w-3" />{" "}
-                                          Paid
-                                        </span>
-                                      ) : csCancelled ? (
-                                        <span className={cn(
-                                          "inline-flex text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-3 py-0.5",
-                                          isReferenceSidebarClient &&
-                                            "px-2.5 py-1 text-[11px]",
-                                        )}>
-                                          {isReferenceSidebarClient && (
-                                            <XCircle className="mr-1 h-3 w-3" />
-                                          )}
-                                          Cancelled
-                                        </span>
-                                      ) : csWaived ? (
-                                        <span className={cn(
-                                          "inline-flex text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-3 py-0.5",
-                                          isReferenceSidebarClient &&
-                                            "px-2.5 py-1 text-[11px]",
-                                        )}>
-                                          Waived
-                                        </span>
-                                      ) : csPending ? (
-                                        <span className={cn(
-                                          "inline-flex text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-0.5 animate-pulse",
-                                          isReferenceSidebarClient &&
-                                            "px-2.5 py-1 text-[11px]",
-                                        )}>
-                                          Pending Validation
-                                        </span>
-                                      ) : (
-                                        <span className={cn(
-                                          "inline-flex text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-3 py-0.5",
-                                          isReferenceSidebarClient &&
-                                            "px-2.5 py-1 text-[11px]",
-                                        )}>
-                                          Processing
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <UploadReceipt
-                                    projectId={selectedProjectPid}
-                                    hasChargeSlip={true}
-                                    chargeSlipNumber={
-                                      chargeSlip.chargeSlipNumber
+                            {isProjectInfoEditing ? (
+                              /* ── Edit mode ─────────────────────────── */
+                              <div className="space-y-3">
+                                <div className="space-y-1">
+                                  <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                    Project Title
+                                  </Label>
+                                  <Input
+                                    value={projectInfoForm.title}
+                                    onChange={(e) =>
+                                      setProjectInfoForm((prev) => ({
+                                        ...prev,
+                                        title: e.target.value,
+                                      }))
                                     }
-                                    uploadAllowed={!csPaid && !csCancelled}
+                                    className="h-8 text-xs"
+                                    placeholder="Enter project title"
                                   />
                                 </div>
-                              );
-                            })}
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Service Reports panel */}
-                      {panelSection === "serviceReports" &&
-                        portalFeatures.serviceReports &&
-                        (() => {
-                          const hasServiceReports =
-                            (panelDocs?.serviceReports?.length || 0) > 0;
-                          const serviceReportCount =
-                            panelDocs?.serviceReports?.length || 0;
-                          return (
-                            <div
-                              className={cn(
-                                "space-y-2",
-                                isReferenceSidebarClient &&
-                                  "space-y-3 bg-slate-50 p-4",
-                              )}
-                            >
-                              {panelDocs?.loading ? (
-                                <div className="flex items-center gap-2 py-6 justify-center text-slate-400">
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                  <span className="text-sm">
-                                    Loading service reports…
-                                  </span>
+                                <div className="space-y-1">
+                                  <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                    Project Lead
+                                  </Label>
+                                  <Input
+                                    value={projectInfoForm.lead}
+                                    onChange={(e) =>
+                                      setProjectInfoForm((prev) => ({
+                                        ...prev,
+                                        lead: e.target.value,
+                                      }))
+                                    }
+                                    className="h-8 text-xs"
+                                    placeholder="Enter project lead name"
+                                  />
                                 </div>
-                              ) : !hasServiceReports ? (
-                                <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                  <ShieldEllipsis className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                                  <p className="text-sm text-slate-400 italic">
-                                    No service reports available yet.
-                                  </p>
+                                <div className="space-y-1">
+                                  <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                    Start Date
+                                  </Label>
+                                  <Input
+                                    type="date"
+                                    value={projectInfoForm.startDate}
+                                    onChange={(e) =>
+                                      setProjectInfoForm((prev) => ({
+                                        ...prev,
+                                        startDate: e.target.value,
+                                      }))
+                                    }
+                                    className="h-8 text-xs"
+                                  />
                                 </div>
-                              ) : (
-                                <>
-                                  {isReferenceSidebarClient && (
-                                    <p className="text-xs font-semibold text-slate-600">
-                                      {serviceReportCount} service{" "}
-                                      {serviceReportCount === 1
-                                        ? "report"
-                                        : "reports"}
-                                    </p>
-                                  )}
-                                  <div
-                                    className={cn(
-                                      "space-y-2",
-                                      isReferenceSidebarClient &&
-                                        "space-y-0 overflow-hidden rounded-xl border border-slate-200 bg-white",
-                                    )}
+                                <div className="space-y-1">
+                                  <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                    Sending Institution
+                                  </Label>
+                                  <Select
+                                    value={projectInfoForm.sendingInstitution}
+                                    onValueChange={(val) =>
+                                      setProjectInfoForm((prev) => ({
+                                        ...prev,
+                                        sendingInstitution: val,
+                                      }))
+                                    }
                                   >
-                                  {panelDocs?.serviceReports.map((item: any) => {
-                                  const isReceived = item.status === "received";
-                                  const reportUrl =
-                                    typeof item.fileUrl === "string"
-                                      ? item.fileUrl
-                                      : typeof item.downloadURL === "string"
-                                        ? item.downloadURL
-                                        : "";
-                                  const receivedDate = item.receivedAt?.toDate
-                                    ? format(
-                                        item.receivedAt.toDate(),
-                                        "MMM d, yyyy h:mm a",
-                                      )
-                                    : "";
-                                  const uploadedDate = item.uploadedAt?.toDate
-                                    ? format(
-                                        item.uploadedAt.toDate(),
-                                        "MMM d, yyyy h:mm a",
-                                      )
-                                    : "";
-                                  const reportKey = `${selectedProjectPid}:${item.id}`;
-                                  const isReceiving =
-                                    receivingReportId === reportKey;
-                                  return (
-                                    <div
-                                      key={item.id}
+                                    <SelectTrigger className="h-8 text-xs">
+                                      <SelectValue placeholder="Select sending institution" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {SENDING_INSTITUTIONS.map((inst) => (
+                                        <SelectItem
+                                          key={inst}
+                                          value={inst}
+                                          className="text-xs"
+                                        >
+                                          {inst}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                    Funding Institution
+                                  </Label>
+                                  <Input
+                                    value={projectInfoForm.fundingInstitution}
+                                    onChange={(e) =>
+                                      setProjectInfoForm((prev) => ({
+                                        ...prev,
+                                        fundingInstitution: e.target.value,
+                                      }))
+                                    }
+                                    className="h-8 text-xs"
+                                    placeholder="Enter funding institution"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2 pt-1">
+                                  <Button
+                                    size="sm"
+                                    onClick={handleSaveProjectInfo}
+                                    disabled={isSavingProjectInfo}
+                                    className="h-7 text-xs gap-1"
+                                  >
+                                    {isSavingProjectInfo ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <Save className="h-3 w-3" />
+                                    )}
+                                    Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      setIsProjectInfoEditing(false)
+                                    }
+                                    disabled={isSavingProjectInfo}
+                                    className="h-7 text-xs"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              /* ── Read-only view ──────────────────────── */
+                              <div
+                                className={cn(
+                                  "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3",
+                                  isReferenceSidebarClient &&
+                                    "grid-cols-2 gap-x-4 gap-y-4",
+                                )}
+                              >
+                                <div
+                                  className={cn(
+                                    "flex items-start gap-2",
+                                    isReferenceSidebarClient && "gap-0",
+                                  )}
+                                >
+                                  <User
+                                    className={cn(
+                                      "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                      isReferenceSidebarClient && "hidden",
+                                    )}
+                                  />
+                                  <div>
+                                    <p
                                       className={cn(
-                                        "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col gap-2 hover:bg-slate-50 transition-colors",
+                                        "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
                                         isReferenceSidebarClient &&
-                                          `rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:items-center md:gap-x-0 md:gap-y-0 ${
-                                            isReceived
-                                              ? "md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
-                                              : "md:grid-cols-3"
-                                          }`,
+                                          "text-[11px] normal-case tracking-normal text-slate-700",
                                       )}
                                     >
-                                      {/* File meta row */}
-                                      <div
-                                        className={cn(
-                                          "flex items-center gap-2 min-w-0",
-                                          isReferenceSidebarClient &&
-                                            "border-b border-slate-100 pb-3 md:border-b-0 md:pb-0 md:pr-4",
-                                        )}
-                                      >
-                                        <FileText
-                                          className={cn(
-                                            "h-4 w-4 text-blue-500 flex-shrink-0",
-                                            isReferenceSidebarClient &&
-                                              "h-10 w-10 rounded-xl bg-blue-50 p-2.5 text-blue-700",
-                                          )}
-                                        />
-                                        <div className="min-w-0 flex-1">
-                                          {isReceived &&
-                                          item.clientAccessEnabled !== false &&
-                                          reportUrl ? (
-                                            <a
-                                              href={reportUrl}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className={cn(
-                                                "text-sm text-blue-700 hover:underline truncate block",
-                                                isReferenceSidebarClient &&
-                                                  "font-semibold text-slate-900 no-underline hover:text-blue-700 hover:underline",
-                                              )}
-                                              title="Open service report"
-                                            >
-                                              {item.fileName || item.id}
-                                            </a>
-                                          ) : (
-                                            <span
-                                              className={cn(
-                                                "text-sm text-slate-600 truncate block",
-                                                isReferenceSidebarClient &&
-                                                  "font-semibold text-slate-900",
-                                              )}
-                                            >
-                                              {item.fileName || item.id}
-                                            </span>
-                                          )}
-                                          {isReferenceSidebarClient ? (
-                                            <span className="block text-xs text-slate-500">
-                                              PDF document
-                                            </span>
-                                          ) : uploadedDate ? (
-                                            <span
-                                              className={cn(
-                                                "text-[10px] font-medium text-slate-400",
-                                              )}
-                                            >
-                                              Uploaded: {uploadedDate}
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                      </div>
-
-                                      {isReferenceSidebarClient && (
-                                        <div className="hidden min-w-0 md:flex md:flex-col md:items-center md:gap-1 md:border-l md:border-slate-200 md:px-4 md:text-center">
-                                          <span className="text-sm text-slate-600">
-                                            Uploaded
-                                          </span>
-                                          <span className="truncate text-sm text-slate-900">
-                                            {uploadedDate || "—"}
-                                          </span>
-                                        </div>
+                                      Project Lead
+                                    </p>
+                                    <p
+                                      className={cn(
+                                        "text-xs text-slate-700 font-medium",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] text-slate-900",
                                       )}
-
-                                      {isReferenceSidebarClient && isReceived && (
-                                        <div className="hidden min-w-0 flex-col items-center justify-center gap-1 border-l border-slate-200 px-4 text-center md:flex">
-                                          <Badge
-                                            variant="outline"
-                                            className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800"
-                                          >
-                                            <CheckCircle2 className="h-3 w-3" />
-                                            Received
-                                          </Badge>
-                                          {receivedDate && (
-                                            <span className="text-xs text-slate-700">
-                                              {receivedDate}
-                                            </span>
-                                          )}
-                                        </div>
-                                      )}
-
-                                      <div
-                                        className={cn(
-                                          "flex items-center justify-end",
-                                          isReferenceSidebarClient &&
-                                            "flex-wrap justify-end gap-2 pt-1 md:w-full md:border-l md:border-slate-200 md:py-2 md:pl-4 md:pt-0",
-                                        )}
-                                      >
-                                        {isReceived ? (
-                                          <div
-                                            className={cn(
-                                              "flex items-center gap-2",
-                                              isReferenceSidebarClient &&
-                                                "w-full flex-col items-start gap-2 md:w-auto md:items-end",
-                                            )}
-                                          >
-                                            {isReferenceSidebarClient ? (
-                                              <div className="flex flex-col items-start gap-1 md:hidden">
-                                                <Badge
-                                                  variant="outline"
-                                                  className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800"
-                                                >
-                                                  <CheckCircle2 className="h-3 w-3" />
-                                                  Received
-                                                </Badge>
-                                                {receivedDate && (
-                                                  <span className="text-xs text-slate-700">
-                                                    {receivedDate}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <Badge
-                                                variant="outline"
-                                                className="text-xs text-green-700 border-green-200 bg-green-50 gap-1 h-6 shrink-0"
-                                              >
-                                                <CheckCircle2 className="h-3 w-3" />
-                                                Received
-                                                {receivedDate && (
-                                                  <span className="font-normal text-green-600 opacity-80">
-                                                    · {receivedDate}
-                                                  </span>
-                                                )}
-                                              </Badge>
-                                            )}
-                                            {item.clientAccessEnabled !== false &&
-                                              reportUrl && (
-                                                <a
-                                                  href={reportUrl}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className={cn(
-                                                    "inline-flex h-8 items-center gap-1 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700",
-                                                    isReferenceSidebarClient &&
-                                                      "h-10 rounded-xl border border-blue-600 bg-white px-4 font-semibold text-blue-700 hover:bg-blue-50",
-                                                  )}
-                                                >
-                                                  {isReferenceSidebarClient ? (
-                                                    <ExternalLink className="h-4 w-4" />
-                                                  ) : (
-                                                    <Download className="h-3 w-3" />
-                                                  )}
-                                                  {isReferenceSidebarClient
-                                                    ? "Open report"
-                                                    : "Open Report"}
-                                                </a>
-                                              )}
-                                          </div>
-                                        ) : !(
-                                            canReceiveServiceReport ||
-                                            Boolean(
-                                              item.skipChargeSlipRequirement,
-                                            )
-                                          ) ? (
-                                            <TooltipProvider delayDuration={100}>
-                                              <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                  <span>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="outline"
-                                                      className="h-8 text-xs px-3 gap-1 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none"
-                                                      disabled
-                                                    >
-                                                      <Download className="h-3 w-3" />{" "}
-                                                      Receive
-                                                    </Button>
-                                                  </span>
-                                                </TooltipTrigger>
-                                                <TooltipContent
-                                                  side="left"
-                                                  className="max-w-[220px] text-xs text-center"
-                                                >
-                                                  Please settle the Charge Slip
-                                                  first to receive the service
-                                                  report. The status must be Paid
-                                                  or Waived.
-                                                </TooltipContent>
-                                              </Tooltip>
-                                            </TooltipProvider>
-                                        ) : formOpenedReports.has(item.id) ? (
-                                          /* Step 2 — confirm form was submitted then unlock PDF */
-                                          <div className="flex w-full flex-col items-end gap-1">
-                                            <Button
-                                              size="sm"
-                                              className="h-8 text-xs px-3 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
-                                              disabled={isReceiving}
-                                              onClick={() =>
-                                                handleReceiveServiceReport(
-                                                  selectedProjectPid,
-                                                  item,
-                                                )
-                                              }
-                                            >
-                                              {isReceiving ? (
-                                                <Loader2 className="h-3 w-3 animate-spin" />
-                                              ) : (
-                                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                              )}
-                                              Confirm & Access Report
-                                            </Button>
-                                            <span className="text-right text-[13px] text-slate-500 italic">
-                                              Form opened — confirm to access
-                                              the file.
-                                            </span>
-                                          </div>
-                                        ) : (
-                                          /* Step 1 — prompt client to fill the Google feedback form first */
-                                          <div className="flex w-full flex-col items-end gap-1">
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              className="h-8 text-xs px-3 gap-1 border-amber-400 text-amber-700 hover:bg-amber-50"
-                                              onClick={() => {
-                                                window.open(
-                                                  "https://docs.google.com/forms/d/e/1FAIpQLSfSI8p9Bo1DvHVxA7efSsKuBzXyQ7Wi4Lxl-2jKL5SN4zkDkw/viewform",
-                                                  "_blank",
-                                                  "noopener,noreferrer",
-                                                );
-                                                setFormOpenedReports((prev) =>
-                                                  new Set(prev).add(item.id),
-                                                );
-                                              }}
-                                            >
-                                              <ArrowRight className="h-3.5 w-3.5" />
-                                              Open Feedback Form
-                                            </Button>
-                                            <span className="text-right text-[13px] font-medium text-amber-700">
-                                              Please complete the feedback
-                                              form to access this file.
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                  })}
+                                    >
+                                      {projectDetails.lead || "—"}
+                                    </p>
                                   </div>
-                                </>
-                              )}
-                            </div>
-                          );
-                        })()}
-                    </div>
-                  );
-                })()}
-            </div>
-          ) : (
-            /* ── Dashboard Overview (no project selected) ─────── */
-            <div
-              className={cn(
-                "h-full overflow-y-auto bg-slate-50/30 p-4 lg:p-6",
-                isReferenceSidebarClient &&
-                  "bg-[#F1F4F8] p-3 sm:p-4 lg:p-3",
-              )}
-            >
-              <div
-                className={cn(
-                  "max-w-4xl mx-auto space-y-6",
-                  isReferenceSidebarClient && "max-w-5xl space-y-4",
-                )}
-              >
-                {/* ── Request Progress Timeline ──────────────────── */}
-                {portalFeatures.requestProgressTimeline &&
-                  !isReferenceSidebarClient && (
-                  <Card className="border border-slate-100 shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800">
-                            Request Progress
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Track the current stage of your request from inquiry
-                            to delivery.
-                          </p>
-                        </div>
-                        {selectedProjectPid &&
-                          projectDocuments.get(selectedProjectPid)?.loading && (
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              <span>Loading documents</span>
-                            </div>
-                          )}
-                      </div>
+                                </div>
 
-                      <div className="mt-4 overflow-x-auto">
-                        <div className="flex items-start gap-6 min-w-max pb-1">
-                          {timelineSteps.map((step, index) => (
-                            <div
-                              key={step.key}
-                              className="flex items-center gap-4"
-                            >
-                              <div className="flex items-start gap-3">
+                                <div
+                                  className={cn(
+                                    "flex items-start gap-2",
+                                    isReferenceSidebarClient && "gap-0",
+                                  )}
+                                >
+                                  <ShieldCheck
+                                    className={cn(
+                                      "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                      isReferenceSidebarClient && "hidden",
+                                    )}
+                                  />
+                                  <div>
+                                    <p
+                                      className={cn(
+                                        "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] normal-case tracking-normal text-slate-700",
+                                      )}
+                                    >
+                                      Status
+                                    </p>
+                                    <p
+                                      className={cn(
+                                        "text-xs text-slate-700 font-medium",
+                                        isReferenceSidebarClient &&
+                                          projectDetails.status ===
+                                            "Cancelled" &&
+                                          "text-red-700",
+                                      )}
+                                    >
+                                      {isReferenceSidebarClient &&
+                                        projectDetails.status ===
+                                          "Cancelled" && (
+                                          <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-red-600 align-middle" />
+                                        )}
+                                      {projectDetails.status || "—"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div
+                                  className={cn(
+                                    "flex items-start gap-2",
+                                    isReferenceSidebarClient && "gap-0",
+                                  )}
+                                >
+                                  <Calendar
+                                    className={cn(
+                                      "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                      isReferenceSidebarClient && "hidden",
+                                    )}
+                                  />
+                                  <div>
+                                    <p
+                                      className={cn(
+                                        "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] normal-case tracking-normal text-slate-700",
+                                      )}
+                                    >
+                                      Start Date
+                                    </p>
+                                    <p
+                                      className={cn(
+                                        "text-xs text-slate-700 font-medium",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] text-slate-900",
+                                      )}
+                                    >
+                                      {projectDetails.startDate
+                                        ? (() => {
+                                            try {
+                                              const d =
+                                                projectDetails.startDate instanceof
+                                                Date
+                                                  ? projectDetails.startDate
+                                                  : new Date(
+                                                      projectDetails.startDate as string,
+                                                    );
+                                              return isNaN(d.getTime())
+                                                ? "—"
+                                                : format(d, "MMM d, yyyy");
+                                            } catch {
+                                              return "—";
+                                            }
+                                          })()
+                                        : "—"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div
+                                  className={cn(
+                                    "flex items-start gap-2",
+                                    isReferenceSidebarClient && "gap-0",
+                                  )}
+                                >
+                                  <Building2
+                                    className={cn(
+                                      "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                      isReferenceSidebarClient && "hidden",
+                                    )}
+                                  />
+                                  <div>
+                                    <p
+                                      className={cn(
+                                        "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] normal-case tracking-normal text-slate-700",
+                                      )}
+                                    >
+                                      Sending Institution
+                                    </p>
+                                    <p
+                                      className={cn(
+                                        "text-xs text-slate-700 font-medium",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] text-slate-900",
+                                      )}
+                                    >
+                                      {projectDetails.sendingInstitution || "—"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div
+                                  className={cn(
+                                    "flex items-start gap-2",
+                                    isReferenceSidebarClient && "gap-0",
+                                  )}
+                                >
+                                  <Briefcase
+                                    className={cn(
+                                      "h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0",
+                                      isReferenceSidebarClient && "hidden",
+                                    )}
+                                  />
+                                  <div>
+                                    <p
+                                      className={cn(
+                                        "text-[10px] font-medium text-slate-400 uppercase tracking-wide",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] normal-case tracking-normal text-slate-700",
+                                      )}
+                                    >
+                                      Funding Institution
+                                    </p>
+                                    <p
+                                      className={cn(
+                                        "text-xs text-slate-700 font-medium",
+                                        isReferenceSidebarClient &&
+                                          "text-[11px] text-slate-900",
+                                      )}
+                                    >
+                                      {projectDetails.fundingInstitution || "—"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── Request Progress Timeline ──────────────────── */}
+                  {portalFeatures.requestProgressTimeline &&
+                    !isReferenceSidebarClient && (
+                      <Card className="border border-slate-100 shadow-sm">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800">
+                                Request Progress
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                Track the current stage of your request from
+                                inquiry to delivery.
+                              </p>
+                            </div>
+                            {selectedProjectPid &&
+                              projectDocuments.get(selectedProjectPid)
+                                ?.loading && (
+                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  <span>Loading documents</span>
+                                </div>
+                              )}
+                          </div>
+
+                          <div className="mt-4 space-y-3">
+                            {timelineSteps.map((step) => (
+                              <div
+                                key={step.key}
+                                className="flex items-start gap-3"
+                              >
                                 <div className="mt-0.5">
                                   {step.state === "complete" ? (
                                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -7274,7 +6132,7 @@ export default function ClientPortalPage() {
                                     <span className="h-4 w-4 rounded-full border border-slate-300 block" />
                                   )}
                                 </div>
-                                <div className="min-w-[160px]">
+                                <div className="flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <p className="text-sm font-semibold text-slate-700">
                                       {step.label}
@@ -7295,2233 +6153,3672 @@ export default function ClientPortalPage() {
                                   </p>
                                 </div>
                               </div>
-                              {index < timelineSteps.length - 1 && (
-                                <span
-                                  className="h-px w-8 bg-slate-200"
-                                  aria-hidden="true"
-                                />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Welcome & Status Header */}
-                <div
-                  className={cn(
-                    "bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100 relative overflow-hidden",
-                    isReferenceSidebarClient &&
-                      "rounded-xl border-slate-200 px-5 py-4",
-                  )}
-                >
-                  {!isReferenceSidebarClient && (
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
-                  )}
-                  <div className="relative">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                      <div className="space-y-0.5">
-                        <h2
-                          className={cn(
-                            "text-base font-bold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent",
-                            isReferenceSidebarClient &&
-                              "text-lg bg-none text-[#145B91]",
-                          )}
-                        >
-                          {isReferenceSidebarClient
-                            ? "Welcome to your Workspace"
-                            : "Welcome to your Workspace"}
-                        </h2>
-                        <p
-                          className={cn(
-                            "text-slate-500 text-xs",
-                            !isReferenceSidebarClient && "whitespace-nowrap",
-                            isReferenceSidebarClient && "text-[13px]",
-                          )}
-                        >
-                          {isReferenceSidebarClient
-                            ? "Review your official quotations and manage your research projects here."
-                            : "Review your official quotations and manage your research projects here."}
-                        </p>
-                      </div>
-
-                      {currentInquiry && (
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  <div
+                    className={cn(
+                      "space-y-2",
+                      isReferenceSidebarClient &&
+                        "-mx-4 space-y-3 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm",
+                    )}
+                  >
+                    {/* Section header */}
+                    <div
+                      className={cn(
+                        "flex items-center justify-between gap-2 flex-wrap",
+                        isReferenceSidebarClient &&
+                          "border-b border-slate-100 pb-3",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
                         <div
                           className={cn(
-                            "bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 flex items-center gap-3 min-w-[200px]",
-                            isReferenceSidebarClient &&
-                              "min-w-0 rounded-full border-0 bg-[#E3F5EC] px-3 py-2",
-                              isPendingReferenceClient &&
-                                "bg-[#FFF1D6]",
-                              isOngoingQuotationReferenceClient &&
-                                "bg-[#E1F1FD]",
-                              isInProgressReferenceClient && "bg-[#F6E6D9]",
+                            "p-1.5 bg-[#166FB5]/10 rounded-lg",
+                            isReferenceSidebarClient && "hidden",
                           )}
                         >
-                          {isReferenceSidebarClient &&
-                          currentInquiry.status === "Pending" ? (
-                                <Clock className="h-6 w-6 shrink-0 text-amber-700" />
-                          ) : isOngoingQuotationReferenceClient ? (
-                              <FileText className="h-6 w-6 shrink-0 text-[#1769AA]" />
-                          ) : isInProgressReferenceClient ? (
-                              <CheckCircle2 className="h-6 w-6 shrink-0 text-[#8A4B20]" />
-                          ) : isReferenceSidebarClient ? (
-                              <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-700" />
-                          ) : (
+                          <Users className="h-4 w-4 text-[#166FB5]" />
+                        </div>
+                        <div>
+                          <h2 className="text-sm font-bold text-slate-800 leading-tight">
+                            Team Members
+                          </h2>
+                          <p
+                            className={cn(
+                              "text-[10px] text-slate-400 uppercase tracking-wider font-semibold",
+                              isReferenceSidebarClient &&
+                                "mt-1 flex items-center gap-2 text-[9px] font-normal normal-case tracking-normal text-slate-600",
+                            )}
+                          >
+                            {isReferenceSidebarClient ? (
+                              <>
+                                <span
+                                  role="progressbar"
+                                  aria-label="Saved team members"
+                                  aria-valuemin={0}
+                                  aria-valuemax={members.length}
+                                  aria-valuenow={savedMemberCount}
+                                  className="h-1 w-[72px] overflow-hidden rounded-full bg-slate-200"
+                                >
+                                  <span
+                                    className="block h-full rounded-full bg-blue-700 transition-[width]"
+                                    style={{
+                                      width: `${
+                                        members.length
+                                          ? (savedMemberCount /
+                                              members.length) *
+                                            100
+                                          : 0
+                                      }%`,
+                                    }}
+                                  />
+                                </span>
+                                <span>
+                                  {savedMemberCount} of {members.length} saved
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <strong>{savedMemberCount}</strong> /{" "}
+                                <strong>{members.length}</strong> Saved
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Add Member button (for all projects) */}
+                        <Button
+                          onClick={handleAddMember}
+                          variant="outline"
+                          size="sm"
+                          disabled={
+                            projectDetails?.status === "Completed" ||
+                            approvalStatus === "pending" ||
+                            projectDetails?.status === "Pending Approval"
+                          }
+                          className={cn(
+                            "border-[#166FB5] text-[#166FB5] hover:bg-[#166FB5] hover:text-white disabled:opacity-50",
+                            isReferenceSidebarClient &&
+                              "h-8 rounded-lg px-3 text-[10px] hover:bg-[#166FB5] hover:text-white",
+                          )}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          New Member
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Primary member */}
+                    {primaryMember && (
+                      <div className="space-y-1.5">
+                        {!isReferenceSidebarClient && (
+                          <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                            Primary Member
+                          </h3>
+                        )}
+                        {renderMemberCard(primaryMember)}
+                      </div>
+                    )}
+
+                    {/* Other members */}
+                    {otherMembers.length > 0 && (
+                      <div className="space-y-1.5">
+                        <h3
+                          className={cn(
+                            "px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400",
+                            isReferenceSidebarClient &&
+                              "text-[11px] normal-case tracking-normal text-slate-800",
+                          )}
+                        >
+                          Other Members ({otherMembers.length})
+                        </h3>
+                        <div className="space-y-1.5">
+                          {otherMembers.map((member) =>
+                            renderMemberCard(member),
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── Approval Banners (REMOVED) ────────────────────── */}
+
+                    {approvalStatus === "rejected" && (
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-red-100 rounded-lg">
+                            <XCircle className="h-5 w-5 text-red-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-red-800">
+                              Submission Rejected
+                            </h4>
+                            <p className="text-sm text-red-700 mt-1">
+                              Please review and update the member information,
+                              then resubmit.
+                            </p>
+                            {approvalStatusData.reviewNotes && (
+                              <div className="bg-white/70 rounded-lg p-3 mt-2 border border-red-200">
+                                <p className="text-sm font-semibold text-red-800 mb-1">
+                                  Reason for Rejection:
+                                </p>
+                                <p className="text-sm text-red-700">
+                                  {approvalStatusData.reviewNotes}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── Submit for Approval Button ─────────── */}
+                    {projectDetails?.status !== "Completed" &&
+                      projectDetails?.status !== "Pending Approval" && // Hide if main project is pending
+                      approvalStatus !== "pending" &&
+                      (projectDetails?.isDraft ||
+                        members.some((m) => m.isDraft && !m.isPrimary)) && (
+                        <div
+                          className={cn(
+                            "pt-6 border-t-2 border-slate-200",
+                            isReferenceSidebarClient &&
+                              "sticky bottom-0 z-10 -mx-4 -mb-4 rounded-b-xl border-t border-slate-200 bg-white p-2",
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4",
+                              isReferenceSidebarClient && "gap-2",
+                            )}
+                          >
                             <div
                               className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center shadow-sm",
-                                currentInquiry.status === "Approved Client"
-                                  ? "bg-green-100 text-green-600"
-                                  : currentInquiry.status === "Quotation Only"
-                                    ? "bg-blue-100 text-blue-600"
-                                    : currentInquiry.status === "Cancelled"
-                                      ? "bg-red-100 text-red-500"
-                                      : "bg-amber-100 text-amber-600",
+                                "text-sm text-slate-500",
+                                isReferenceSidebarClient && "text-[9px]",
                               )}
                             >
-                              {currentInquiry.status === "Approved Client" ? (
-                                <CheckCircle2 className="h-5 w-5" />
-                              ) : currentInquiry.status === "Quotation Only" ? (
-                                <FileText className="h-5 w-5" />
-                              ) : currentInquiry.status === "Cancelled" ? (
-                                <XCircle className="h-5 w-5" />
+                              {members.some((m) => !m.isSubmitted) ? (
+                                <span
+                                  className={cn(
+                                    "text-[#B9273A] font-semibold flex items-center gap-1.5",
+                                    isReferenceSidebarClient &&
+                                      "text-amber-900",
+                                  )}
+                                >
+                                  <AlertCircle
+                                    className={cn(
+                                      "h-4 w-4",
+                                      isReferenceSidebarClient &&
+                                        "h-3 w-3 text-amber-800",
+                                    )}
+                                  />
+                                  {isReferenceSidebarClient
+                                    ? "Save all member details to enable submission"
+                                    : "Complete and save all member details to proceed"}
+                                </span>
+                              ) : projectDetails?.isDraft ? (
+                                <span className="flex items-center gap-1.5 text-blue-600 font-medium">
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  Ready to submit project and team details
+                                </span>
                               ) : (
-                                <Clock className="h-5 w-5" />
+                                "Submit your team members for admin review"
                               )}
                             </div>
-                          )}
-                          <div>
-                            <p
+                            <Button
+                              onClick={handleFinalSubmit}
+                              disabled={
+                                submitting ||
+                                members.some((m) => !m.isSubmitted)
+                              }
                               className={cn(
-                                "text-[9px] font-bold text-slate-400 uppercase tracking-widest",
+                                "h-12 px-8 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-bold shadow-xl hover:shadow-2xl disabled:opacity-50 whitespace-nowrap",
                                 isReferenceSidebarClient &&
-                                  "text-[11px] font-normal normal-case tracking-normal text-emerald-700",
-                                  isPendingReferenceClient &&
-                                    "text-amber-700",
-                                  isOngoingQuotationReferenceClient &&
-                                    "text-[#1769AA]",
-                                  isInProgressReferenceClient &&
-                                    "text-[#8A4B20]",
+                                  "h-8 px-3 text-[9px] font-medium shadow-none disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-100",
+                                isReferenceSidebarClient &&
+                                  (submitting ||
+                                    members.some((m) => !m.isSubmitted)) &&
+                                  "disabled:h-9 disabled:border disabled:border-slate-300 disabled:px-4 disabled:text-xs disabled:font-medium disabled:bg-none disabled:bg-slate-200 disabled:text-slate-600 disabled:shadow-none disabled:opacity-100 disabled:hover:bg-none disabled:hover:bg-slate-200",
                               )}
                             >
-                              Inquiry Status
-                            </p>
-                            <p
-                              className={cn(
-                                "font-bold text-slate-700 text-sm",
-                                isReferenceSidebarClient &&
-                                  "text-[13px] leading-4 text-emerald-800",
-                                  isPendingReferenceClient &&
-                                    "text-amber-800",
-                                  isOngoingQuotationReferenceClient &&
-                                    "text-[#145B91]",
-                                  isInProgressReferenceClient &&
-                                    "text-[#713B19]",
-                              )}
-                            >
-                              {currentInquiry.status}
-                            </p>
+                              <Send
+                                className={cn(
+                                  "h-5 w-5 mr-2",
+                                  isReferenceSidebarClient && "mr-1 h-3 w-3",
+                                  isReferenceSidebarClient &&
+                                    (submitting ||
+                                      members.some((m) => !m.isSubmitted)) &&
+                                    "disabled:mr-1.5 disabled:h-3.5 disabled:w-3.5",
+                                )}
+                              />
+                              {projectDetails?.isDraft
+                                ? "Submit Project & Team for Approval"
+                                : "Submit Team Members for Approval"}
+                            </Button>
                           </div>
                         </div>
                       )}
-                    </div>
                   </div>
-                </div>
 
+                  {/* ── Document Panel (shown below Team Members when a doc section is selected) ── */}
+                  {selectedProjectPid &&
+                    activeDocPanel &&
+                    activeDocPanel.startsWith(selectedProjectPid + ":") &&
+                    (() => {
+                      const panelSection = activeDocPanel
+                        .split(":")
+                        .slice(1)
+                        .join(":");
+                      const panelDocs =
+                        projectDocuments.get(selectedProjectPid);
+                      const panelChargeSlipCount =
+                        panelDocs?.chargeSlips.length || 0;
+                      const hasSettledChargeSlip =
+                        panelChargeSlipCount > 0 &&
+                        (panelDocs?.chargeSlips?.some((cs) => {
+                          const status = (cs.status ?? "").toLowerCase();
+                          return status === "paid" || status === "waived";
+                        }) ??
+                          false);
+                      const canReceiveServiceReport =
+                        Boolean(
+                          projectDetails?.allowServiceReportWithoutChargeSlip,
+                        ) || hasSettledChargeSlip;
+                      const sfParams = new URLSearchParams();
+                      if (emailParam) sfParams.set("email", emailParam);
+                      if (inquiryIdParam)
+                        sfParams.set("inquiryId", inquiryIdParam);
+                      sfParams.set("pid", selectedProjectPid);
+                      if (projectDetails?.title)
+                        sfParams.set("projectTitle", projectDetails.title);
+                      if (primaryMember?.formData?.name)
+                        sfParams.set("name", primaryMember.formData.name);
+                      if (primaryMember?.cid)
+                        sfParams.set("clientId", primaryMember.cid);
+                      const sfBaseHref = `/client/sample-form?${sfParams.toString()}`;
+
+                      const PANEL_META: Record<
+                        string,
+                        {
+                          icon: React.ReactNode;
+                          label: string;
+                          accent: string;
+                          iconBg: string;
+                        }
+                      > = {
+                        quotations: {
+                          icon: (
+                            <FileText className="h-4 w-4 text-purple-600" />
+                          ),
+                          label: "Quotations",
+                          accent: "text-purple-700",
+                          iconBg: "bg-purple-50",
+                        },
+                        sampleForm: {
+                          icon: <FileText className="h-4 w-4 text-red-600" />,
+                          label: "Sample Submission Form",
+                          accent: "text-slate-900",
+                          iconBg: "bg-red-50",
+                        },
+                        chargeSlips: {
+                          icon: (
+                            <span
+                              className={cn(
+                                "text-sm font-bold",
+                                isReferenceSidebarClient
+                                  ? "text-[#08724f]"
+                                  : "text-green-600",
+                              )}
+                            >
+                              ₱
+                            </span>
+                          ),
+                          label: "Charge Slips",
+                          accent: "text-green-700",
+                          iconBg: "bg-green-50",
+                        },
+                        serviceReports: {
+                          icon: (
+                            <ShieldEllipsis className="h-4 w-4 text-blue-600" />
+                          ),
+                          label: "Service Reports",
+                          accent: "text-blue-700",
+                          iconBg: "bg-blue-50",
+                        },
+                      };
+                      const meta = PANEL_META[panelSection];
+                      if (!meta) return null;
+
+                      return (
+                        <div
+                          className={cn(
+                            "bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4",
+                            isReferenceSidebarClient &&
+                              "space-y-0 overflow-hidden rounded-xl border-slate-200 p-0 shadow-sm",
+                          )}
+                        >
+                          {/* Panel header */}
+                          <div
+                            className={cn(
+                              "flex items-center justify-between",
+                              isReferenceSidebarClient &&
+                                "border-b border-slate-200 p-4",
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={cn(
+                                  "p-1.5 rounded-lg",
+                                  meta.iconBg,
+                                  isReferenceSidebarClient &&
+                                    panelSection === "chargeSlips" &&
+                                    "bg-[#d8eee4]",
+                                  isReferenceSidebarClient &&
+                                    "rounded-xl p-2.5",
+                                )}
+                              >
+                                {meta.icon}
+                              </div>
+                              <div>
+                                <h2
+                                  className={cn(
+                                    "text-base font-bold leading-tight",
+                                    meta.accent,
+                                    isReferenceSidebarClient &&
+                                      "text-slate-900",
+                                  )}
+                                >
+                                  {meta.label}
+                                </h2>
+                                <p
+                                  className={cn(
+                                    "text-xs text-slate-400",
+                                    isReferenceSidebarClient &&
+                                      "text-slate-500",
+                                  )}
+                                >
+                                  Project:{" "}
+                                  {isReferenceSidebarClient ? (
+                                    <span className="font-medium text-slate-700">
+                                      {projectDetails?.pid ||
+                                        selectedProjectPid}
+                                    </span>
+                                  ) : (
+                                    projectDetails?.pid || selectedProjectPid
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setActiveDocPanel(null)}
+                              className={cn(
+                                "text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors",
+                                isReferenceSidebarClient &&
+                                  "rounded-full p-2 hover:bg-slate-100",
+                              )}
+                              title="Close panel"
+                              aria-label={
+                                isReferenceSidebarClient
+                                  ? `Close ${meta.label} panel`
+                                  : undefined
+                              }
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          {/* Quotations panel */}
+                          {panelSection === "quotations" && (
+                            <div
+                              className={cn(
+                                "space-y-2",
+                                isReferenceSidebarClient &&
+                                  "space-y-3 bg-slate-50 p-4",
+                              )}
+                            >
+                              {panelDocs?.loading ? (
+                                <div className="flex items-center gap-2 py-6 justify-center text-slate-400">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <span className="text-sm">
+                                    Loading quotations…
+                                  </span>
+                                </div>
+                              ) : (panelDocs?.quotations.length || 0) === 0 ? (
+                                <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                  <FileText className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                                  <p className="text-sm text-slate-400 italic">
+                                    No quotations issued for this project yet.
+                                  </p>
+                                </div>
+                              ) : (
+                                <>
+                                  {isReferenceSidebarClient && (
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                                      {panelDocs?.quotations.length}{" "}
+                                      {panelDocs?.quotations.length === 1
+                                        ? "QUOTATION"
+                                        : "QUOTATIONS"}
+                                    </p>
+                                  )}
+                                  {panelDocs?.quotations.map((quotation) => {
+                                    const qCancelled =
+                                      quotation.status === "cancelled";
+                                    const qTotal =
+                                      typeof quotation.total === "number"
+                                        ? quotation.total
+                                        : 0;
+                                    const qRawDate = quotation.dateIssued;
+                                    const qIssuedDate = qRawDate
+                                      ? (qRawDate as any)?.toDate
+                                        ? formatDate((qRawDate as any).toDate())
+                                        : formatDate(qRawDate as string)
+                                      : null;
+                                    return (
+                                      <div
+                                        key={quotation.id}
+                                        className={cn(
+                                          "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex items-center justify-between gap-3 flex-wrap hover:bg-slate-50 transition-colors",
+                                          isReferenceSidebarClient &&
+                                            "relative flex-col items-stretch border-slate-200 bg-white p-4",
+                                        )}
+                                      >
+                                        <div
+                                          className={cn(
+                                            "flex items-center gap-2 flex-wrap min-w-0",
+                                            isReferenceSidebarClient &&
+                                              "w-full justify-between gap-x-3 gap-y-3",
+                                          )}
+                                        >
+                                          {!isReferenceSidebarClient && (
+                                            <a
+                                              href={`/client/view-document?type=quotation&ref=${quotation.referenceNumber}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-[11px] font-bold text-purple-700 border border-purple-200 bg-white rounded-md px-2 py-0.5 hover:bg-purple-50 transition-colors"
+                                            >
+                                              {quotation.referenceNumber}
+                                            </a>
+                                          )}
+                                          {isReferenceSidebarClient ? (
+                                            <div className="grid w-full grid-cols-1 items-center gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(70px,0.7fr)_minmax(140px,1.4fr)_auto] sm:gap-4">
+                                              <div className="min-w-0">
+                                                <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                  Quotation No.
+                                                </p>
+                                                <a
+                                                  href={`/client/view-document?type=quotation&ref=${quotation.referenceNumber}`}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-violet-100 px-2.5 py-1.5 text-[11px] font-semibold text-violet-800 transition hover:bg-violet-200"
+                                                >
+                                                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                                                  <span className="truncate">
+                                                    {quotation.referenceNumber}
+                                                  </span>
+                                                </a>
+                                              </div>
+                                              <div>
+                                                <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                  Total
+                                                </p>
+                                                <p
+                                                  className={cn(
+                                                    "text-sm font-bold text-slate-900",
+                                                    qCancelled &&
+                                                      "line-through",
+                                                  )}
+                                                >
+                                                  ₱
+                                                  {qTotal.toLocaleString(
+                                                    "en-US",
+                                                    {
+                                                      minimumFractionDigits: 2,
+                                                    },
+                                                  )}
+                                                </p>
+                                              </div>
+                                              <div>
+                                                <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                  Issued
+                                                </p>
+                                                {qIssuedDate ? (
+                                                  <p className="flex items-center gap-1.5 text-sm font-medium text-slate-900">
+                                                    <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                                                    {qIssuedDate}
+                                                  </p>
+                                                ) : (
+                                                  <p className="text-sm text-slate-500">
+                                                    —
+                                                  </p>
+                                                )}
+                                              </div>
+                                              <div className="justify-self-start sm:justify-self-end">
+                                                {qCancelled ? (
+                                                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                                                    <XCircle className="h-3.5 w-3.5" />
+                                                    Cancelled
+                                                  </span>
+                                                ) : quotation.status ===
+                                                    "selected" ||
+                                                  quotation.selectedForProject ? (
+                                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+                                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                                    Selected
+                                                  </span>
+                                                ) : null}
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <>
+                                              <span className="text-xs text-slate-500">
+                                                Total:{" "}
+                                                <span className="font-semibold text-slate-700">
+                                                  ₱
+                                                  {qTotal.toLocaleString(
+                                                    "en-US",
+                                                    {
+                                                      minimumFractionDigits: 2,
+                                                    },
+                                                  )}
+                                                </span>
+                                              </span>
+                                              {qIssuedDate && (
+                                                <span className="text-xs text-slate-500">
+                                                  Issued:{" "}
+                                                  <span className="font-medium text-slate-600">
+                                                    {qIssuedDate}
+                                                  </span>
+                                                </span>
+                                              )}
+                                            </>
+                                          )}
+                                        </div>
+                                        {!isReferenceSidebarClient && (
+                                          <div
+                                            className={cn(
+                                              "flex-shrink-0",
+                                              isReferenceSidebarClient &&
+                                                "absolute right-4 top-4",
+                                            )}
+                                          >
+                                            {qCancelled ? (
+                                              <span
+                                                className={cn(
+                                                  "inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5",
+                                                  isReferenceSidebarClient &&
+                                                    "border-0 bg-slate-100 px-2.5 py-1 text-[11px] text-slate-700",
+                                                )}
+                                              >
+                                                {isReferenceSidebarClient && (
+                                                  <XCircle className="h-3 w-3" />
+                                                )}
+                                                Cancelled
+                                              </span>
+                                            ) : quotation.status ===
+                                                "selected" ||
+                                              quotation.selectedForProject ? (
+                                              <span
+                                                className={cn(
+                                                  "inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5",
+                                                  isReferenceSidebarClient &&
+                                                    "border-0 bg-emerald-100 px-2.5 py-1 text-[11px] text-emerald-800",
+                                                )}
+                                              >
+                                                <CheckCircle2 className="h-3 w-3" />{" "}
+                                                Selected
+                                              </span>
+                                            ) : null}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Sample Submission Form panel */}
+                          {panelSection === "sampleForm" && (
+                            <div
+                              className={cn(
+                                "space-y-4",
+                                isReferenceSidebarClient && "space-y-3 p-4",
+                              )}
+                            >
+                              <DownloadForms
+                                projectId={selectedProjectPid}
+                                referenceClientDesign={isReferenceSidebarClient}
+                              />
+                              {portalFeatures.sampleForms && (
+                                <>
+                                  {!isReferenceSidebarClient && (
+                                    <div className="pt-2 border-t border-slate-100">
+                                      <a
+                                        href={sfBaseHref}
+                                        className="inline-flex items-center gap-2 text-sm text-[#166FB5] hover:underline font-semibold"
+                                      >
+                                        <Plus className="h-4 w-4" /> Fill out
+                                        Sample Submission Form
+                                      </a>
+                                    </div>
+                                  )}
+                                  {(panelDocs?.sampleForms?.length || 0) >
+                                    0 && (
+                                    <div
+                                      className={cn(
+                                        "space-y-2",
+                                        isReferenceSidebarClient &&
+                                          "space-y-3 p-4",
+                                      )}
+                                    >
+                                      <p
+                                        className={cn(
+                                          "text-[10px] font-bold text-slate-400 uppercase tracking-wider",
+                                          isReferenceSidebarClient &&
+                                            "text-xs normal-case tracking-normal text-slate-700",
+                                        )}
+                                      >
+                                        Submitted Forms
+                                      </p>
+                                      {panelDocs?.sampleForms.map((item) => (
+                                        <a
+                                          key={item.id}
+                                          href={`${sfBaseHref}&formId=${item.id}`}
+                                          className={cn(
+                                            "flex items-center gap-2 text-sm text-slate-600 hover:text-orange-600 hover:underline py-1.5 px-3 rounded-lg hover:bg-orange-50 transition-colors",
+                                            isReferenceSidebarClient &&
+                                              "rounded-xl border border-slate-200 bg-white p-3",
+                                          )}
+                                        >
+                                          <FileSpreadsheet className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                                          {item.id} —{" "}
+                                          {item.totalNumberOfSamples || 0}{" "}
+                                          samples
+                                        </a>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Charge Slips panel */}
+                          {panelSection === "chargeSlips" && (
+                            <div
+                              className={cn(
+                                "space-y-3",
+                                isReferenceSidebarClient &&
+                                  "space-y-3 bg-slate-50 p-4",
+                              )}
+                            >
+                              {panelDocs?.loading ? (
+                                <div className="flex items-center gap-2 py-6 justify-center text-slate-400">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <span className="text-sm">
+                                    Loading charge slips…
+                                  </span>
+                                </div>
+                              ) : (panelDocs?.chargeSlips.length || 0) === 0 ? (
+                                <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                  <Receipt className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                                  <p className="text-sm text-slate-400 italic">
+                                    No charge slips issued for this project yet.
+                                  </p>
+                                </div>
+                              ) : (
+                                <>
+                                  {isReferenceSidebarClient && (
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                                      {panelDocs?.chargeSlips.length}{" "}
+                                      {panelDocs?.chargeSlips.length === 1
+                                        ? "charge slip"
+                                        : "charge slips"}
+                                    </p>
+                                  )}
+                                  {panelDocs?.chargeSlips.map((chargeSlip) => {
+                                    const csPaid = chargeSlip.status === "paid";
+                                    const csCancelled =
+                                      chargeSlip.status === "cancelled";
+                                    const csPending =
+                                      chargeSlip.status === "pending";
+                                    const csWaived =
+                                      chargeSlip.status === "waived";
+                                    const csTotal =
+                                      typeof chargeSlip.total === "number"
+                                        ? chargeSlip.total
+                                        : 0;
+                                    const csRawDate = chargeSlip.dateIssued;
+                                    const csIssuedDate = csRawDate
+                                      ? (csRawDate as any)?.toDate
+                                        ? formatDate(
+                                            (csRawDate as any).toDate(),
+                                          )
+                                        : formatDate(csRawDate as string)
+                                      : null;
+                                    return (
+                                      <div
+                                        key={chargeSlip.id}
+                                        className={cn(
+                                          "rounded-xl border border-slate-100 bg-slate-50/50 p-4 space-y-3 hover:bg-slate-50 transition-colors",
+                                          isReferenceSidebarClient &&
+                                            "relative border-slate-200 bg-white p-4 hover:bg-slate-50",
+                                        )}
+                                      >
+                                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                                          <div
+                                            className={cn(
+                                              "flex items-center gap-2 flex-wrap min-w-0",
+                                              isReferenceSidebarClient &&
+                                                "w-full",
+                                            )}
+                                          >
+                                            {isReferenceSidebarClient && (
+                                              <p className="w-full text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                Charge Slip No.
+                                              </p>
+                                            )}
+                                            <a
+                                              href={`/client/view-document?type=charge-slip&ref=${chargeSlip.id}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className={cn(
+                                                "flex items-center gap-1 text-[11px] font-bold text-green-700 bg-white hover:bg-green-700 hover:text-white border border-green-600 rounded-full px-2.5 py-0.5 transition-all shadow-sm",
+                                                isReferenceSidebarClient &&
+                                                  "rounded-lg border-0 bg-[#d8eee4] px-3 py-2 text-sm text-[#075f45] shadow-none hover:bg-[#c8e5d7] hover:text-[#075f45]",
+                                              )}
+                                            >
+                                              {isReferenceSidebarClient && (
+                                                <FileText className="h-4 w-4 shrink-0" />
+                                              )}
+                                              {chargeSlip.chargeSlipNumber}
+                                            </a>
+                                            {isReferenceSidebarClient ? (
+                                              <div className="order-3 grid w-full grid-cols-1 gap-4 rounded-xl bg-slate-50 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] sm:gap-6">
+                                                <div>
+                                                  <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                    Total
+                                                  </p>
+                                                  <p
+                                                    className={cn(
+                                                      "text-base font-bold text-slate-900",
+                                                      csCancelled &&
+                                                        "line-through",
+                                                    )}
+                                                  >
+                                                    ₱
+                                                    {csTotal.toLocaleString(
+                                                      "en-US",
+                                                      {
+                                                        minimumFractionDigits: 2,
+                                                      },
+                                                    )}
+                                                  </p>
+                                                </div>
+                                                {csIssuedDate && (
+                                                  <div>
+                                                    <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                      Issued
+                                                    </p>
+                                                    <p className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                                                      {isReferenceSidebarClient && (
+                                                        <Calendar className="h-4 w-4 text-slate-500" />
+                                                      )}
+                                                      {csIssuedDate}
+                                                    </p>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            ) : (
+                                              <>
+                                                <span className="text-xs text-slate-500">
+                                                  Total:{" "}
+                                                  <span className="font-semibold text-slate-700">
+                                                    ₱
+                                                    {csTotal.toLocaleString(
+                                                      "en-US",
+                                                      {
+                                                        minimumFractionDigits: 2,
+                                                      },
+                                                    )}
+                                                  </span>
+                                                </span>
+                                                {csIssuedDate && (
+                                                  <span className="text-xs text-slate-500">
+                                                    Issued:{" "}
+                                                    <span className="font-medium text-slate-600">
+                                                      {csIssuedDate}
+                                                    </span>
+                                                  </span>
+                                                )}
+                                              </>
+                                            )}
+                                          </div>
+                                          <div
+                                            className={cn(
+                                              isReferenceSidebarClient &&
+                                                "absolute right-4 top-4",
+                                            )}
+                                          >
+                                            {csPaid ? (
+                                              <span
+                                                className={cn(
+                                                  "inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-0.5",
+                                                  isReferenceSidebarClient &&
+                                                    "px-2.5 py-1 text-[11px]",
+                                                )}
+                                              >
+                                                <CheckCircle2 className="h-3 w-3" />{" "}
+                                                Paid
+                                              </span>
+                                            ) : csCancelled ? (
+                                              <span
+                                                className={cn(
+                                                  "inline-flex text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-3 py-0.5",
+                                                  isReferenceSidebarClient &&
+                                                    "px-2.5 py-1 text-[11px]",
+                                                )}
+                                              >
+                                                {isReferenceSidebarClient && (
+                                                  <XCircle className="mr-1 h-3 w-3" />
+                                                )}
+                                                Cancelled
+                                              </span>
+                                            ) : csWaived ? (
+                                              <span
+                                                className={cn(
+                                                  "inline-flex text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-3 py-0.5",
+                                                  isReferenceSidebarClient &&
+                                                    "px-2.5 py-1 text-[11px]",
+                                                )}
+                                              >
+                                                Waived
+                                              </span>
+                                            ) : csPending ? (
+                                              <span
+                                                className={cn(
+                                                  "inline-flex text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-0.5 animate-pulse",
+                                                  isReferenceSidebarClient &&
+                                                    "px-2.5 py-1 text-[11px]",
+                                                )}
+                                              >
+                                                Pending Validation
+                                              </span>
+                                            ) : (
+                                              <span
+                                                className={cn(
+                                                  "inline-flex text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-3 py-0.5",
+                                                  isReferenceSidebarClient &&
+                                                    "px-2.5 py-1 text-[11px]",
+                                                )}
+                                              >
+                                                Processing
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <UploadReceipt
+                                          projectId={selectedProjectPid}
+                                          hasChargeSlip={true}
+                                          chargeSlipNumber={
+                                            chargeSlip.chargeSlipNumber
+                                          }
+                                          uploadAllowed={
+                                            !csPaid && !csCancelled
+                                          }
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                </>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Service Reports panel */}
+                          {panelSection === "serviceReports" &&
+                            portalFeatures.serviceReports &&
+                            (() => {
+                              const hasServiceReports =
+                                (panelDocs?.serviceReports?.length || 0) > 0;
+                              const serviceReportCount =
+                                panelDocs?.serviceReports?.length || 0;
+                              return (
+                                <div
+                                  className={cn(
+                                    "space-y-2",
+                                    isReferenceSidebarClient &&
+                                      "space-y-3 bg-slate-50 p-4",
+                                  )}
+                                >
+                                  {panelDocs?.loading ? (
+                                    <div className="flex items-center gap-2 py-6 justify-center text-slate-400">
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                      <span className="text-sm">
+                                        Loading service reports…
+                                      </span>
+                                    </div>
+                                  ) : !hasServiceReports ? (
+                                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                      <ShieldEllipsis className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                                      <p className="text-sm text-slate-400 italic">
+                                        No service reports available yet.
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {isReferenceSidebarClient && (
+                                        <p className="text-xs font-semibold text-slate-600">
+                                          {serviceReportCount} service{" "}
+                                          {serviceReportCount === 1
+                                            ? "report"
+                                            : "reports"}
+                                        </p>
+                                      )}
+                                      <div
+                                        className={cn(
+                                          "space-y-2",
+                                          isReferenceSidebarClient &&
+                                            "space-y-0 overflow-hidden rounded-xl border border-slate-200 bg-white",
+                                        )}
+                                      >
+                                        {panelDocs?.serviceReports.map(
+                                          (item: any) => {
+                                            const isReceived =
+                                              item.status === "received";
+                                            const reportUrl =
+                                              typeof item.fileUrl === "string"
+                                                ? item.fileUrl
+                                                : typeof item.downloadURL ===
+                                                    "string"
+                                                  ? item.downloadURL
+                                                  : "";
+                                            const receivedDate = item.receivedAt
+                                              ?.toDate
+                                              ? format(
+                                                  item.receivedAt.toDate(),
+                                                  "MMM d, yyyy h:mm a",
+                                                )
+                                              : "";
+                                            const uploadedDate = item.uploadedAt
+                                              ?.toDate
+                                              ? format(
+                                                  item.uploadedAt.toDate(),
+                                                  "MMM d, yyyy h:mm a",
+                                                )
+                                              : "";
+                                            const reportKey = `${selectedProjectPid}:${item.id}`;
+                                            const isReceiving =
+                                              receivingReportId === reportKey;
+                                            return (
+                                              <div
+                                                key={item.id}
+                                                className={cn(
+                                                  "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col gap-2 hover:bg-slate-50 transition-colors",
+                                                  isReferenceSidebarClient &&
+                                                    `rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:items-center md:gap-x-0 md:gap-y-0 ${
+                                                      isReceived
+                                                        ? "md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
+                                                        : "md:grid-cols-3"
+                                                    }`,
+                                                )}
+                                              >
+                                                {/* File meta row */}
+                                                <div
+                                                  className={cn(
+                                                    "flex items-center gap-2 min-w-0",
+                                                    isReferenceSidebarClient &&
+                                                      "border-b border-slate-100 pb-3 md:border-b-0 md:pb-0 md:pr-4",
+                                                  )}
+                                                >
+                                                  <FileText
+                                                    className={cn(
+                                                      "h-4 w-4 text-blue-500 flex-shrink-0",
+                                                      isReferenceSidebarClient &&
+                                                        "h-10 w-10 rounded-xl bg-blue-50 p-2.5 text-blue-700",
+                                                    )}
+                                                  />
+                                                  <div className="min-w-0 flex-1">
+                                                    {isReceived &&
+                                                    item.clientAccessEnabled !==
+                                                      false &&
+                                                    reportUrl ? (
+                                                      <a
+                                                        href={reportUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className={cn(
+                                                          "text-sm text-blue-700 hover:underline truncate block",
+                                                          isReferenceSidebarClient &&
+                                                            "font-semibold text-slate-900 no-underline hover:text-blue-700 hover:underline",
+                                                        )}
+                                                        title="Open service report"
+                                                      >
+                                                        {item.fileName ||
+                                                          item.id}
+                                                      </a>
+                                                    ) : (
+                                                      <span
+                                                        className={cn(
+                                                          "text-sm text-slate-600 truncate block",
+                                                          isReferenceSidebarClient &&
+                                                            "font-semibold text-slate-900",
+                                                        )}
+                                                      >
+                                                        {item.fileName ||
+                                                          item.id}
+                                                      </span>
+                                                    )}
+                                                    {isReferenceSidebarClient ? (
+                                                      <span className="block text-xs text-slate-500">
+                                                        PDF document
+                                                      </span>
+                                                    ) : uploadedDate ? (
+                                                      <span
+                                                        className={cn(
+                                                          "text-[10px] font-medium text-slate-400",
+                                                        )}
+                                                      >
+                                                        Uploaded: {uploadedDate}
+                                                      </span>
+                                                    ) : null}
+                                                  </div>
+                                                </div>
+
+                                                {isReferenceSidebarClient && (
+                                                  <div className="hidden min-w-0 md:flex md:flex-col md:items-center md:gap-1 md:border-l md:border-slate-200 md:px-4 md:text-center">
+                                                    <span className="text-sm text-slate-600">
+                                                      Uploaded
+                                                    </span>
+                                                    <span className="truncate text-sm text-slate-900">
+                                                      {uploadedDate || "—"}
+                                                    </span>
+                                                  </div>
+                                                )}
+
+                                                {isReferenceSidebarClient &&
+                                                  isReceived && (
+                                                    <div className="hidden min-w-0 flex-col items-center justify-center gap-1 border-l border-slate-200 px-4 text-center md:flex">
+                                                      <Badge
+                                                        variant="outline"
+                                                        className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800"
+                                                      >
+                                                        <CheckCircle2 className="h-3 w-3" />
+                                                        Received
+                                                      </Badge>
+                                                      {receivedDate && (
+                                                        <span className="text-xs text-slate-700">
+                                                          {receivedDate}
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                  )}
+
+                                                <div
+                                                  className={cn(
+                                                    "flex items-center justify-end",
+                                                    isReferenceSidebarClient &&
+                                                      "flex-wrap justify-end gap-2 pt-1 md:w-full md:border-l md:border-slate-200 md:py-2 md:pl-4 md:pt-0",
+                                                  )}
+                                                >
+                                                  {isReceived ? (
+                                                    <div
+                                                      className={cn(
+                                                        "flex items-center gap-2",
+                                                        isReferenceSidebarClient &&
+                                                          "w-full flex-col items-start gap-2 md:w-auto md:items-end",
+                                                      )}
+                                                    >
+                                                      {isReferenceSidebarClient ? (
+                                                        <div className="flex flex-col items-start gap-1 md:hidden">
+                                                          <Badge
+                                                            variant="outline"
+                                                            className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800"
+                                                          >
+                                                            <CheckCircle2 className="h-3 w-3" />
+                                                            Received
+                                                          </Badge>
+                                                          {receivedDate && (
+                                                            <span className="text-xs text-slate-700">
+                                                              {receivedDate}
+                                                            </span>
+                                                          )}
+                                                        </div>
+                                                      ) : (
+                                                        <Badge
+                                                          variant="outline"
+                                                          className="text-xs text-green-700 border-green-200 bg-green-50 gap-1 h-6 shrink-0"
+                                                        >
+                                                          <CheckCircle2 className="h-3 w-3" />
+                                                          Received
+                                                          {receivedDate && (
+                                                            <span className="font-normal text-green-600 opacity-80">
+                                                              · {receivedDate}
+                                                            </span>
+                                                          )}
+                                                        </Badge>
+                                                      )}
+                                                      {item.clientAccessEnabled !==
+                                                        false &&
+                                                        reportUrl && (
+                                                          <a
+                                                            href={reportUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className={cn(
+                                                              "inline-flex h-8 items-center gap-1 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700",
+                                                              isReferenceSidebarClient &&
+                                                                "h-10 rounded-xl border border-blue-600 bg-white px-4 font-semibold text-blue-700 hover:bg-blue-50",
+                                                            )}
+                                                          >
+                                                            {isReferenceSidebarClient ? (
+                                                              <ExternalLink className="h-4 w-4" />
+                                                            ) : (
+                                                              <Download className="h-3 w-3" />
+                                                            )}
+                                                            {isReferenceSidebarClient
+                                                              ? "Open report"
+                                                              : "Open Report"}
+                                                          </a>
+                                                        )}
+                                                    </div>
+                                                  ) : !(
+                                                      canReceiveServiceReport ||
+                                                      Boolean(
+                                                        item.skipChargeSlipRequirement,
+                                                      )
+                                                    ) ? (
+                                                    <TooltipProvider
+                                                      delayDuration={100}
+                                                    >
+                                                      <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                          <span>
+                                                            <Button
+                                                              size="sm"
+                                                              variant="outline"
+                                                              className="h-8 text-xs px-3 gap-1 text-slate-400 border-slate-200 cursor-not-allowed pointer-events-none"
+                                                              disabled
+                                                            >
+                                                              <Download className="h-3 w-3" />{" "}
+                                                              Receive
+                                                            </Button>
+                                                          </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent
+                                                          side="left"
+                                                          className="max-w-[220px] text-xs text-center"
+                                                        >
+                                                          Please settle the
+                                                          Charge Slip first to
+                                                          receive the service
+                                                          report. The status
+                                                          must be Paid or
+                                                          Waived.
+                                                        </TooltipContent>
+                                                      </Tooltip>
+                                                    </TooltipProvider>
+                                                  ) : formOpenedReports.has(
+                                                      item.id,
+                                                    ) ? (
+                                                    /* Step 2 — confirm form was submitted then unlock PDF */
+                                                    <div className="flex w-full flex-col items-end gap-1">
+                                                      <Button
+                                                        size="sm"
+                                                        className="h-8 text-xs px-3 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                                                        disabled={isReceiving}
+                                                        onClick={() =>
+                                                          handleReceiveServiceReport(
+                                                            selectedProjectPid,
+                                                            item,
+                                                          )
+                                                        }
+                                                      >
+                                                        {isReceiving ? (
+                                                          <Loader2 className="h-3 w-3 animate-spin" />
+                                                        ) : (
+                                                          <CheckCircle2 className="h-3.5 w-3.5" />
+                                                        )}
+                                                        Confirm & Access Report
+                                                      </Button>
+                                                      <span className="text-right text-[13px] text-slate-500 italic">
+                                                        Form opened — confirm to
+                                                        access the file.
+                                                      </span>
+                                                    </div>
+                                                  ) : (
+                                                    /* Step 1 — prompt client to fill the Google feedback form first */
+                                                    <div className="flex w-full flex-col items-end gap-1">
+                                                      <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-8 text-xs px-3 gap-1 border-amber-400 text-amber-700 hover:bg-amber-50"
+                                                        onClick={() => {
+                                                          window.open(
+                                                            "https://docs.google.com/forms/d/e/1FAIpQLSfSI8p9Bo1DvHVxA7efSsKuBzXyQ7Wi4Lxl-2jKL5SN4zkDkw/viewform",
+                                                            "_blank",
+                                                            "noopener,noreferrer",
+                                                          );
+                                                          setFormOpenedReports(
+                                                            (prev) =>
+                                                              new Set(prev).add(
+                                                                item.id,
+                                                              ),
+                                                          );
+                                                        }}
+                                                      >
+                                                        <ArrowRight className="h-3.5 w-3.5" />
+                                                        Open Feedback Form
+                                                      </Button>
+                                                      <span className="text-right text-[13px] font-medium text-amber-700">
+                                                        Please complete the
+                                                        feedback form to access
+                                                        this file.
+                                                      </span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            );
+                                          },
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                        </div>
+                      );
+                    })()}
+                </div>
+              ) : (
+                /* ── Dashboard Overview (no project selected) ─────── */
                 <div
                   className={cn(
-                    "space-y-6",
-                    isReferenceSidebarClient && "space-y-4",
+                    "h-full overflow-y-auto bg-slate-50/30 p-4 lg:p-6",
+                    isReferenceSidebarClient &&
+                      "bg-[#F1F4F8] p-3 sm:p-4 lg:p-3",
                   )}
                 >
-                  {/* Documents FIRST, then Summary */}
                   <div
                     className={cn(
-                      "space-y-6",
-                      isReferenceSidebarClient && "space-y-4",
+                      "max-w-4xl mx-auto space-y-6",
+                      isReferenceSidebarClient && "max-w-5xl space-y-4",
                     )}
                   >
-                    {/* Official Documents (Quotations) - MOVED UP */}
+                    {/* ── Request Progress Timeline ──────────────────── */}
+                    {portalFeatures.requestProgressTimeline &&
+                      !isReferenceSidebarClient && (
+                        <Card className="border border-slate-100 shadow-sm">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-800">
+                                  Request Progress
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  Track the current stage of your request from
+                                  inquiry to delivery.
+                                </p>
+                              </div>
+                              {selectedProjectPid &&
+                                projectDocuments.get(selectedProjectPid)
+                                  ?.loading && (
+                                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    <span>Loading documents</span>
+                                  </div>
+                                )}
+                            </div>
+
+                            <div className="mt-4 overflow-x-auto">
+                              <div className="flex items-start gap-6 min-w-max pb-1">
+                                {timelineSteps.map((step, index) => (
+                                  <div
+                                    key={step.key}
+                                    className="flex items-center gap-4"
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      <div className="mt-0.5">
+                                        {step.state === "complete" ? (
+                                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                        ) : step.state === "current" ? (
+                                          <Clock className="h-4 w-4 text-blue-500" />
+                                        ) : (
+                                          <span className="h-4 w-4 rounded-full border border-slate-300 block" />
+                                        )}
+                                      </div>
+                                      <div className="min-w-[160px]">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <p className="text-sm font-semibold text-slate-700">
+                                            {step.label}
+                                          </p>
+                                          {step.state === "current" && (
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                                              In progress
+                                            </span>
+                                          )}
+                                          {step.state === "complete" && (
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                              Completed
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                          {step.detail}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    {index < timelineSteps.length - 1 && (
+                                      <span
+                                        className="h-px w-8 bg-slate-200"
+                                        aria-hidden="true"
+                                      />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                    {/* Welcome & Status Header */}
                     <div
                       className={cn(
-                        "bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100",
+                        "bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100 relative overflow-hidden",
                         isReferenceSidebarClient &&
                           "rounded-xl border-slate-200 px-5 py-4",
                       )}
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                          <FileText
-                            className={cn(
-                              "h-4 w-4 text-indigo-500",
-                              isReferenceSidebarClient &&
-                                "h-[18px] w-[18px] text-slate-600",
-                            )}
-                          />
-                          Official Documents
-                        </h3>
-                      </div>
-
-                      {loadingQuotations ? (
-                        <div className="flex flex-col items-center justify-center py-6 text-slate-400 gap-2">
-                          <Loader2 className="h-6 w-6 animate-spin" />
-                          <p className="text-xs font-medium">
-                            Fetching documents...
-                          </p>
-                        </div>
-                      ) : isPendingReferenceClient ||
-                        (inquiryQuotations.length === 0 &&
-                          currentInquiry?.status === "Pending") ? (
-                        <div
-                          className={cn(
-                            "rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-6 text-center space-y-2",
-                            isPendingReferenceClient &&
-                              "border-slate-200 bg-[#F5F7FA] px-4 py-6 sm:py-7",
-                          )}
-                        >
-                          <div className="flex justify-center">
-                            <span
-                              className={cn(
-                                "inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600",
-                                isPendingReferenceClient &&
-                                  "h-16 w-16 bg-[#FFF1D6] text-amber-700 ring-8 ring-[#FBF5E9]",
-                              )}
-                            >
-                              <Clock
-                                className={cn(
-                                  "h-6 w-6",
-                                  isPendingReferenceClient && "h-7 w-7",
-                                )}
-                              />
-                            </span>
-                          </div>
-                          <p
-                            className={cn(
-                              "text-sm font-bold text-amber-900",
-                              isPendingReferenceClient &&
-                                "pt-1 text-base font-semibold text-slate-900",
-                            )}
-                          >
-                            Awaiting Quotation from Admin
-                          </p>
-                          <p
-                            className={cn(
-                              "text-xs text-amber-700 leading-relaxed",
-                              isPendingReferenceClient &&
-                                "mx-auto max-w-xl text-sm text-slate-600",
-                            )}
-                          >
-                            Your inquiry has been submitted and is currently
-                            under review. An official quotation will appear
-                            here once the admin has processed your request.
-                          </p>
-                        </div>
-                      ) : inquiryQuotations.length === 0 ? (
-                        <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                          <p className="text-xs text-slate-500 italic">
-                            No official quotations found for this inquiry yet.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {inquiryQuotations.map((quote) => {
-                            const qCancelled = quote.status === "cancelled";
-                            const isSelected =
-                              quote.status === "selected" ||
-                              quote.selectedForProject;
-                            return (
-                              <div
-                                key={quote.id}
-                                className={cn(
-                                  "rounded-xl border border-slate-100 bg-white shadow-sm p-2.5",
-                                  isReferenceSidebarClient &&
-                                    cn(
-                                      "rounded-lg p-3 shadow-none",
-                                      isOngoingQuotationReferenceClient
-                                        ? "border-slate-200 bg-[#F5F7FA]"
-                                        : isSelected
-                                        ? "border-[#1971C7] bg-[#E7F1FA]"
-                                        : "border-slate-200 bg-white",
-                                    ),
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "flex items-center justify-between gap-2 flex-wrap",
-                                    isReferenceSidebarClient &&
-                                      "gap-3 sm:flex-nowrap",
-                                  )}
-                                >
-                                  {/* Left: clickable name + totals */}
-                                  <div
-                                    className={cn(
-                                      "flex items-center gap-1.5 min-w-0 flex-wrap",
-                                      isReferenceSidebarClient &&
-                                        "flex-1 items-center gap-x-5 gap-y-2",
-                                    )}
-                                  >
-                                    <a
-                                      href={`/client/view-document?type=quotation&ref=${quote.referenceNumber}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className={cn(
-                                        "inline-flex items-center gap-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-full px-2.5 py-0.5 transition-colors",
-                                        isReferenceSidebarClient &&
-                                          "rounded-full border-[#1971C7] bg-white px-3 py-2 text-[13px] text-[#145B91] hover:bg-blue-50",
-                                      )}
-                                    >
-                                      {isReferenceSidebarClient && (
-                                        <Eye className="h-3.5 w-3.5" />
-                                      )}
-                                      {quote.referenceNumber}
-                                    </a>
-                                    <div
-                                      className={cn(
-                                        "flex items-center gap-1.5",
-                                        isReferenceSidebarClient &&
-                                          "flex-row flex-wrap gap-x-5 gap-y-1",
-                                      )}
-                                    >
-                                      <span
-                                        className={cn(
-                                          "text-[10px] text-slate-500",
-                                          isReferenceSidebarClient &&
-                                            "text-[12px] text-slate-600",
-                                        )}
-                                      >
-                                        Total:{" "}
-                                        {!isReferenceSidebarClient && " "}
-                                        <span className="font-semibold text-slate-800">
-                                          {new Intl.NumberFormat("en-PH", {
-                                            style: "currency",
-                                            currency: "PHP",
-                                          }).format(quote.total)}
-                                        </span>
-                                      </span>
-                                      <span
-                                        className={cn(
-                                          "text-[10px] text-slate-500",
-                                          isReferenceSidebarClient &&
-                                            "text-[12px] text-slate-600",
-                                        )}
-                                      >
-                                        Issued:{" "}
-                                        {!isReferenceSidebarClient && " "}
-                                        <span className="font-medium text-slate-600">
-                                          {new Date(
-                                            quote.dateIssued,
-                                          ).toLocaleDateString("en-US", {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                          })}
-                                        </span>
-                                      </span>
-                                    </div>
-                                  </div>
-                                  {/* Right: status badge + action buttons */}
-                                  <div
-                                    className={cn(
-                                      "flex items-center gap-2 flex-shrink-0",
-                                      isReferenceSidebarClient &&
-                                        "w-full justify-between sm:w-auto sm:justify-end",
-                                    )}
-                                  >
-                                    {qCancelled ? (
-                                      <span className={cn(
-                                        "inline-flex text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5",
-                                        isReferenceSidebarClient &&
-                                          "text-[11px] px-2.5 py-1",
-                                      )}>
-                                        Cancelled
-                                      </span>
-                                    ) : isSelected ? (
-                                      <span className={cn(
-                                        "inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5",
-                                        isReferenceSidebarClient &&
-                                          "text-[11px] px-2.5 py-1",
-                                      )}>
-                                          <CheckCircle2 className="h-2.5 w-2.5" />{" "}
-                                          Selected
-                                      </span>
-                                    ) : null}
-                                    {!qCancelled &&
-                                      !isSelected &&
-                                      fetchedApprovedProjects.length === 0 &&
-                                      currentInquiry?.status !== "Cancelled" &&
-                                      currentInquiry?.status !==
-                                        "Quotation Only" && (
-                                        <Button
-                                          size="sm"
-                                          onClick={() =>
-                                            handleProceedWithService(
-                                              quote.referenceNumber,
-                                            )
-                                          }
-                                          className={cn(
-                                            "bg-gradient-to-r from-[#166FB5] to-[#4038AF] text-white hover:opacity-90 font-bold h-8 text-xs",
-                                            isOngoingQuotationReferenceClient &&
-                                              "bg-none bg-[#1769AA] hover:bg-[#12588F] hover:opacity-100",
-                                          )}
-                                        >
-                                          <ArrowRight className="h-3 w-3 mr-1" />
-                                          Proceed with Service
-                                        </Button>
-                                      )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                      {!isReferenceSidebarClient && (
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
                       )}
-                    </div>
-
-                    {/* Messages / Communications (Floating) — rendered globally below */}
-
-                    {/* Quotation Request Details (previously Inquiry Details Summary) */}
-                    {currentInquiry && (
-                      <div
-                        className={cn(
-                          "bg-amber-50/70 border border-amber-100 rounded-xl px-4 py-3",
-                          isReferenceSidebarClient &&
-                            "rounded-xl border-slate-200 bg-[#F5F7FA] px-5 py-4",
-                          isPendingReferenceClient &&
-                            "border-slate-200 bg-[#F5F7FA]",
-                          isOngoingQuotationReferenceClient &&
-                            "border-slate-200 bg-[#F5F7FA]",
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "flex flex-col sm:flex-row sm:items-center justify-between gap-2",
-                            isReferenceSidebarClient && "gap-4",
-                          )}
-                        >
+                      <div className="relative">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                           <div className="space-y-0.5">
-                            <h4
+                            <h2
                               className={cn(
-                                "text-xs font-bold text-amber-900",
+                                "text-base font-bold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent",
                                 isReferenceSidebarClient &&
-                                  "text-sm font-semibold text-slate-900",
+                                  "text-lg bg-none text-[#145B91]",
                               )}
                             >
                               {isReferenceSidebarClient
-                                ? "Not proceeding with the service?"
-                                : "Not proceeding with the service?"}
-                            </h4>
+                                ? "Welcome to your Workspace"
+                                : "Welcome to your Workspace"}
+                            </h2>
                             <p
                               className={cn(
-                                "text-[11px] text-amber-800",
-                                isReferenceSidebarClient &&
-                                  "mt-1 text-sm text-slate-600",
+                                "text-slate-500 text-xs",
+                                !isReferenceSidebarClient &&
+                                  "whitespace-nowrap",
+                                isReferenceSidebarClient && "text-[13px]",
                               )}
                             >
                               {isReferenceSidebarClient
-                                ? 'Update this request to "Quotation Only" if you decide to stop.'
-                                : 'Update this request to "Quotation Only" if you decide to stop.'}
+                                ? "Review your official quotations and manage your research projects here."
+                                : "Review your official quotations and manage your research projects here."}
                             </p>
                           </div>
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowCancelInquiryModal(true)}
-                            disabled={
-                              currentInquiry.status === "Cancelled" ||
-                              currentInquiry.status === "Quotation Only" ||
-                              currentInquiry.status === "Approved Client" ||
-                              cancelInquirySubmitting
-                            }
-                            className={cn(
-                              "border-amber-200 text-amber-900 hover:bg-amber-100 font-bold text-xs h-7 shrink-0",
-                              isReferenceSidebarClient &&
-                                "h-9 border-slate-200 bg-transparent px-4 text-sm font-medium text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-100",
-                              isPendingReferenceClient &&
-                                "border-red-400 bg-white text-red-700 hover:bg-red-50 disabled:border-red-400 disabled:bg-white disabled:text-red-700",
-                              isOngoingQuotationReferenceClient &&
-                                "border-red-400 bg-white text-red-700 hover:bg-red-50",
-                              isReferenceSidebarClient &&
-                                (currentInquiry.status === "Cancelled" ||
-                                  currentInquiry.status === "Quotation Only" ||
-                                  currentInquiry.status === "Approved Client") &&
-                                "border-dashed",
-                            )}
-                          >
-                            Do Not Proceed
-                          </Button>
-                        </div>
-                        {(currentInquiry.status === "Cancelled" ||
-                          currentInquiry.status === "Quotation Only" ||
-                          currentInquiry.status === "Approved Client") && (
-                          <p
-                            className={cn(
-                              "text-[11px] text-amber-700 mt-1.5",
-                              isReferenceSidebarClient &&
-                                "mt-2 flex items-center gap-1.5 text-sm text-emerald-700",
-                            )}
-                          >
-                            {isReferenceSidebarClient && (
-                              <CheckCircle2 className="h-4 w-4 shrink-0" />
-                            )}
-                            This request is already marked as{" "}
-                            {currentInquiry.status}.
-                          </p>
-                        )}
-                      </div>
-                    )}
 
-                    {currentInquiry && (
+                          {currentInquiry && (
+                            <div
+                              className={cn(
+                                "bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 flex items-center gap-3 min-w-[200px]",
+                                isReferenceSidebarClient &&
+                                  "min-w-0 rounded-full border-0 bg-[#E3F5EC] px-3 py-2",
+                                isPendingReferenceClient && "bg-[#FFF1D6]",
+                                isOngoingQuotationReferenceClient &&
+                                  "bg-[#E1F1FD]",
+                                isInProgressReferenceClient && "bg-[#F6E6D9]",
+                              )}
+                            >
+                              {isReferenceSidebarClient &&
+                              currentInquiry.status === "Pending" ? (
+                                <Clock className="h-6 w-6 shrink-0 text-amber-700" />
+                              ) : isOngoingQuotationReferenceClient ? (
+                                <FileText className="h-6 w-6 shrink-0 text-[#1769AA]" />
+                              ) : isInProgressReferenceClient ? (
+                                <CheckCircle2 className="h-6 w-6 shrink-0 text-[#8A4B20]" />
+                              ) : isReferenceSidebarClient ? (
+                                <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-700" />
+                              ) : (
+                                <div
+                                  className={cn(
+                                    "w-10 h-10 rounded-full flex items-center justify-center shadow-sm",
+                                    currentInquiry.status === "Approved Client"
+                                      ? "bg-green-100 text-green-600"
+                                      : currentInquiry.status ===
+                                          "Quotation Only"
+                                        ? "bg-blue-100 text-blue-600"
+                                        : currentInquiry.status === "Cancelled"
+                                          ? "bg-red-100 text-red-500"
+                                          : "bg-amber-100 text-amber-600",
+                                  )}
+                                >
+                                  {currentInquiry.status ===
+                                  "Approved Client" ? (
+                                    <CheckCircle2 className="h-5 w-5" />
+                                  ) : currentInquiry.status ===
+                                    "Quotation Only" ? (
+                                    <FileText className="h-5 w-5" />
+                                  ) : currentInquiry.status === "Cancelled" ? (
+                                    <XCircle className="h-5 w-5" />
+                                  ) : (
+                                    <Clock className="h-5 w-5" />
+                                  )}
+                                </div>
+                              )}
+                              <div>
+                                <p
+                                  className={cn(
+                                    "text-[9px] font-bold text-slate-400 uppercase tracking-widest",
+                                    isReferenceSidebarClient &&
+                                      "text-[11px] font-normal normal-case tracking-normal text-emerald-700",
+                                    isPendingReferenceClient &&
+                                      "text-amber-700",
+                                    isOngoingQuotationReferenceClient &&
+                                      "text-[#1769AA]",
+                                    isInProgressReferenceClient &&
+                                      "text-[#8A4B20]",
+                                  )}
+                                >
+                                  Inquiry Status
+                                </p>
+                                <p
+                                  className={cn(
+                                    "font-bold text-slate-700 text-sm",
+                                    isReferenceSidebarClient &&
+                                      "text-[13px] leading-4 text-emerald-800",
+                                    isPendingReferenceClient &&
+                                      "text-amber-800",
+                                    isOngoingQuotationReferenceClient &&
+                                      "text-[#145B91]",
+                                    isInProgressReferenceClient &&
+                                      "text-[#713B19]",
+                                  )}
+                                >
+                                  {currentInquiry.status}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={cn(
+                        "space-y-6",
+                        isReferenceSidebarClient && "space-y-4",
+                      )}
+                    >
+                      {/* Documents FIRST, then Summary */}
                       <div
                         className={cn(
-                          "bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden",
-                          isReferenceSidebarClient &&
-                            "rounded-xl border-slate-200 px-5 py-4 shadow-none",
+                          "space-y-6",
+                          isReferenceSidebarClient && "space-y-4",
                         )}
                       >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setIsQuotationRequestExpanded((prev) => !prev)
-                          }
-                          className="flex w-full items-center justify-between gap-3 text-left"
-                          aria-expanded={isQuotationRequestExpanded}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={cn(
-                                "w-2 h-2 bg-gradient-to-r from-[#912ABD] to-[#6E308E] rounded-full",
-                                isReferenceSidebarClient &&
-                                  "hidden",
-                              )}
-                            />
-                            {isReferenceSidebarClient && (
-                              <ClipboardList className="h-5 w-5 text-[#1769AA]" />
-                            )}
-                            <span>
-                              <span className="block text-base font-semibold text-slate-800">
-                                {isReferenceSidebarClient
-                                  ? "Quotation Request Details"
-                                  : "Quotation Request Details"}
-                              </span>
-                            </span>
-                          </div>
-                          {isQuotationRequestExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-slate-400" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-slate-400" />
+                        {/* Official Documents (Quotations) - MOVED UP */}
+                        <div
+                          className={cn(
+                            "bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100",
+                            isReferenceSidebarClient &&
+                              "rounded-xl border-slate-200 px-5 py-4",
                           )}
-                        </button>
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                              <FileText
+                                className={cn(
+                                  "h-4 w-4 text-indigo-500",
+                                  isReferenceSidebarClient &&
+                                    "h-[18px] w-[18px] text-slate-600",
+                                )}
+                              />
+                              Official Documents
+                            </h3>
+                          </div>
 
-                        {isQuotationRequestExpanded && (
-                          <div className="mt-4 space-y-5">
-                            {/* Laboratory Service Details */}
-                            {currentInquiry.serviceType === "laboratory" ? (
-                              <div className="space-y-4 animate-in fade-in duration-500">
-                                {/* Quick stats row */}
-                                <div className="grid grid-cols-3 gap-4 pb-4 border-b border-slate-100">
-                                  <div className="space-y-1">
-                                    <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                      Service Type
-                                    </span>
-                                    <p className="text-sm font-semibold text-slate-900">
-                                      Laboratory
-                                    </p>
-                                  </div>
-                                  <div className="space-y-1">
-                                    <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                      Species
-                                    </span>
-                                    <p className="text-sm font-semibold text-slate-900 capitalize italic">
-                                      {currentInquiry.species
-                                        ? currentInquiry.otherSpecies
-                                          ? `${currentInquiry.species}: ${currentInquiry.otherSpecies}`
-                                          : currentInquiry.species
-                                        : "—"}
-                                    </p>
-                                  </div>
-                                  <div className="space-y-1">
-                                    <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                      Sample Count
-                                    </span>
-                                    <p className="text-sm font-semibold text-slate-900">
-                                      {currentInquiry.sampleCount || "—"}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Workflow */}
-                                <div className="space-y-1">
-                                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                    Workflow / Analysis Strategy
-                                  </span>
-                                  <p className="text-sm font-semibold text-slate-900">
-                                    {formatWorkflowType(
-                                      currentInquiry.workflowType,
-                                    ) || "—"}
-                                  </p>
-                                </div>
-
-                                {/* Bioinformatics Analysis badges removed as requested */}
-
-                                {/* complete-bioinfo: full bioinformaticsDetails breakdown */}
-                                {currentInquiry.workflowType ===
-                                  "complete-bioinfo" &&
-                                  currentInquiry.bioinformaticsDetails && (
-                                    <div className="space-y-4 pt-1">
-                                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block">
-                                        Configure Bioinformatics Analysis
-                                      </span>
-
-                                      {/* Service Types */}
-                                      <div className="space-y-2">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Type of Bioinformatics Service
-                                        </span>
-                                        <div className="flex flex-wrap gap-2">
-                                          {(Array.isArray(
-                                            currentInquiry.bioinformaticsDetails
-                                              ?.serviceTypes,
-                                          )
-                                            ? currentInquiry
-                                                .bioinformaticsDetails
-                                                .serviceTypes
-                                            : []
-                                          ).length > 0 ? (
-                                            (
-                                              currentInquiry
-                                                .bioinformaticsDetails
-                                                .serviceTypes as string[]
-                                            ).map((serviceType) => {
-                                              const labels: Record<
-                                                string,
-                                                string
-                                              > = {
-                                                phylogenetic:
-                                                  "Phylogenetic Analysis",
-                                                metabarcoding:
-                                                  "Metabarcoding/Metagenomics",
-                                                transcriptomics:
-                                                  "Transcriptomics",
-                                                "whole-genome-assembly":
-                                                  "Whole Genome Assembly",
-                                                others: "Others",
-                                              };
-                                              return (
-                                                <span
-                                                  key={serviceType}
-                                                  className="inline-block text-xs font-medium text-blue-700 bg-blue-50 border border-blue-100 rounded px-2.5 py-1"
-                                                >
-                                                  {labels[serviceType] ||
-                                                    serviceType}
-                                                </span>
-                                              );
-                                            })
-                                          ) : (
-                                            <p className="text-sm text-slate-400 italic">
-                                              None selected
-                                            </p>
+                          {loadingQuotations ? (
+                            <div className="flex flex-col items-center justify-center py-6 text-slate-400 gap-2">
+                              <Loader2 className="h-6 w-6 animate-spin" />
+                              <p className="text-xs font-medium">
+                                Fetching documents...
+                              </p>
+                            </div>
+                          ) : isPendingReferenceClient ||
+                            (inquiryQuotations.length === 0 &&
+                              currentInquiry?.status === "Pending") ? (
+                            <div
+                              className={cn(
+                                "rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-6 text-center space-y-2",
+                                isPendingReferenceClient &&
+                                  "border-slate-200 bg-[#F5F7FA] px-4 py-6 sm:py-7",
+                              )}
+                            >
+                              <div className="flex justify-center">
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600",
+                                    isPendingReferenceClient &&
+                                      "h-16 w-16 bg-[#FFF1D6] text-amber-700 ring-8 ring-[#FBF5E9]",
+                                  )}
+                                >
+                                  <Clock
+                                    className={cn(
+                                      "h-6 w-6",
+                                      isPendingReferenceClient && "h-7 w-7",
+                                    )}
+                                  />
+                                </span>
+                              </div>
+                              <p
+                                className={cn(
+                                  "text-sm font-bold text-amber-900",
+                                  isPendingReferenceClient &&
+                                    "pt-1 text-base font-semibold text-slate-900",
+                                )}
+                              >
+                                Awaiting Quotation from Admin
+                              </p>
+                              <p
+                                className={cn(
+                                  "text-xs text-amber-700 leading-relaxed",
+                                  isPendingReferenceClient &&
+                                    "mx-auto max-w-xl text-sm text-slate-600",
+                                )}
+                              >
+                                Your inquiry has been submitted and is currently
+                                under review. An official quotation will appear
+                                here once the admin has processed your request.
+                              </p>
+                            </div>
+                          ) : inquiryQuotations.length === 0 ? (
+                            <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                              <p className="text-xs text-slate-500 italic">
+                                No official quotations found for this inquiry
+                                yet.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {inquiryQuotations.map((quote) => {
+                                const qCancelled = quote.status === "cancelled";
+                                const isSelected =
+                                  quote.status === "selected" ||
+                                  quote.selectedForProject;
+                                return (
+                                  <div
+                                    key={quote.id}
+                                    className={cn(
+                                      "rounded-xl border border-slate-100 bg-white shadow-sm p-2.5",
+                                      isReferenceSidebarClient &&
+                                        cn(
+                                          "rounded-lg p-3 shadow-none",
+                                          isOngoingQuotationReferenceClient
+                                            ? "border-slate-200 bg-[#F5F7FA]"
+                                            : isSelected
+                                              ? "border-[#1971C7] bg-[#E7F1FA]"
+                                              : "border-slate-200 bg-white",
+                                        ),
+                                    )}
+                                  >
+                                    <div
+                                      className={cn(
+                                        "flex items-center justify-between gap-2 flex-wrap",
+                                        isReferenceSidebarClient &&
+                                          "gap-3 sm:flex-nowrap",
+                                      )}
+                                    >
+                                      {/* Left: clickable name + totals */}
+                                      <div
+                                        className={cn(
+                                          "flex items-center gap-1.5 min-w-0 flex-wrap",
+                                          isReferenceSidebarClient &&
+                                            "flex-1 items-center gap-x-5 gap-y-2",
+                                        )}
+                                      >
+                                        <a
+                                          href={`/client/view-document?type=quotation&ref=${quote.referenceNumber}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className={cn(
+                                            "inline-flex items-center gap-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-full px-2.5 py-0.5 transition-colors",
+                                            isReferenceSidebarClient &&
+                                              "rounded-full border-[#1971C7] bg-white px-3 py-2 text-[13px] text-[#145B91] hover:bg-blue-50",
                                           )}
+                                        >
+                                          {isReferenceSidebarClient && (
+                                            <Eye className="h-3.5 w-3.5" />
+                                          )}
+                                          {quote.referenceNumber}
+                                        </a>
+                                        <div
+                                          className={cn(
+                                            "flex items-center gap-1.5",
+                                            isReferenceSidebarClient &&
+                                              "flex-row flex-wrap gap-x-5 gap-y-1",
+                                          )}
+                                        >
+                                          <span
+                                            className={cn(
+                                              "text-[10px] text-slate-500",
+                                              isReferenceSidebarClient &&
+                                                "text-[12px] text-slate-600",
+                                            )}
+                                          >
+                                            Total:{" "}
+                                            {!isReferenceSidebarClient && " "}
+                                            <span className="font-semibold text-slate-800">
+                                              {new Intl.NumberFormat("en-PH", {
+                                                style: "currency",
+                                                currency: "PHP",
+                                              }).format(quote.total)}
+                                            </span>
+                                          </span>
+                                          <span
+                                            className={cn(
+                                              "text-[10px] text-slate-500",
+                                              isReferenceSidebarClient &&
+                                                "text-[12px] text-slate-600",
+                                            )}
+                                          >
+                                            Issued:{" "}
+                                            {!isReferenceSidebarClient && " "}
+                                            <span className="font-medium text-slate-600">
+                                              {new Date(
+                                                quote.dateIssued,
+                                              ).toLocaleDateString("en-US", {
+                                                year: "numeric",
+                                                month: "short",
+                                                day: "numeric",
+                                              })}
+                                            </span>
+                                          </span>
                                         </div>
                                       </div>
+                                      {/* Right: status badge + action buttons */}
+                                      <div
+                                        className={cn(
+                                          "flex items-center gap-2 flex-shrink-0",
+                                          isReferenceSidebarClient &&
+                                            "w-full justify-between sm:w-auto sm:justify-end",
+                                        )}
+                                      >
+                                        {qCancelled ? (
+                                          <span
+                                            className={cn(
+                                              "inline-flex text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5",
+                                              isReferenceSidebarClient &&
+                                                "text-[11px] px-2.5 py-1",
+                                            )}
+                                          >
+                                            Cancelled
+                                          </span>
+                                        ) : isSelected ? (
+                                          <span
+                                            className={cn(
+                                              "inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5",
+                                              isReferenceSidebarClient &&
+                                                "text-[11px] px-2.5 py-1",
+                                            )}
+                                          >
+                                            <CheckCircle2 className="h-2.5 w-2.5" />{" "}
+                                            Selected
+                                          </span>
+                                        ) : null}
+                                        {!qCancelled &&
+                                          !isSelected &&
+                                          fetchedApprovedProjects.length ===
+                                            0 &&
+                                          currentInquiry?.status !==
+                                            "Cancelled" &&
+                                          currentInquiry?.status !==
+                                            "Quotation Only" && (
+                                            <Button
+                                              size="sm"
+                                              onClick={() =>
+                                                handleProceedWithService(
+                                                  quote.referenceNumber,
+                                                )
+                                              }
+                                              className={cn(
+                                                "bg-gradient-to-r from-[#166FB5] to-[#4038AF] text-white hover:opacity-90 font-bold h-8 text-xs",
+                                                isOngoingQuotationReferenceClient &&
+                                                  "bg-none bg-[#1769AA] hover:bg-[#12588F] hover:opacity-100",
+                                              )}
+                                            >
+                                              <ArrowRight className="h-3 w-3 mr-1" />
+                                              Proceed with Service
+                                            </Button>
+                                          )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
 
-                                      {/* Phylogenetic Analysis */}
-                                      {(
-                                        (currentInquiry.bioinformaticsDetails
-                                          ?.serviceTypes as
-                                          | string[]
-                                          | undefined) || []
-                                      ).includes("phylogenetic") && (
-                                        <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-3">
-                                          <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                            Phylogenetic Analysis Details
-                                          </h4>
-                                          <div className="grid grid-cols-2 gap-3">
-                                            <div className="flex flex-col">
-                                              <span className="text-xs text-slate-500">
-                                                No. of markers
-                                              </span>
-                                              <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                {currentInquiry
-                                                  .bioinformaticsDetails
-                                                  ?.phylogenetic?.markerCount ??
-                                                  "—"}
-                                              </span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-xs text-slate-500">
-                                                Marker(s)
-                                              </span>
-                                              <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                {currentInquiry
-                                                  .bioinformaticsDetails
-                                                  ?.phylogenetic?.markers ||
-                                                  "—"}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
+                        {/* Messages / Communications (Floating) — rendered globally below */}
 
-                                      {/* Metabarcoding / Metagenomics */}
-                                      {(
-                                        (currentInquiry.bioinformaticsDetails
-                                          ?.serviceTypes as
-                                          | string[]
-                                          | undefined) || []
-                                      ).includes("metabarcoding") && (
-                                        <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
-                                          <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                            Metabarcoding / Metagenomics Details
-                                          </h4>
-                                          <div>
-                                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                              Study Structure
+                        {/* Quotation Request Details (previously Inquiry Details Summary) */}
+                        {currentInquiry && (
+                          <div
+                            className={cn(
+                              "bg-amber-50/70 border border-amber-100 rounded-xl px-4 py-3",
+                              isReferenceSidebarClient &&
+                                "rounded-xl border-slate-200 bg-[#F5F7FA] px-5 py-4",
+                              isPendingReferenceClient &&
+                                "border-slate-200 bg-[#F5F7FA]",
+                              isOngoingQuotationReferenceClient &&
+                                "border-slate-200 bg-[#F5F7FA]",
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "flex flex-col sm:flex-row sm:items-center justify-between gap-2",
+                                isReferenceSidebarClient && "gap-4",
+                              )}
+                            >
+                              <div className="space-y-0.5">
+                                <h4
+                                  className={cn(
+                                    "text-xs font-bold text-amber-900",
+                                    isReferenceSidebarClient &&
+                                      "text-sm font-semibold text-slate-900",
+                                  )}
+                                >
+                                  {isReferenceSidebarClient
+                                    ? "Not proceeding with the service?"
+                                    : "Not proceeding with the service?"}
+                                </h4>
+                                <p
+                                  className={cn(
+                                    "text-[11px] text-amber-800",
+                                    isReferenceSidebarClient &&
+                                      "mt-1 text-sm text-slate-600",
+                                  )}
+                                >
+                                  {isReferenceSidebarClient
+                                    ? 'Update this request to "Quotation Only" if you decide to stop.'
+                                    : 'Update this request to "Quotation Only" if you decide to stop.'}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                onClick={() => setShowCancelInquiryModal(true)}
+                                disabled={
+                                  currentInquiry.status === "Cancelled" ||
+                                  currentInquiry.status === "Quotation Only" ||
+                                  currentInquiry.status === "Approved Client" ||
+                                  cancelInquirySubmitting
+                                }
+                                className={cn(
+                                  "border-amber-200 text-amber-900 hover:bg-amber-100 font-bold text-xs h-7 shrink-0",
+                                  isReferenceSidebarClient &&
+                                    "h-9 border-slate-200 bg-transparent px-4 text-sm font-medium text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-100",
+                                  isPendingReferenceClient &&
+                                    "border-red-400 bg-white text-red-700 hover:bg-red-50 disabled:border-red-400 disabled:bg-white disabled:text-red-700",
+                                  isOngoingQuotationReferenceClient &&
+                                    "border-red-400 bg-white text-red-700 hover:bg-red-50",
+                                  isReferenceSidebarClient &&
+                                    (currentInquiry.status === "Cancelled" ||
+                                      currentInquiry.status ===
+                                        "Quotation Only" ||
+                                      currentInquiry.status ===
+                                        "Approved Client") &&
+                                    "border-dashed",
+                                )}
+                              >
+                                Do Not Proceed
+                              </Button>
+                            </div>
+                            {(currentInquiry.status === "Cancelled" ||
+                              currentInquiry.status === "Quotation Only" ||
+                              currentInquiry.status === "Approved Client") && (
+                              <p
+                                className={cn(
+                                  "text-[11px] text-amber-700 mt-1.5",
+                                  isReferenceSidebarClient &&
+                                    "mt-2 flex items-center gap-1.5 text-sm text-emerald-700",
+                                )}
+                              >
+                                {isReferenceSidebarClient && (
+                                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                )}
+                                This request is already marked as{" "}
+                                {currentInquiry.status}.
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {currentInquiry && (
+                          <div
+                            className={cn(
+                              "bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden",
+                              isReferenceSidebarClient &&
+                                "rounded-xl border-slate-200 px-5 py-4 shadow-none",
+                            )}
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setIsQuotationRequestExpanded((prev) => !prev)
+                              }
+                              className="flex w-full items-center justify-between gap-3 text-left"
+                              aria-expanded={isQuotationRequestExpanded}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span
+                                  className={cn(
+                                    "w-2 h-2 bg-gradient-to-r from-[#912ABD] to-[#6E308E] rounded-full",
+                                    isReferenceSidebarClient && "hidden",
+                                  )}
+                                />
+                                {isReferenceSidebarClient && (
+                                  <ClipboardList className="h-5 w-5 text-[#1769AA]" />
+                                )}
+                                <span>
+                                  <span className="block text-base font-semibold text-slate-800">
+                                    {isReferenceSidebarClient
+                                      ? "Quotation Request Details"
+                                      : "Quotation Request Details"}
+                                  </span>
+                                </span>
+                              </div>
+                              {isQuotationRequestExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-slate-400" />
+                              )}
+                            </button>
+
+                            {isQuotationRequestExpanded && (
+                              <div className="mt-4 space-y-5">
+                                {/* Laboratory Service Details */}
+                                {currentInquiry.serviceType === "laboratory" ? (
+                                  <div className="space-y-4 animate-in fade-in duration-500">
+                                    {/* Quick stats row */}
+                                    <div className="grid grid-cols-3 gap-4 pb-4 border-b border-slate-100">
+                                      <div className="space-y-1">
+                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                          Service Type
+                                        </span>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                          Laboratory
+                                        </p>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                          Species
+                                        </span>
+                                        <p className="text-sm font-semibold text-slate-900 capitalize italic">
+                                          {currentInquiry.species
+                                            ? currentInquiry.otherSpecies
+                                              ? `${currentInquiry.species}: ${currentInquiry.otherSpecies}`
+                                              : currentInquiry.species
+                                            : "—"}
+                                        </p>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                          Sample Count
+                                        </span>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                          {currentInquiry.sampleCount || "—"}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Workflow */}
+                                    <div className="space-y-1">
+                                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                        Workflow / Analysis Strategy
+                                      </span>
+                                      <p className="text-sm font-semibold text-slate-900">
+                                        {formatWorkflowType(
+                                          currentInquiry.workflowType,
+                                        ) || "—"}
+                                      </p>
+                                    </div>
+
+                                    {/* Bioinformatics Analysis badges removed as requested */}
+
+                                    {/* complete-bioinfo: full bioinformaticsDetails breakdown */}
+                                    {currentInquiry.workflowType ===
+                                      "complete-bioinfo" &&
+                                      currentInquiry.bioinformaticsDetails && (
+                                        <div className="space-y-4 pt-1">
+                                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block">
+                                            Configure Bioinformatics Analysis
+                                          </span>
+
+                                          {/* Service Types */}
+                                          <div className="space-y-2">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Type of Bioinformatics Service
                                             </span>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                              {(
-                                                [
-                                                  {
-                                                    label: "Sample type",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.metabarcoding?.study
-                                                      ?.sampleType,
-                                                  },
-                                                  {
-                                                    label: "No. of samples",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.metabarcoding?.study
-                                                      ?.sampleCount,
-                                                  },
-                                                  {
-                                                    label:
-                                                      "No. of groups / treatments to study",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.metabarcoding?.study
-                                                      ?.groupCount,
-                                                  },
-                                                  {
-                                                    label:
-                                                      "No. of replicates per sample",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.metabarcoding?.study
-                                                      ?.replicatesPerSample,
-                                                  },
-                                                  {
-                                                    label:
-                                                      "Target gene / marker",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.metabarcoding?.study
-                                                      ?.targetGene,
-                                                  },
-                                                  {
-                                                    label: "Target region",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.metabarcoding?.study
-                                                      ?.targetRegion,
-                                                  },
-                                                  {
-                                                    label: "Primer set used",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.metabarcoding?.study
-                                                      ?.primerSet,
-                                                  },
-                                                  {
-                                                    label:
-                                                      "Expected amplicon size",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.metabarcoding?.study
-                                                      ?.ampliconSize,
-                                                  },
-                                                  {
-                                                    label:
-                                                      "Sequencing type and platform",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.metabarcoding?.study
-                                                      ?.sequencingPlatform,
-                                                  },
-                                                ] as {
-                                                  label: string;
-                                                  val: any;
-                                                }[]
-                                              ).map(({ label, val }) =>
-                                                val != null && val !== "" ? (
-                                                  <div
-                                                    key={label}
-                                                    className="flex flex-col"
-                                                  >
-                                                    <span className="text-xs text-slate-500">
-                                                      {label}
+                                            <div className="flex flex-wrap gap-2">
+                                              {(Array.isArray(
+                                                currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.serviceTypes,
+                                              )
+                                                ? currentInquiry
+                                                    .bioinformaticsDetails
+                                                    .serviceTypes
+                                                : []
+                                              ).length > 0 ? (
+                                                (
+                                                  currentInquiry
+                                                    .bioinformaticsDetails
+                                                    .serviceTypes as string[]
+                                                ).map((serviceType) => {
+                                                  const labels: Record<
+                                                    string,
+                                                    string
+                                                  > = {
+                                                    phylogenetic:
+                                                      "Phylogenetic Analysis",
+                                                    metabarcoding:
+                                                      "Metabarcoding/Metagenomics",
+                                                    transcriptomics:
+                                                      "Transcriptomics",
+                                                    "whole-genome-assembly":
+                                                      "Whole Genome Assembly",
+                                                    others: "Others",
+                                                  };
+                                                  return (
+                                                    <span
+                                                      key={serviceType}
+                                                      className="inline-block text-xs font-medium text-blue-700 bg-blue-50 border border-blue-100 rounded px-2.5 py-1"
+                                                    >
+                                                      {labels[serviceType] ||
+                                                        serviceType}
                                                     </span>
-                                                    <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                      {val}
-                                                    </span>
-                                                  </div>
-                                                ) : null,
+                                                  );
+                                                })
+                                              ) : (
+                                                <p className="text-sm text-slate-400 italic">
+                                                  None selected
+                                                </p>
                                               )}
                                             </div>
                                           </div>
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.metabarcoding?.analysisType && (
-                                            <div className="flex flex-col">
-                                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                                Analysis Type
-                                              </span>
-                                              <span className="text-sm font-medium text-slate-800 mt-1">
+
+                                          {/* Phylogenetic Analysis */}
+                                          {(
+                                            (currentInquiry
+                                              .bioinformaticsDetails
+                                              ?.serviceTypes as
+                                              | string[]
+                                              | undefined) || []
+                                          ).includes("phylogenetic") && (
+                                            <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-3">
+                                              <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                                Phylogenetic Analysis Details
+                                              </h4>
+                                              <div className="grid grid-cols-2 gap-3">
+                                                <div className="flex flex-col">
+                                                  <span className="text-xs text-slate-500">
+                                                    No. of markers
+                                                  </span>
+                                                  <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                    {currentInquiry
+                                                      .bioinformaticsDetails
+                                                      ?.phylogenetic
+                                                      ?.markerCount ?? "—"}
+                                                  </span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-xs text-slate-500">
+                                                    Marker(s)
+                                                  </span>
+                                                  <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                    {currentInquiry
+                                                      .bioinformaticsDetails
+                                                      ?.phylogenetic?.markers ||
+                                                      "—"}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* Metabarcoding / Metagenomics */}
+                                          {(
+                                            (currentInquiry
+                                              .bioinformaticsDetails
+                                              ?.serviceTypes as
+                                              | string[]
+                                              | undefined) || []
+                                          ).includes("metabarcoding") && (
+                                            <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
+                                              <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                                Metabarcoding / Metagenomics
+                                                Details
+                                              </h4>
+                                              <div>
+                                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                  Study Structure
+                                                </span>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                                  {(
+                                                    [
+                                                      {
+                                                        label: "Sample type",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.metabarcoding?.study
+                                                          ?.sampleType,
+                                                      },
+                                                      {
+                                                        label: "No. of samples",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.metabarcoding?.study
+                                                          ?.sampleCount,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "No. of groups / treatments to study",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.metabarcoding?.study
+                                                          ?.groupCount,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "No. of replicates per sample",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.metabarcoding?.study
+                                                          ?.replicatesPerSample,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "Target gene / marker",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.metabarcoding?.study
+                                                          ?.targetGene,
+                                                      },
+                                                      {
+                                                        label: "Target region",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.metabarcoding?.study
+                                                          ?.targetRegion,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "Primer set used",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.metabarcoding?.study
+                                                          ?.primerSet,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "Expected amplicon size",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.metabarcoding?.study
+                                                          ?.ampliconSize,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "Sequencing type and platform",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.metabarcoding?.study
+                                                          ?.sequencingPlatform,
+                                                      },
+                                                    ] as {
+                                                      label: string;
+                                                      val: any;
+                                                    }[]
+                                                  ).map(({ label, val }) =>
+                                                    val != null &&
+                                                    val !== "" ? (
+                                                      <div
+                                                        key={label}
+                                                        className="flex flex-col"
+                                                      >
+                                                        <span className="text-xs text-slate-500">
+                                                          {label}
+                                                        </span>
+                                                        <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                          {val}
+                                                        </span>
+                                                      </div>
+                                                    ) : null,
+                                                  )}
+                                                </div>
+                                              </div>
+                                              {currentInquiry
+                                                .bioinformaticsDetails
+                                                ?.metabarcoding
+                                                ?.analysisType && (
+                                                <div className="flex flex-col">
+                                                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                    Analysis Type
+                                                  </span>
+                                                  <span className="text-sm font-medium text-slate-800 mt-1">
+                                                    {currentInquiry
+                                                      .bioinformaticsDetails
+                                                      .metabarcoding
+                                                      .analysisType ===
+                                                    "general-pipeline"
+                                                      ? "General Pipeline"
+                                                      : currentInquiry
+                                                            .bioinformaticsDetails
+                                                            .metabarcoding
+                                                            .analysisType ===
+                                                          "general-pipeline-downstream"
+                                                        ? "General Pipeline with Downstream Analysis"
+                                                        : currentInquiry
+                                                              .bioinformaticsDetails
+                                                              .metabarcoding
+                                                              .analysisType ===
+                                                            "unsure"
+                                                          ? "Unsure"
+                                                          : currentInquiry
+                                                              .bioinformaticsDetails
+                                                              .metabarcoding
+                                                              .analysisType}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {/* Transcriptomics */}
+                                          {(
+                                            (currentInquiry
+                                              .bioinformaticsDetails
+                                              ?.serviceTypes as
+                                              | string[]
+                                              | undefined) || []
+                                          ).includes("transcriptomics") && (
+                                            <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
+                                              <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                                Transcriptomics Details
+                                              </h4>
+                                              <div>
+                                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                  Study Structure
+                                                </span>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                                  {(
+                                                    [
+                                                      {
+                                                        label: "Sample type",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.transcriptomics
+                                                          ?.study?.sampleType,
+                                                      },
+                                                      {
+                                                        label: "No. of samples",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.transcriptomics
+                                                          ?.study?.sampleCount,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "No. of groups / treatments / conditions",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.transcriptomics
+                                                          ?.study?.groupCount,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "No. of biological replicates per group",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.transcriptomics
+                                                          ?.study
+                                                          ?.biologicalReplicates,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "Sequencing type and platform",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.transcriptomics
+                                                          ?.study
+                                                          ?.sequencingPlatform,
+                                                      },
+                                                      {
+                                                        label:
+                                                          "Estimated sequencing depth per sample",
+                                                        val: currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.transcriptomics
+                                                          ?.study?.depth,
+                                                      },
+                                                    ] as {
+                                                      label: string;
+                                                      val: any;
+                                                    }[]
+                                                  ).map(({ label, val }) =>
+                                                    val != null &&
+                                                    val !== "" ? (
+                                                      <div
+                                                        key={label}
+                                                        className="flex flex-col"
+                                                      >
+                                                        <span className="text-xs text-slate-500">
+                                                          {label}
+                                                        </span>
+                                                        <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                          {val}
+                                                        </span>
+                                                      </div>
+                                                    ) : null,
+                                                  )}
+                                                </div>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                  Selected Analyses
+                                                </span>
+                                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                                  {(
+                                                    [
+                                                      {
+                                                        key: "preProcessing",
+                                                        label: "Pre-processing",
+                                                      },
+                                                      {
+                                                        key: "deNovoAssembly",
+                                                        label:
+                                                          "De novo transcriptome assembly & evaluation",
+                                                      },
+                                                      {
+                                                        key: "referenceBased",
+                                                        label:
+                                                          "Reference-based assembly pipeline",
+                                                      },
+                                                      {
+                                                        key: "orfPrediction",
+                                                        label:
+                                                          "Open-reading frame prediction",
+                                                      },
+                                                      {
+                                                        key: "functionalAnnotation",
+                                                        label:
+                                                          "Functional Annotation",
+                                                      },
+                                                    ] as {
+                                                      key: string;
+                                                      label: string;
+                                                    }[]
+                                                  )
+                                                    .filter(
+                                                      ({ key }) =>
+                                                        currentInquiry
+                                                          .bioinformaticsDetails
+                                                          ?.transcriptomics
+                                                          ?.analysis?.[key],
+                                                    )
+                                                    .map(({ label }) => (
+                                                      <span
+                                                        key={label}
+                                                        className="inline-block text-xs font-medium text-purple-700 bg-purple-50 border border-purple-100 rounded px-2.5 py-1"
+                                                      >
+                                                        {label}
+                                                      </span>
+                                                    ))}
+                                                  {currentInquiry
+                                                    .bioinformaticsDetails
+                                                    ?.transcriptomics
+                                                    ?.unsure && (
+                                                    <span className="inline-block text-xs font-medium text-slate-600 bg-gray-100 border border-gray-200 rounded px-2.5 py-1">
+                                                      Unsure
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* Whole Genome Assembly */}
+                                          {(
+                                            (currentInquiry
+                                              .bioinformaticsDetails
+                                              ?.serviceTypes as
+                                              | string[]
+                                              | undefined) || []
+                                          ).includes(
+                                            "whole-genome-assembly",
+                                          ) && (
+                                            <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
+                                              <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                                Whole Genome Assembly Details
+                                              </h4>
+                                              <div className="grid grid-cols-2 gap-3">
                                                 {currentInquiry
                                                   .bioinformaticsDetails
-                                                  .metabarcoding
-                                                  .analysisType ===
-                                                "general-pipeline"
-                                                  ? "General Pipeline"
-                                                  : currentInquiry
+                                                  ?.wholeGenomeAssembly
+                                                  ?.sampleTaxonomy && (
+                                                  <div className="flex flex-col">
+                                                    <span className="text-xs text-slate-500">
+                                                      Sample Taxonomy
+                                                    </span>
+                                                    <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                      {
+                                                        currentInquiry
+                                                          .bioinformaticsDetails
+                                                          .wholeGenomeAssembly
+                                                          .sampleTaxonomy
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                )}
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.wholeGenomeAssembly
+                                                  ?.sampleCount && (
+                                                  <div className="flex flex-col">
+                                                    <span className="text-xs text-slate-500">
+                                                      No. of samples
+                                                    </span>
+                                                    <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                      {
+                                                        currentInquiry
+                                                          .bioinformaticsDetails
+                                                          .wholeGenomeAssembly
+                                                          .sampleCount
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                  Selected Analyses
+                                                </span>
+                                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                                  {currentInquiry
+                                                    .bioinformaticsDetails
+                                                    ?.wholeGenomeAssembly
+                                                    ?.analysis?.assembly && (
+                                                    <span className="inline-block text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded px-2.5 py-1">
+                                                      Whole Genome Assembly
+                                                    </span>
+                                                  )}
+                                                  {currentInquiry
+                                                    .bioinformaticsDetails
+                                                    ?.wholeGenomeAssembly
+                                                    ?.analysis
+                                                    ?.assemblyAnnotation && (
+                                                    <span className="inline-block text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded px-2.5 py-1">
+                                                      Whole Genome Assembly and
+                                                      Annotation
+                                                    </span>
+                                                  )}
+                                                  {currentInquiry
+                                                    .bioinformaticsDetails
+                                                    ?.wholeGenomeAssembly
+                                                    ?.unsure && (
+                                                    <span className="inline-block text-xs font-medium text-slate-600 bg-gray-100 border border-gray-200 rounded px-2.5 py-1">
+                                                      Unsure
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.wholeGenomeAssembly
+                                                  ?.analysis
+                                                  ?.additionalDownstream && (
+                                                  <div className="mt-2 flex flex-col">
+                                                    <span className="text-xs text-slate-500">
+                                                      Additional Downstream
+                                                      Analysis
+                                                    </span>
+                                                    <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                      {
+                                                        currentInquiry
+                                                          .bioinformaticsDetails
+                                                          .wholeGenomeAssembly
+                                                          .analysis
+                                                          .additionalDownstream
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* Others – Specify */}
+                                          {(
+                                            (currentInquiry
+                                              .bioinformaticsDetails
+                                              ?.serviceTypes as
+                                              | string[]
+                                              | undefined) || []
+                                          ).includes("others") &&
+                                            currentInquiry.bioinformaticsDetails
+                                              ?.othersSpecify && (
+                                              <div className="space-y-1.5">
+                                                <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                                  Others – Specify
+                                                </span>
+                                                <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg whitespace-pre-wrap">
+                                                  {
+                                                    currentInquiry
+                                                      .bioinformaticsDetails
+                                                      .othersSpecify
+                                                  }
+                                                </p>
+                                              </div>
+                                            )}
+
+                                          {/* Data Section */}
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                                Provide Own Data
+                                              </span>
+                                              <p className="text-sm font-semibold text-slate-900">
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.dataProvideOwnData
+                                                  ? "Yes"
+                                                  : "No"}
+                                              </p>
+                                            </div>
+                                            <div className="space-y-1">
+                                              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                                Data Generated by PGC Visayas
+                                              </span>
+                                              <p className="text-sm font-semibold text-slate-900">
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.dataProvidedByPgc
+                                                  ? "Yes"
+                                                  : "No"}
+                                              </p>
+                                            </div>
+                                          </div>
+
+                                          {currentInquiry.bioinformaticsDetails
+                                            ?.dataProvideOwnData && (
+                                            <div className="space-y-1.5">
+                                              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                                Data Details
+                                              </span>
+                                              <div className="bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 text-sm text-slate-700 leading-6 space-y-1">
+                                                <p>
+                                                  <span className="font-medium text-slate-500">
+                                                    File formats:
+                                                  </span>{" "}
+                                                  {Array.isArray(
+                                                    currentInquiry
+                                                      .bioinformaticsDetails
+                                                      ?.dataFileFormats,
+                                                  ) &&
+                                                  currentInquiry
+                                                    .bioinformaticsDetails
+                                                    ?.dataFileFormats.length > 0
+                                                    ? currentInquiry.bioinformaticsDetails.dataFileFormats.join(
+                                                        ", ",
+                                                      )
+                                                    : "—"}
+                                                </p>
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.dataOtherFormat && (
+                                                  <p>
+                                                    <span className="font-medium text-slate-500">
+                                                      Other format:
+                                                    </span>{" "}
+                                                    {
+                                                      currentInquiry
                                                         .bioinformaticsDetails
-                                                        .metabarcoding
-                                                        .analysisType ===
-                                                      "general-pipeline-downstream"
-                                                    ? "General Pipeline with Downstream Analysis"
+                                                        .dataOtherFormat
+                                                    }
+                                                  </p>
+                                                )}
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.dataFileSizePerSample && (
+                                                  <p>
+                                                    <span className="font-medium text-slate-500">
+                                                      File size per sample:
+                                                    </span>{" "}
+                                                    {
+                                                      currentInquiry
+                                                        .bioinformaticsDetails
+                                                        .dataFileSizePerSample
+                                                    }
+                                                  </p>
+                                                )}
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.dataTransferMode && (
+                                                  <p>
+                                                    <span className="font-medium text-slate-500">
+                                                      Transfer mode:
+                                                    </span>{" "}
+                                                    {
+                                                      currentInquiry
+                                                        .bioinformaticsDetails
+                                                        .dataTransferMode
+                                                    }
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* Overview of Research and Objectives */}
+                                          <div className="space-y-1.5">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Overview of Research and
+                                              Objectives
+                                            </span>
+                                            <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
+                                              {currentInquiry
+                                                .bioinformaticsDetails
+                                                ?.overviewObjectives || "—"}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                    {/* Individual Assay Details */}
+                                    {currentInquiry.individualAssayDetails && (
+                                      <div className="space-y-1.5">
+                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                          Individual Assay Details
+                                        </span>
+                                        <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
+                                          {
+                                            currentInquiry.individualAssayDetails
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {/* Research Overview */}
+                                    <div className="space-y-1.5">
+                                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                        Research Overview
+                                      </span>
+                                      <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100">
+                                        {currentInquiry.researchOverview || "—"}
+                                      </p>
+                                    </div>
+
+                                    {/* Methodology File */}
+                                    {currentInquiry.methodologyFileUrl && (
+                                      <div className="space-y-1.5">
+                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                          Methodology / Concept Note
+                                        </span>
+                                        <a
+                                          href={
+                                            currentInquiry.methodologyFileUrl
+                                          }
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[#166FB5] bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 transition-colors"
+                                        >
+                                          View Uploaded Methodology
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  /* Other Services (Research, Training, Retail, etc.) */
+                                  <div className="space-y-4 animate-in fade-in duration-500">
+                                    {/* Top Section: Quick Stats */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-4 border-b border-slate-100">
+                                      {/* Service Type */}
+                                      <div className="space-y-1">
+                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                          Service Type
+                                        </span>
+                                        <p className="text-sm font-semibold text-slate-900 capitalize">
+                                          {formatServiceType(
+                                            currentInquiry.serviceType,
+                                          )}
+                                        </p>
+                                      </div>
+
+                                      {/* Sample Count */}
+                                      {currentInquiry.sampleCount && (
+                                        <div className="space-y-1">
+                                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                            Quantity
+                                          </span>
+                                          <p className="text-sm font-semibold text-slate-900">
+                                            {currentInquiry.sampleCount} samples
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Retail Sales Details Section */}
+                                      {currentInquiry.serviceType ===
+                                        "retail" &&
+                                        currentInquiry.retailItems &&
+                                        currentInquiry.retailItems.length >
+                                          0 && (
+                                          <div className="space-y-2 sm:col-span-3">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Requested Items
+                                            </span>
+                                            <div className="grid grid-cols-1 gap-2">
+                                              {currentInquiry.retailItems.map(
+                                                (item, idx) => (
+                                                  <div
+                                                    key={`${item}-${idx}`}
+                                                    className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg border border-slate-100"
+                                                  >
+                                                    <span className="text-sm font-medium text-slate-800">
+                                                      {item}
+                                                    </span>
+                                                    {currentInquiry
+                                                      .retailItemDetails?.[
+                                                      item
+                                                    ] && (
+                                                      <span className="text-sm text-[#166FB5] font-semibold">
+                                                        {
+                                                          currentInquiry
+                                                            .retailItemDetails[
+                                                            item
+                                                          ]
+                                                        }
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                ),
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                    </div>
+
+                                    {currentInquiry.serviceType ===
+                                      "bioinformatics" && (
+                                      <div className="space-y-4">
+                                        {/* Service Types */}
+                                        <div className="space-y-2">
+                                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                            Type of Bioinformatics Service
+                                          </span>
+                                          <div className="flex flex-wrap gap-2">
+                                            {(Array.isArray(
+                                              currentInquiry
+                                                .bioinformaticsDetails
+                                                ?.serviceTypes,
+                                            )
+                                              ? currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.serviceTypes
+                                              : []
+                                            ).length > 0 ? (
+                                              (
+                                                currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.serviceTypes as string[]
+                                              ).map((serviceType) => {
+                                                const labels: Record<
+                                                  string,
+                                                  string
+                                                > = {
+                                                  phylogenetic:
+                                                    "Phylogenetic Analysis",
+                                                  metabarcoding:
+                                                    "Metabarcoding/Metagenomics",
+                                                  transcriptomics:
+                                                    "Transcriptomics",
+                                                  "whole-genome-assembly":
+                                                    "Whole Genome Assembly",
+                                                  others: "Others",
+                                                };
+                                                return (
+                                                  <span
+                                                    key={serviceType}
+                                                    className="inline-block text-xs font-medium text-blue-700 bg-blue-50 border border-blue-100 rounded px-2.5 py-1"
+                                                  >
+                                                    {labels[serviceType] ||
+                                                      serviceType}
+                                                  </span>
+                                                );
+                                              })
+                                            ) : (
+                                              <p className="text-sm text-slate-400 italic">
+                                                None selected
+                                              </p>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Phylogenetic Analysis */}
+                                        {(
+                                          (currentInquiry.bioinformaticsDetails
+                                            ?.serviceTypes as
+                                            | string[]
+                                            | undefined) || []
+                                        ).includes("phylogenetic") && (
+                                          <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-3">
+                                            <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                              Phylogenetic Analysis Details
+                                            </h4>
+                                            <div className="grid grid-cols-2 gap-3">
+                                              <div className="flex flex-col">
+                                                <span className="text-xs text-slate-500">
+                                                  No. of markers
+                                                </span>
+                                                <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                  {currentInquiry
+                                                    .bioinformaticsDetails
+                                                    ?.phylogenetic
+                                                    ?.markerCount ?? "—"}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span className="text-xs text-slate-500">
+                                                  Marker(s)
+                                                </span>
+                                                <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                  {currentInquiry
+                                                    .bioinformaticsDetails
+                                                    ?.phylogenetic?.markers ||
+                                                    "—"}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {/* Metabarcoding / Metagenomics */}
+                                        {(
+                                          (currentInquiry.bioinformaticsDetails
+                                            ?.serviceTypes as
+                                            | string[]
+                                            | undefined) || []
+                                        ).includes("metabarcoding") && (
+                                          <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
+                                            <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                              Metabarcoding / Metagenomics
+                                              Details
+                                            </h4>
+                                            <div>
+                                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                Study Structure
+                                              </span>
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                                {(
+                                                  [
+                                                    {
+                                                      label: "Sample type",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.metabarcoding?.study
+                                                        ?.sampleType,
+                                                    },
+                                                    {
+                                                      label: "No. of samples",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.metabarcoding?.study
+                                                        ?.sampleCount,
+                                                    },
+                                                    {
+                                                      label:
+                                                        "No. of groups / treatments to study",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.metabarcoding?.study
+                                                        ?.groupCount,
+                                                    },
+                                                    {
+                                                      label:
+                                                        "No. of replicates per sample",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.metabarcoding?.study
+                                                        ?.replicatesPerSample,
+                                                    },
+                                                    {
+                                                      label:
+                                                        "Target gene / marker",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.metabarcoding?.study
+                                                        ?.targetGene,
+                                                    },
+                                                    {
+                                                      label: "Target region",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.metabarcoding?.study
+                                                        ?.targetRegion,
+                                                    },
+                                                    {
+                                                      label: "Primer set used",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.metabarcoding?.study
+                                                        ?.primerSet,
+                                                    },
+                                                    {
+                                                      label:
+                                                        "Expected amplicon size",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.metabarcoding?.study
+                                                        ?.ampliconSize,
+                                                    },
+                                                    {
+                                                      label:
+                                                        "Sequencing type and platform",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.metabarcoding?.study
+                                                        ?.sequencingPlatform,
+                                                    },
+                                                  ] as {
+                                                    label: string;
+                                                    val: any;
+                                                  }[]
+                                                ).map(({ label, val }) =>
+                                                  val != null && val !== "" ? (
+                                                    <div
+                                                      key={label}
+                                                      className="flex flex-col"
+                                                    >
+                                                      <span className="text-xs text-slate-500">
+                                                        {label}
+                                                      </span>
+                                                      <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                        {val}
+                                                      </span>
+                                                    </div>
+                                                  ) : null,
+                                                )}
+                                              </div>
+                                            </div>
+                                            {currentInquiry
+                                              .bioinformaticsDetails
+                                              ?.metabarcoding?.analysisType && (
+                                              <div className="flex flex-col">
+                                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                  Analysis Type
+                                                </span>
+                                                <span className="text-sm font-medium text-slate-800 mt-1">
+                                                  {currentInquiry
+                                                    .bioinformaticsDetails
+                                                    .metabarcoding
+                                                    .analysisType ===
+                                                  "general-pipeline"
+                                                    ? "General Pipeline"
                                                     : currentInquiry
                                                           .bioinformaticsDetails
                                                           .metabarcoding
                                                           .analysisType ===
-                                                        "unsure"
-                                                      ? "Unsure"
+                                                        "general-pipeline-downstream"
+                                                      ? "General Pipeline with Downstream Analysis"
                                                       : currentInquiry
-                                                          .bioinformaticsDetails
-                                                          .metabarcoding
-                                                          .analysisType}
-                                              </span>
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
+                                                            .bioinformaticsDetails
+                                                            .metabarcoding
+                                                            .analysisType ===
+                                                          "unsure"
+                                                        ? "Unsure"
+                                                        : currentInquiry
+                                                            .bioinformaticsDetails
+                                                            .metabarcoding
+                                                            .analysisType}
+                                                </span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
 
-                                      {/* Transcriptomics */}
-                                      {(
-                                        (currentInquiry.bioinformaticsDetails
-                                          ?.serviceTypes as
-                                          | string[]
-                                          | undefined) || []
-                                      ).includes("transcriptomics") && (
-                                        <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
-                                          <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                            Transcriptomics Details
-                                          </h4>
-                                          <div>
-                                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                              Study Structure
-                                            </span>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                              {(
-                                                [
-                                                  {
-                                                    label: "Sample type",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.transcriptomics?.study
-                                                      ?.sampleType,
-                                                  },
-                                                  {
-                                                    label: "No. of samples",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.transcriptomics?.study
-                                                      ?.sampleCount,
-                                                  },
-                                                  {
-                                                    label:
-                                                      "No. of groups / treatments / conditions",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.transcriptomics?.study
-                                                      ?.groupCount,
-                                                  },
-                                                  {
-                                                    label:
-                                                      "No. of biological replicates per group",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.transcriptomics?.study
-                                                      ?.biologicalReplicates,
-                                                  },
-                                                  {
-                                                    label:
-                                                      "Sequencing type and platform",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.transcriptomics?.study
-                                                      ?.sequencingPlatform,
-                                                  },
-                                                  {
-                                                    label:
-                                                      "Estimated sequencing depth per sample",
-                                                    val: currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.transcriptomics?.study
-                                                      ?.depth,
-                                                  },
-                                                ] as {
-                                                  label: string;
-                                                  val: any;
-                                                }[]
-                                              ).map(({ label, val }) =>
-                                                val != null && val !== "" ? (
-                                                  <div
-                                                    key={label}
-                                                    className="flex flex-col"
-                                                  >
-                                                    <span className="text-xs text-slate-500">
+                                        {/* Transcriptomics */}
+                                        {(
+                                          (currentInquiry.bioinformaticsDetails
+                                            ?.serviceTypes as
+                                            | string[]
+                                            | undefined) || []
+                                        ).includes("transcriptomics") && (
+                                          <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
+                                            <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                              Transcriptomics Details
+                                            </h4>
+                                            <div>
+                                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                Study Structure
+                                              </span>
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                                {(
+                                                  [
+                                                    {
+                                                      label: "Sample type",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.transcriptomics?.study
+                                                        ?.sampleType,
+                                                    },
+                                                    {
+                                                      label: "No. of samples",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.transcriptomics?.study
+                                                        ?.sampleCount,
+                                                    },
+                                                    {
+                                                      label:
+                                                        "No. of groups / treatments / conditions",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.transcriptomics?.study
+                                                        ?.groupCount,
+                                                    },
+                                                    {
+                                                      label:
+                                                        "No. of biological replicates per group",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.transcriptomics?.study
+                                                        ?.biologicalReplicates,
+                                                    },
+                                                    {
+                                                      label:
+                                                        "Sequencing type and platform",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.transcriptomics?.study
+                                                        ?.sequencingPlatform,
+                                                    },
+                                                    {
+                                                      label:
+                                                        "Estimated sequencing depth per sample",
+                                                      val: currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.transcriptomics?.study
+                                                        ?.depth,
+                                                    },
+                                                  ] as {
+                                                    label: string;
+                                                    val: any;
+                                                  }[]
+                                                ).map(({ label, val }) =>
+                                                  val != null && val !== "" ? (
+                                                    <div
+                                                      key={label}
+                                                      className="flex flex-col"
+                                                    >
+                                                      <span className="text-xs text-slate-500">
+                                                        {label}
+                                                      </span>
+                                                      <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                        {val}
+                                                      </span>
+                                                    </div>
+                                                  ) : null,
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                Selected Analyses
+                                              </span>
+                                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                                {(
+                                                  [
+                                                    {
+                                                      key: "preProcessing",
+                                                      label: "Pre-processing",
+                                                    },
+                                                    {
+                                                      key: "deNovoAssembly",
+                                                      label:
+                                                        "De novo transcriptome assembly & evaluation",
+                                                    },
+                                                    {
+                                                      key: "referenceBased",
+                                                      label:
+                                                        "Reference-based assembly pipeline",
+                                                    },
+                                                    {
+                                                      key: "orfPrediction",
+                                                      label:
+                                                        "Open-reading frame prediction",
+                                                    },
+                                                    {
+                                                      key: "functionalAnnotation",
+                                                      label:
+                                                        "Functional Annotation",
+                                                    },
+                                                  ] as {
+                                                    key: string;
+                                                    label: string;
+                                                  }[]
+                                                )
+                                                  .filter(
+                                                    ({ key }) =>
+                                                      currentInquiry
+                                                        .bioinformaticsDetails
+                                                        ?.transcriptomics
+                                                        ?.analysis?.[key],
+                                                  )
+                                                  .map(({ label }) => (
+                                                    <span
+                                                      key={label}
+                                                      className="inline-block text-xs font-medium text-purple-700 bg-purple-50 border border-purple-100 rounded px-2.5 py-1"
+                                                    >
                                                       {label}
                                                     </span>
-                                                    <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                      {val}
-                                                    </span>
-                                                  </div>
-                                                ) : null,
-                                              )}
-                                            </div>
-                                          </div>
-                                          <div className="flex flex-col">
-                                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                              Selected Analyses
-                                            </span>
-                                            <div className="mt-2 flex flex-wrap gap-1.5">
-                                              {(
-                                                [
-                                                  {
-                                                    key: "preProcessing",
-                                                    label: "Pre-processing",
-                                                  },
-                                                  {
-                                                    key: "deNovoAssembly",
-                                                    label:
-                                                      "De novo transcriptome assembly & evaluation",
-                                                  },
-                                                  {
-                                                    key: "referenceBased",
-                                                    label:
-                                                      "Reference-based assembly pipeline",
-                                                  },
-                                                  {
-                                                    key: "orfPrediction",
-                                                    label:
-                                                      "Open-reading frame prediction",
-                                                  },
-                                                  {
-                                                    key: "functionalAnnotation",
-                                                    label:
-                                                      "Functional Annotation",
-                                                  },
-                                                ] as {
-                                                  key: string;
-                                                  label: string;
-                                                }[]
-                                              )
-                                                .filter(
-                                                  ({ key }) =>
-                                                    currentInquiry
-                                                      .bioinformaticsDetails
-                                                      ?.transcriptomics
-                                                      ?.analysis?.[key],
-                                                )
-                                                .map(({ label }) => (
-                                                  <span
-                                                    key={label}
-                                                    className="inline-block text-xs font-medium text-purple-700 bg-purple-50 border border-purple-100 rounded px-2.5 py-1"
-                                                  >
-                                                    {label}
+                                                  ))}
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.transcriptomics?.unsure && (
+                                                  <span className="inline-block text-xs font-medium text-slate-600 bg-gray-100 border border-gray-200 rounded px-2.5 py-1">
+                                                    Unsure
                                                   </span>
-                                                ))}
-                                              {currentInquiry
-                                                .bioinformaticsDetails
-                                                ?.transcriptomics?.unsure && (
-                                                <span className="inline-block text-xs font-medium text-slate-600 bg-gray-100 border border-gray-200 rounded px-2.5 py-1">
-                                                  Unsure
-                                                </span>
-                                              )}
+                                                )}
+                                              </div>
                                             </div>
                                           </div>
-                                        </div>
-                                      )}
+                                        )}
 
-                                      {/* Whole Genome Assembly */}
-                                      {(
-                                        (currentInquiry.bioinformaticsDetails
-                                          ?.serviceTypes as
-                                          | string[]
-                                          | undefined) || []
-                                      ).includes("whole-genome-assembly") && (
-                                        <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
-                                          <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                            Whole Genome Assembly Details
-                                          </h4>
-                                          <div className="grid grid-cols-2 gap-3">
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.wholeGenomeAssembly
-                                              ?.sampleTaxonomy && (
-                                              <div className="flex flex-col">
-                                                <span className="text-xs text-slate-500">
-                                                  Sample Taxonomy
-                                                </span>
-                                                <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                  {
-                                                    currentInquiry
-                                                      .bioinformaticsDetails
-                                                      .wholeGenomeAssembly
-                                                      .sampleTaxonomy
-                                                  }
-                                                </span>
-                                              </div>
-                                            )}
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.wholeGenomeAssembly
-                                              ?.sampleCount && (
-                                              <div className="flex flex-col">
-                                                <span className="text-xs text-slate-500">
-                                                  No. of samples
-                                                </span>
-                                                <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                  {
-                                                    currentInquiry
-                                                      .bioinformaticsDetails
-                                                      .wholeGenomeAssembly
-                                                      .sampleCount
-                                                  }
-                                                </span>
-                                              </div>
-                                            )}
-                                          </div>
-                                          <div className="flex flex-col">
-                                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                              Selected Analyses
-                                            </span>
-                                            <div className="mt-2 flex flex-wrap gap-1.5">
+                                        {/* Whole Genome Assembly */}
+                                        {(
+                                          (currentInquiry.bioinformaticsDetails
+                                            ?.serviceTypes as
+                                            | string[]
+                                            | undefined) || []
+                                        ).includes("whole-genome-assembly") && (
+                                          <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
+                                            <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                              Whole Genome Assembly Details
+                                            </h4>
+                                            <div className="grid grid-cols-2 gap-3">
                                               {currentInquiry
                                                 .bioinformaticsDetails
-                                                ?.wholeGenomeAssembly?.analysis
-                                                ?.assembly && (
-                                                <span className="inline-block text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded px-2.5 py-1">
-                                                  Whole Genome Assembly
-                                                </span>
-                                              )}
-                                              {currentInquiry
-                                                .bioinformaticsDetails
-                                                ?.wholeGenomeAssembly?.analysis
-                                                ?.assemblyAnnotation && (
-                                                <span className="inline-block text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded px-2.5 py-1">
-                                                  Whole Genome Assembly and
-                                                  Annotation
-                                                </span>
+                                                ?.wholeGenomeAssembly
+                                                ?.sampleTaxonomy && (
+                                                <div className="flex flex-col">
+                                                  <span className="text-xs text-slate-500">
+                                                    Sample Taxonomy
+                                                  </span>
+                                                  <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                    {
+                                                      currentInquiry
+                                                        .bioinformaticsDetails
+                                                        .wholeGenomeAssembly
+                                                        .sampleTaxonomy
+                                                    }
+                                                  </span>
+                                                </div>
                                               )}
                                               {currentInquiry
                                                 .bioinformaticsDetails
                                                 ?.wholeGenomeAssembly
-                                                ?.unsure && (
-                                                <span className="inline-block text-xs font-medium text-slate-600 bg-gray-100 border border-gray-200 rounded px-2.5 py-1">
-                                                  Unsure
-                                                </span>
+                                                ?.sampleCount && (
+                                                <div className="flex flex-col">
+                                                  <span className="text-xs text-slate-500">
+                                                    No. of samples
+                                                  </span>
+                                                  <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                    {
+                                                      currentInquiry
+                                                        .bioinformaticsDetails
+                                                        .wholeGenomeAssembly
+                                                        .sampleCount
+                                                    }
+                                                  </span>
+                                                </div>
                                               )}
                                             </div>
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.wholeGenomeAssembly?.analysis
-                                              ?.additionalDownstream && (
-                                              <div className="mt-2 flex flex-col">
-                                                <span className="text-xs text-slate-500">
-                                                  Additional Downstream Analysis
-                                                </span>
-                                                <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                            <div className="flex flex-col">
+                                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                                Selected Analyses
+                                              </span>
+                                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.wholeGenomeAssembly
+                                                  ?.analysis?.assembly && (
+                                                  <span className="inline-block text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded px-2.5 py-1">
+                                                    Whole Genome Assembly
+                                                  </span>
+                                                )}
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.wholeGenomeAssembly
+                                                  ?.analysis
+                                                  ?.assemblyAnnotation && (
+                                                  <span className="inline-block text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded px-2.5 py-1">
+                                                    Whole Genome Assembly and
+                                                    Annotation
+                                                  </span>
+                                                )}
+                                                {currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.wholeGenomeAssembly
+                                                  ?.unsure && (
+                                                  <span className="inline-block text-xs font-medium text-slate-600 bg-gray-100 border border-gray-200 rounded px-2.5 py-1">
+                                                    Unsure
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {currentInquiry
+                                                .bioinformaticsDetails
+                                                ?.wholeGenomeAssembly?.analysis
+                                                ?.additionalDownstream && (
+                                                <div className="mt-2 flex flex-col">
+                                                  <span className="text-xs text-slate-500">
+                                                    Additional Downstream
+                                                    Analysis
+                                                  </span>
+                                                  <span className="text-sm font-medium text-slate-800 mt-0.5">
+                                                    {
+                                                      currentInquiry
+                                                        .bioinformaticsDetails
+                                                        .wholeGenomeAssembly
+                                                        .analysis
+                                                        .additionalDownstream
+                                                    }
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {/* Others – Specify */}
+                                        {(
+                                          (currentInquiry.bioinformaticsDetails
+                                            ?.serviceTypes as
+                                            | string[]
+                                            | undefined) || []
+                                        ).includes("others") &&
+                                          currentInquiry.bioinformaticsDetails
+                                            ?.othersSpecify && (
+                                            <div className="space-y-1.5">
+                                              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                                Others – Specify
+                                              </span>
+                                              <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg whitespace-pre-wrap">
+                                                {
+                                                  currentInquiry
+                                                    .bioinformaticsDetails
+                                                    .othersSpecify
+                                                }
+                                              </p>
+                                            </div>
+                                          )}
+
+                                        {/* Data Section */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Provide Own Data
+                                            </span>
+                                            <p className="text-sm font-semibold text-slate-900">
+                                              {currentInquiry
+                                                .bioinformaticsDetails
+                                                ?.dataProvideOwnData
+                                                ? "Yes"
+                                                : "No"}
+                                            </p>
+                                          </div>
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Data Generated by PGC Visayas
+                                            </span>
+                                            <p className="text-sm font-semibold text-slate-900">
+                                              {currentInquiry
+                                                .bioinformaticsDetails
+                                                ?.dataProvidedByPgc
+                                                ? "Yes"
+                                                : "No"}
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        {currentInquiry.bioinformaticsDetails
+                                          ?.dataProvideOwnData && (
+                                          <div className="space-y-1.5">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Data Details
+                                            </span>
+                                            <div className="bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 text-sm text-slate-700 leading-6 space-y-1">
+                                              <p>
+                                                <span className="font-medium text-slate-500">
+                                                  File formats:
+                                                </span>{" "}
+                                                {Array.isArray(
+                                                  currentInquiry
+                                                    .bioinformaticsDetails
+                                                    ?.dataFileFormats,
+                                                ) &&
+                                                currentInquiry
+                                                  .bioinformaticsDetails
+                                                  ?.dataFileFormats.length > 0
+                                                  ? currentInquiry.bioinformaticsDetails.dataFileFormats.join(
+                                                      ", ",
+                                                    )
+                                                  : "—"}
+                                              </p>
+                                              {currentInquiry
+                                                .bioinformaticsDetails
+                                                ?.dataOtherFormat && (
+                                                <p>
+                                                  <span className="font-medium text-slate-500">
+                                                    Other format:
+                                                  </span>{" "}
                                                   {
                                                     currentInquiry
                                                       .bioinformaticsDetails
-                                                      .wholeGenomeAssembly
-                                                      .analysis
-                                                      .additionalDownstream
+                                                      .dataOtherFormat
                                                   }
-                                                </span>
-                                              </div>
-                                            )}
+                                                </p>
+                                              )}
+                                              {currentInquiry
+                                                .bioinformaticsDetails
+                                                ?.dataFileSizePerSample && (
+                                                <p>
+                                                  <span className="font-medium text-slate-500">
+                                                    File size per sample:
+                                                  </span>{" "}
+                                                  {
+                                                    currentInquiry
+                                                      .bioinformaticsDetails
+                                                      .dataFileSizePerSample
+                                                  }
+                                                </p>
+                                              )}
+                                              {currentInquiry
+                                                .bioinformaticsDetails
+                                                ?.dataTransferMode && (
+                                                <p>
+                                                  <span className="font-medium text-slate-500">
+                                                    Transfer mode:
+                                                  </span>{" "}
+                                                  {
+                                                    currentInquiry
+                                                      .bioinformaticsDetails
+                                                      .dataTransferMode
+                                                  }
+                                                </p>
+                                              )}
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
+                                        )}
 
-                                      {/* Others – Specify */}
-                                      {(
-                                        (currentInquiry.bioinformaticsDetails
-                                          ?.serviceTypes as
-                                          | string[]
-                                          | undefined) || []
-                                      ).includes("others") &&
-                                        currentInquiry.bioinformaticsDetails
-                                          ?.othersSpecify && (
-                                          <div className="space-y-1.5">
+                                        {/* Overview of Research and Objectives */}
+                                        <div className="space-y-1.5">
+                                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                            Overview of Research and Objectives
+                                          </span>
+                                          <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
+                                            {currentInquiry
+                                              .bioinformaticsDetails
+                                              ?.overviewObjectives || "—"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Technical Block */}
+                                    {(currentInquiry.species ||
+                                      currentInquiry.workflowType) && (
+                                      <div className="grid grid-cols-2 gap-4">
+                                        {currentInquiry.species && (
+                                          <div className="space-y-1">
                                             <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                              Others – Specify
+                                              Species / Organism
                                             </span>
-                                            <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg whitespace-pre-wrap">
-                                              {
-                                                currentInquiry
-                                                  .bioinformaticsDetails
-                                                  .othersSpecify
-                                              }
+                                            <p className="text-sm font-semibold text-slate-900 capitalize">
+                                              {currentInquiry.otherSpecies
+                                                ? `${currentInquiry.species}: ${currentInquiry.otherSpecies}`
+                                                : currentInquiry.species}
                                             </p>
                                           </div>
                                         )}
 
-                                      {/* Data Section */}
-                                      <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1">
-                                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                            Provide Own Data
-                                          </span>
-                                          <p className="text-sm font-semibold text-slate-900">
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.dataProvideOwnData
-                                              ? "Yes"
-                                              : "No"}
-                                          </p>
-                                        </div>
-                                        <div className="space-y-1">
-                                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                            Data Generated by PGC Visayas
-                                          </span>
-                                          <p className="text-sm font-semibold text-slate-900">
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.dataProvidedByPgc
-                                              ? "Yes"
-                                              : "No"}
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      {currentInquiry.bioinformaticsDetails
-                                        ?.dataProvideOwnData && (
-                                        <div className="space-y-1.5">
-                                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                            Data Details
-                                          </span>
-                                          <div className="bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 text-sm text-slate-700 leading-6 space-y-1">
-                                            <p>
-                                              <span className="font-medium text-slate-500">
-                                                File formats:
-                                              </span>{" "}
-                                              {Array.isArray(
-                                                currentInquiry
-                                                  .bioinformaticsDetails
-                                                  ?.dataFileFormats,
-                                              ) &&
-                                              currentInquiry
-                                                .bioinformaticsDetails
-                                                ?.dataFileFormats.length > 0
-                                                ? currentInquiry.bioinformaticsDetails.dataFileFormats.join(
-                                                    ", ",
-                                                  )
-                                                : "—"}
+                                        {currentInquiry.workflowType && (
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Analysis Strategy
+                                            </span>
+                                            <p className="text-sm font-semibold text-slate-900">
+                                              {formatWorkflowType(
+                                                currentInquiry.workflowType,
+                                              )}
                                             </p>
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.dataOtherFormat && (
-                                              <p>
-                                                <span className="font-medium text-slate-500">
-                                                  Other format:
-                                                </span>{" "}
-                                                {
-                                                  currentInquiry
-                                                    .bioinformaticsDetails
-                                                    .dataOtherFormat
-                                                }
-                                              </p>
-                                            )}
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.dataFileSizePerSample && (
-                                              <p>
-                                                <span className="font-medium text-slate-500">
-                                                  File size per sample:
-                                                </span>{" "}
-                                                {
-                                                  currentInquiry
-                                                    .bioinformaticsDetails
-                                                    .dataFileSizePerSample
-                                                }
-                                              </p>
-                                            )}
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.dataTransferMode && (
-                                              <p>
-                                                <span className="font-medium text-slate-500">
-                                                  Transfer mode:
-                                                </span>{" "}
-                                                {
-                                                  currentInquiry
-                                                    .bioinformaticsDetails
-                                                    .dataTransferMode
-                                                }
-                                              </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Bioinformatics Options */}
+                                    {currentInquiry.workflowType ===
+                                      "complete-bioinfo" &&
+                                      currentInquiry.bioinfoOptions &&
+                                      currentInquiry.bioinfoOptions.length >
+                                        0 && (
+                                        <div className="space-y-2">
+                                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                            Selected Bioinformatics Analysis
+                                          </span>
+                                          <div className="flex flex-wrap gap-2">
+                                            {currentInquiry.bioinfoOptions.map(
+                                              (option) => (
+                                                <span
+                                                  key={option}
+                                                  className="inline-block text-xs font-medium text-blue-700 bg-blue-50 border border-blue-100 rounded px-2.5 py-1"
+                                                >
+                                                  {formatBioinfoOption(option)}
+                                                </span>
+                                              ),
                                             )}
                                           </div>
                                         </div>
                                       )}
+                                  </div>
+                                )}
 
-                                      {/* Overview of Research and Objectives */}
-                                      <div className="space-y-1.5">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Overview of Research and Objectives
-                                        </span>
-                                        <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.overviewObjectives || "—"}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                {/* Individual Assay Details */}
+                                {/* Specific Needs & Assays (Common for all) */}
                                 {currentInquiry.individualAssayDetails && (
                                   <div className="space-y-1.5">
                                     <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                      Individual Assay Details
+                                      Selected Assays
                                     </span>
-                                    <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
+                                    <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100">
                                       {currentInquiry.individualAssayDetails}
                                     </p>
                                   </div>
                                 )}
 
-                                {/* Research Overview */}
-                                <div className="space-y-1.5">
-                                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                    Research Overview
-                                  </span>
-                                  <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100">
-                                    {currentInquiry.researchOverview || "—"}
-                                  </p>
-                                </div>
-
-                                {/* Methodology File */}
-                                {currentInquiry.methodologyFileUrl && (
-                                  <div className="space-y-1.5">
-                                    <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                      Methodology / Concept Note
-                                    </span>
-                                    <a
-                                      href={currentInquiry.methodologyFileUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[#166FB5] bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 transition-colors"
-                                    >
-                                      View Uploaded Methodology
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              /* Other Services (Research, Training, Retail, etc.) */
-                              <div className="space-y-4 animate-in fade-in duration-500">
-                                {/* Top Section: Quick Stats */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-4 border-b border-slate-100">
-                                  {/* Service Type */}
-                                  <div className="space-y-1">
-                                    <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                      Service Type
-                                    </span>
-                                    <p className="text-sm font-semibold text-slate-900 capitalize">
-                                      {formatServiceType(
-                                        currentInquiry.serviceType,
-                                      )}
-                                    </p>
-                                  </div>
-
-                                  {/* Sample Count */}
-                                  {currentInquiry.sampleCount && (
-                                    <div className="space-y-1">
+                                {/* Research Narrative (Only for non-research, non-laboratory services) */}
+                                {currentInquiry.serviceType !== "research" &&
+                                  currentInquiry.serviceType !== "laboratory" &&
+                                  currentInquiry.researchOverview && (
+                                    <div className="space-y-1.5">
                                       <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                        Quantity
+                                        Objectives & Brief Overview
                                       </span>
-                                      <p className="text-sm font-semibold text-slate-900">
-                                        {currentInquiry.sampleCount} samples
+                                      <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100">
+                                        {currentInquiry.researchOverview}
                                       </p>
                                     </div>
                                   )}
 
-                                  {/* Retail Sales Details Section */}
-                                  {currentInquiry.serviceType === "retail" &&
-                                    currentInquiry.retailItems &&
-                                    currentInquiry.retailItems.length > 0 && (
-                                      <div className="space-y-2 sm:col-span-3">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Requested Items
-                                        </span>
-                                        <div className="grid grid-cols-1 gap-2">
-                                          {currentInquiry.retailItems.map(
-                                            (item, idx) => (
-                                              <div
-                                                key={`${item}-${idx}`}
-                                                className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg border border-slate-100"
-                                              >
-                                                <span className="text-sm font-medium text-slate-800">
-                                                  {item}
-                                                </span>
-                                                {currentInquiry
-                                                  .retailItemDetails?.[
-                                                  item
-                                                ] && (
-                                                  <span className="text-sm text-[#166FB5] font-semibold">
-                                                    {
-                                                      currentInquiry
-                                                        .retailItemDetails[item]
-                                                    }
-                                                  </span>
-                                                )}
-                                              </div>
-                                            ),
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                </div>
-
-                                {currentInquiry.serviceType ===
-                                  "bioinformatics" && (
-                                  <div className="space-y-4">
-                                    {/* Service Types */}
-                                    <div className="space-y-2">
-                                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                        Type of Bioinformatics Service
-                                      </span>
-                                      <div className="flex flex-wrap gap-2">
-                                        {(Array.isArray(
-                                          currentInquiry.bioinformaticsDetails
-                                            ?.serviceTypes,
-                                        )
-                                          ? currentInquiry.bioinformaticsDetails
-                                              ?.serviceTypes
-                                          : []
-                                        ).length > 0 ? (
-                                          (
-                                            currentInquiry.bioinformaticsDetails
-                                              ?.serviceTypes as string[]
-                                          ).map((serviceType) => {
-                                            const labels: Record<
-                                              string,
-                                              string
-                                            > = {
-                                              phylogenetic:
-                                                "Phylogenetic Analysis",
-                                              metabarcoding:
-                                                "Metabarcoding/Metagenomics",
-                                              transcriptomics:
-                                                "Transcriptomics",
-                                              "whole-genome-assembly":
-                                                "Whole Genome Assembly",
-                                              others: "Others",
-                                            };
-                                            return (
-                                              <span
-                                                key={serviceType}
-                                                className="inline-block text-xs font-medium text-blue-700 bg-blue-50 border border-blue-100 rounded px-2.5 py-1"
-                                              >
-                                                {labels[serviceType] ||
-                                                  serviceType}
-                                              </span>
-                                            );
-                                          })
-                                        ) : (
-                                          <p className="text-sm text-slate-400 italic">
-                                            None selected
+                                {/* Research & Collaboration Details */}
+                                {currentInquiry.serviceType === "research" &&
+                                  (currentInquiry.researchOverview ||
+                                    currentInquiry.projectBackground ||
+                                    currentInquiry.molecularServicesBudget ||
+                                    currentInquiry.plannedSampleCount) && (
+                                    <div className="space-y-4 border-t border-slate-100 pt-4">
+                                      {(currentInquiry.researchOverview ||
+                                        currentInquiry.projectBackground) && (
+                                        <div className="space-y-1.5">
+                                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                            Overview of Research, Objectives &
+                                            Scope
+                                          </span>
+                                          <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
+                                            {currentInquiry.researchOverview ||
+                                              currentInquiry.projectBackground}
                                           </p>
+                                        </div>
+                                      )}
+
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {currentInquiry.molecularServicesBudget && (
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Molecular Services Budget
+                                            </span>
+                                            <p className="text-sm font-semibold text-slate-900">
+                                              {
+                                                currentInquiry.molecularServicesBudget
+                                              }
+                                            </p>
+                                          </div>
+                                        )}
+                                        {currentInquiry.plannedSampleCount && (
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Planned Sample Count
+                                            </span>
+                                            <p className="text-sm font-semibold text-slate-900">
+                                              {
+                                                currentInquiry.plannedSampleCount
+                                              }
+                                            </p>
+                                          </div>
                                         )}
                                       </div>
                                     </div>
+                                  )}
 
-                                    {/* Phylogenetic Analysis */}
-                                    {(
-                                      (currentInquiry.bioinformaticsDetails
-                                        ?.serviceTypes as
-                                        | string[]
-                                        | undefined) || []
-                                    ).includes("phylogenetic") && (
-                                      <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-3">
-                                        <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                          Phylogenetic Analysis Details
-                                        </h4>
-                                        <div className="grid grid-cols-2 gap-3">
-                                          <div className="flex flex-col">
-                                            <span className="text-xs text-slate-500">
-                                              No. of markers
+                                {/* Training Details */}
+                                {currentInquiry.serviceType === "training" &&
+                                  ((currentInquiry.trainingPrograms &&
+                                    currentInquiry.trainingPrograms.length >
+                                      0) ||
+                                    currentInquiry.specificTrainingNeed ||
+                                    currentInquiry.targetTrainingDate ||
+                                    currentInquiry.numberOfParticipants) && (
+                                    <div className="space-y-4 border-t border-slate-100 pt-4">
+                                      {currentInquiry.trainingPrograms &&
+                                        currentInquiry.trainingPrograms.length >
+                                          0 && (
+                                          <div className="space-y-2">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Training Programs
                                             </span>
-                                            <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                              {currentInquiry
-                                                .bioinformaticsDetails
-                                                ?.phylogenetic?.markerCount ??
-                                                "—"}
-                                            </span>
+                                            <div className="flex flex-wrap gap-2">
+                                              {currentInquiry.trainingPrograms.map(
+                                                (program, index) => (
+                                                  <span
+                                                    key={`${program}-${index}`}
+                                                    className="inline-block text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded px-2.5 py-1"
+                                                  >
+                                                    {program ===
+                                                    "others-customized"
+                                                      ? "Others / Customized Training Program"
+                                                      : program}
+                                                  </span>
+                                                ),
+                                              )}
+                                            </div>
                                           </div>
-                                          <div className="flex flex-col">
-                                            <span className="text-xs text-slate-500">
-                                              Marker(s)
-                                            </span>
-                                            <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                              {currentInquiry
-                                                .bioinformaticsDetails
-                                                ?.phylogenetic?.markers || "—"}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
+                                        )}
 
-                                    {/* Metabarcoding / Metagenomics */}
-                                    {(
-                                      (currentInquiry.bioinformaticsDetails
-                                        ?.serviceTypes as
-                                        | string[]
-                                        | undefined) || []
-                                    ).includes("metabarcoding") && (
-                                      <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
-                                        <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                          Metabarcoding / Metagenomics Details
-                                        </h4>
-                                        <div>
-                                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                            Study Structure
-                                          </span>
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                            {(
-                                              [
-                                                {
-                                                  label: "Sample type",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.metabarcoding?.study
-                                                    ?.sampleType,
-                                                },
-                                                {
-                                                  label: "No. of samples",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.metabarcoding?.study
-                                                    ?.sampleCount,
-                                                },
-                                                {
-                                                  label:
-                                                    "No. of groups / treatments to study",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.metabarcoding?.study
-                                                    ?.groupCount,
-                                                },
-                                                {
-                                                  label:
-                                                    "No. of replicates per sample",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.metabarcoding?.study
-                                                    ?.replicatesPerSample,
-                                                },
-                                                {
-                                                  label: "Target gene / marker",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.metabarcoding?.study
-                                                    ?.targetGene,
-                                                },
-                                                {
-                                                  label: "Target region",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.metabarcoding?.study
-                                                    ?.targetRegion,
-                                                },
-                                                {
-                                                  label: "Primer set used",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.metabarcoding?.study
-                                                    ?.primerSet,
-                                                },
-                                                {
-                                                  label:
-                                                    "Expected amplicon size",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.metabarcoding?.study
-                                                    ?.ampliconSize,
-                                                },
-                                                {
-                                                  label:
-                                                    "Sequencing type and platform",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.metabarcoding?.study
-                                                    ?.sequencingPlatform,
-                                                },
-                                              ] as { label: string; val: any }[]
-                                            ).map(({ label, val }) =>
-                                              val != null && val !== "" ? (
-                                                <div
-                                                  key={label}
-                                                  className="flex flex-col"
-                                                >
-                                                  <span className="text-xs text-slate-500">
-                                                    {label}
-                                                  </span>
-                                                  <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                    {val}
-                                                  </span>
-                                                </div>
-                                              ) : null,
-                                            )}
+                                      <div className="grid grid-cols-2 gap-4">
+                                        {currentInquiry.targetTrainingDate && (
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Requested Date
+                                            </span>
+                                            <p className="text-sm font-semibold text-slate-900">
+                                              {new Date(
+                                                currentInquiry.targetTrainingDate,
+                                              ).toLocaleDateString("en-US", {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                              })}
+                                            </p>
                                           </div>
-                                        </div>
-                                        {currentInquiry.bioinformaticsDetails
-                                          ?.metabarcoding?.analysisType && (
-                                          <div className="flex flex-col">
-                                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                              Analysis Type
+                                        )}
+                                        {currentInquiry.numberOfParticipants && (
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
+                                              Attendance
                                             </span>
-                                            <span className="text-sm font-medium text-slate-800 mt-1">
-                                              {currentInquiry
-                                                .bioinformaticsDetails
-                                                .metabarcoding.analysisType ===
-                                              "general-pipeline"
-                                                ? "General Pipeline"
-                                                : currentInquiry
-                                                      .bioinformaticsDetails
-                                                      .metabarcoding
-                                                      .analysisType ===
-                                                    "general-pipeline-downstream"
-                                                  ? "General Pipeline with Downstream Analysis"
-                                                  : currentInquiry
-                                                        .bioinformaticsDetails
-                                                        .metabarcoding
-                                                        .analysisType ===
-                                                      "unsure"
-                                                    ? "Unsure"
-                                                    : currentInquiry
-                                                        .bioinformaticsDetails
-                                                        .metabarcoding
-                                                        .analysisType}
-                                            </span>
+                                            <p className="text-sm font-semibold text-slate-900">
+                                              {
+                                                currentInquiry.numberOfParticipants
+                                              }{" "}
+                                              pax
+                                            </p>
                                           </div>
                                         )}
                                       </div>
-                                    )}
 
-                                    {/* Transcriptomics */}
-                                    {(
-                                      (currentInquiry.bioinformaticsDetails
-                                        ?.serviceTypes as
-                                        | string[]
-                                        | undefined) || []
-                                    ).includes("transcriptomics") && (
-                                      <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
-                                        <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                          Transcriptomics Details
-                                        </h4>
-                                        <div>
-                                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                            Study Structure
-                                          </span>
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                            {(
-                                              [
-                                                {
-                                                  label: "Sample type",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.transcriptomics?.study
-                                                    ?.sampleType,
-                                                },
-                                                {
-                                                  label: "No. of samples",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.transcriptomics?.study
-                                                    ?.sampleCount,
-                                                },
-                                                {
-                                                  label:
-                                                    "No. of groups / treatments / conditions",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.transcriptomics?.study
-                                                    ?.groupCount,
-                                                },
-                                                {
-                                                  label:
-                                                    "No. of biological replicates per group",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.transcriptomics?.study
-                                                    ?.biologicalReplicates,
-                                                },
-                                                {
-                                                  label:
-                                                    "Sequencing type and platform",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.transcriptomics?.study
-                                                    ?.sequencingPlatform,
-                                                },
-                                                {
-                                                  label:
-                                                    "Estimated sequencing depth per sample",
-                                                  val: currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.transcriptomics?.study
-                                                    ?.depth,
-                                                },
-                                              ] as { label: string; val: any }[]
-                                            ).map(({ label, val }) =>
-                                              val != null && val !== "" ? (
-                                                <div
-                                                  key={label}
-                                                  className="flex flex-col"
-                                                >
-                                                  <span className="text-xs text-slate-500">
-                                                    {label}
-                                                  </span>
-                                                  <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                    {val}
-                                                  </span>
-                                                </div>
-                                              ) : null,
-                                            )}
-                                          </div>
-                                        </div>
-                                        <div className="flex flex-col">
-                                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                            Selected Analyses
-                                          </span>
-                                          <div className="mt-2 flex flex-wrap gap-1.5">
-                                            {(
-                                              [
-                                                {
-                                                  key: "preProcessing",
-                                                  label: "Pre-processing",
-                                                },
-                                                {
-                                                  key: "deNovoAssembly",
-                                                  label:
-                                                    "De novo transcriptome assembly & evaluation",
-                                                },
-                                                {
-                                                  key: "referenceBased",
-                                                  label:
-                                                    "Reference-based assembly pipeline",
-                                                },
-                                                {
-                                                  key: "orfPrediction",
-                                                  label:
-                                                    "Open-reading frame prediction",
-                                                },
-                                                {
-                                                  key: "functionalAnnotation",
-                                                  label:
-                                                    "Functional Annotation",
-                                                },
-                                              ] as {
-                                                key: string;
-                                                label: string;
-                                              }[]
-                                            )
-                                              .filter(
-                                                ({ key }) =>
-                                                  currentInquiry
-                                                    .bioinformaticsDetails
-                                                    ?.transcriptomics
-                                                    ?.analysis?.[key],
-                                              )
-                                              .map(({ label }) => (
-                                                <span
-                                                  key={label}
-                                                  className="inline-block text-xs font-medium text-purple-700 bg-purple-50 border border-purple-100 rounded px-2.5 py-1"
-                                                >
-                                                  {label}
-                                                </span>
-                                              ))}
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.transcriptomics?.unsure && (
-                                              <span className="inline-block text-xs font-medium text-slate-600 bg-gray-100 border border-gray-200 rounded px-2.5 py-1">
-                                                Unsure
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Whole Genome Assembly */}
-                                    {(
-                                      (currentInquiry.bioinformaticsDetails
-                                        ?.serviceTypes as
-                                        | string[]
-                                        | undefined) || []
-                                    ).includes("whole-genome-assembly") && (
-                                      <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-4">
-                                        <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-                                          Whole Genome Assembly Details
-                                        </h4>
-                                        <div className="grid grid-cols-2 gap-3">
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.wholeGenomeAssembly
-                                            ?.sampleTaxonomy && (
-                                            <div className="flex flex-col">
-                                              <span className="text-xs text-slate-500">
-                                                Sample Taxonomy
-                                              </span>
-                                              <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                {
-                                                  currentInquiry
-                                                    .bioinformaticsDetails
-                                                    .wholeGenomeAssembly
-                                                    .sampleTaxonomy
-                                                }
-                                              </span>
-                                            </div>
-                                          )}
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.wholeGenomeAssembly
-                                            ?.sampleCount && (
-                                            <div className="flex flex-col">
-                                              <span className="text-xs text-slate-500">
-                                                No. of samples
-                                              </span>
-                                              <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                {
-                                                  currentInquiry
-                                                    .bioinformaticsDetails
-                                                    .wholeGenomeAssembly
-                                                    .sampleCount
-                                                }
-                                              </span>
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="flex flex-col">
-                                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                            Selected Analyses
-                                          </span>
-                                          <div className="mt-2 flex flex-wrap gap-1.5">
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.wholeGenomeAssembly?.analysis
-                                              ?.assembly && (
-                                              <span className="inline-block text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded px-2.5 py-1">
-                                                Whole Genome Assembly
-                                              </span>
-                                            )}
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.wholeGenomeAssembly?.analysis
-                                              ?.assemblyAnnotation && (
-                                              <span className="inline-block text-xs font-medium text-green-700 bg-green-50 border border-green-100 rounded px-2.5 py-1">
-                                                Whole Genome Assembly and
-                                                Annotation
-                                              </span>
-                                            )}
-                                            {currentInquiry
-                                              .bioinformaticsDetails
-                                              ?.wholeGenomeAssembly?.unsure && (
-                                              <span className="inline-block text-xs font-medium text-slate-600 bg-gray-100 border border-gray-200 rounded px-2.5 py-1">
-                                                Unsure
-                                              </span>
-                                            )}
-                                          </div>
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.wholeGenomeAssembly?.analysis
-                                            ?.additionalDownstream && (
-                                            <div className="mt-2 flex flex-col">
-                                              <span className="text-xs text-slate-500">
-                                                Additional Downstream Analysis
-                                              </span>
-                                              <span className="text-sm font-medium text-slate-800 mt-0.5">
-                                                {
-                                                  currentInquiry
-                                                    .bioinformaticsDetails
-                                                    .wholeGenomeAssembly
-                                                    .analysis
-                                                    .additionalDownstream
-                                                }
-                                              </span>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Others – Specify */}
-                                    {(
-                                      (currentInquiry.bioinformaticsDetails
-                                        ?.serviceTypes as
-                                        | string[]
-                                        | undefined) || []
-                                    ).includes("others") &&
-                                      currentInquiry.bioinformaticsDetails
-                                        ?.othersSpecify && (
+                                      {currentInquiry.specificTrainingNeed && (
                                         <div className="space-y-1.5">
                                           <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                            Others – Specify
+                                            Customized Training Details
                                           </span>
-                                          <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg whitespace-pre-wrap">
+                                          <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
                                             {
-                                              currentInquiry
-                                                .bioinformaticsDetails
-                                                .othersSpecify
+                                              currentInquiry.specificTrainingNeed
                                             }
                                           </p>
                                         </div>
                                       )}
-
-                                    {/* Data Section */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="space-y-1">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Provide Own Data
-                                        </span>
-                                        <p className="text-sm font-semibold text-slate-900">
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.dataProvideOwnData
-                                            ? "Yes"
-                                            : "No"}
-                                        </p>
-                                      </div>
-                                      <div className="space-y-1">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Data Generated by PGC Visayas
-                                        </span>
-                                        <p className="text-sm font-semibold text-slate-900">
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.dataProvidedByPgc
-                                            ? "Yes"
-                                            : "No"}
-                                        </p>
-                                      </div>
-                                    </div>
-
-                                    {currentInquiry.bioinformaticsDetails
-                                      ?.dataProvideOwnData && (
-                                      <div className="space-y-1.5">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Data Details
-                                        </span>
-                                        <div className="bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 text-sm text-slate-700 leading-6 space-y-1">
-                                          <p>
-                                            <span className="font-medium text-slate-500">
-                                              File formats:
-                                            </span>{" "}
-                                            {Array.isArray(
-                                              currentInquiry
-                                                .bioinformaticsDetails
-                                                ?.dataFileFormats,
-                                            ) &&
-                                            currentInquiry.bioinformaticsDetails
-                                              ?.dataFileFormats.length > 0
-                                              ? currentInquiry.bioinformaticsDetails.dataFileFormats.join(
-                                                  ", ",
-                                                )
-                                              : "—"}
-                                          </p>
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.dataOtherFormat && (
-                                            <p>
-                                              <span className="font-medium text-slate-500">
-                                                Other format:
-                                              </span>{" "}
-                                              {
-                                                currentInquiry
-                                                  .bioinformaticsDetails
-                                                  .dataOtherFormat
-                                              }
-                                            </p>
-                                          )}
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.dataFileSizePerSample && (
-                                            <p>
-                                              <span className="font-medium text-slate-500">
-                                                File size per sample:
-                                              </span>{" "}
-                                              {
-                                                currentInquiry
-                                                  .bioinformaticsDetails
-                                                  .dataFileSizePerSample
-                                              }
-                                            </p>
-                                          )}
-                                          {currentInquiry.bioinformaticsDetails
-                                            ?.dataTransferMode && (
-                                            <p>
-                                              <span className="font-medium text-slate-500">
-                                                Transfer mode:
-                                              </span>{" "}
-                                              {
-                                                currentInquiry
-                                                  .bioinformaticsDetails
-                                                  .dataTransferMode
-                                              }
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Overview of Research and Objectives */}
-                                    <div className="space-y-1.5">
-                                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                        Overview of Research and Objectives
-                                      </span>
-                                      <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
-                                        {currentInquiry.bioinformaticsDetails
-                                          ?.overviewObjectives || "—"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Technical Block */}
-                                {(currentInquiry.species ||
-                                  currentInquiry.workflowType) && (
-                                  <div className="grid grid-cols-2 gap-4">
-                                    {currentInquiry.species && (
-                                      <div className="space-y-1">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Species / Organism
-                                        </span>
-                                        <p className="text-sm font-semibold text-slate-900 capitalize">
-                                          {currentInquiry.otherSpecies
-                                            ? `${currentInquiry.species}: ${currentInquiry.otherSpecies}`
-                                            : currentInquiry.species}
-                                        </p>
-                                      </div>
-                                    )}
-
-                                    {currentInquiry.workflowType && (
-                                      <div className="space-y-1">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Analysis Strategy
-                                        </span>
-                                        <p className="text-sm font-semibold text-slate-900">
-                                          {formatWorkflowType(
-                                            currentInquiry.workflowType,
-                                          )}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Bioinformatics Options */}
-                                {currentInquiry.workflowType ===
-                                  "complete-bioinfo" &&
-                                  currentInquiry.bioinfoOptions &&
-                                  currentInquiry.bioinfoOptions.length > 0 && (
-                                    <div className="space-y-2">
-                                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                        Selected Bioinformatics Analysis
-                                      </span>
-                                      <div className="flex flex-wrap gap-2">
-                                        {currentInquiry.bioinfoOptions.map(
-                                          (option) => (
-                                            <span
-                                              key={option}
-                                              className="inline-block text-xs font-medium text-blue-700 bg-blue-50 border border-blue-100 rounded px-2.5 py-1"
-                                            >
-                                              {formatBioinfoOption(option)}
-                                            </span>
-                                          ),
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                              </div>
-                            )}
-
-                            {/* Specific Needs & Assays (Common for all) */}
-                            {currentInquiry.individualAssayDetails && (
-                              <div className="space-y-1.5">
-                                <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                  Selected Assays
-                                </span>
-                                <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100">
-                                  {currentInquiry.individualAssayDetails}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Research Narrative (Only for non-research, non-laboratory services) */}
-                            {currentInquiry.serviceType !== "research" &&
-                              currentInquiry.serviceType !== "laboratory" &&
-                              currentInquiry.researchOverview && (
-                                <div className="space-y-1.5">
-                                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                    Objectives & Brief Overview
-                                  </span>
-                                  <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100">
-                                    {currentInquiry.researchOverview}
-                                  </p>
-                                </div>
-                              )}
-
-                            {/* Research & Collaboration Details */}
-                            {currentInquiry.serviceType === "research" &&
-                              (currentInquiry.researchOverview ||
-                                currentInquiry.projectBackground ||
-                                currentInquiry.molecularServicesBudget ||
-                                currentInquiry.plannedSampleCount) && (
-                                <div className="space-y-4 border-t border-slate-100 pt-4">
-                                  {(currentInquiry.researchOverview ||
-                                    currentInquiry.projectBackground) && (
-                                    <div className="space-y-1.5">
-                                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                        Overview of Research, Objectives & Scope
-                                      </span>
-                                      <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
-                                        {currentInquiry.researchOverview ||
-                                          currentInquiry.projectBackground}
-                                      </p>
                                     </div>
                                   )}
 
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {currentInquiry.molecularServicesBudget && (
-                                      <div className="space-y-1">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Molecular Services Budget
-                                        </span>
-                                        <p className="text-sm font-semibold text-slate-900">
-                                          {
-                                            currentInquiry.molecularServicesBudget
-                                          }
-                                        </p>
-                                      </div>
-                                    )}
-                                    {currentInquiry.plannedSampleCount && (
-                                      <div className="space-y-1">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Planned Sample Count
-                                        </span>
-                                        <p className="text-sm font-semibold text-slate-900">
-                                          {currentInquiry.plannedSampleCount}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
-                            {/* Training Details */}
-                            {currentInquiry.serviceType === "training" &&
-                              ((currentInquiry.trainingPrograms &&
-                                currentInquiry.trainingPrograms.length > 0) ||
-                                currentInquiry.specificTrainingNeed ||
-                                currentInquiry.targetTrainingDate ||
-                                currentInquiry.numberOfParticipants) && (
-                                <div className="space-y-4 border-t border-slate-100 pt-4">
-                                  {currentInquiry.trainingPrograms &&
-                                    currentInquiry.trainingPrograms.length >
-                                      0 && (
-                                      <div className="space-y-2">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Training Programs
-                                        </span>
-                                        <div className="flex flex-wrap gap-2">
-                                          {currentInquiry.trainingPrograms.map(
-                                            (program, index) => (
-                                              <span
-                                                key={`${program}-${index}`}
-                                                className="inline-block text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded px-2.5 py-1"
-                                              >
-                                                {program === "others-customized"
-                                                  ? "Others / Customized Training Program"
-                                                  : program}
-                                              </span>
-                                            ),
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                  <div className="grid grid-cols-2 gap-4">
-                                    {currentInquiry.targetTrainingDate && (
-                                      <div className="space-y-1">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Requested Date
-                                        </span>
-                                        <p className="text-sm font-semibold text-slate-900">
-                                          {new Date(
-                                            currentInquiry.targetTrainingDate,
+                                {/* Submission Footer */}
+                                <div className="pt-3 flex items-center justify-between gap-3 border-t border-slate-100">
+                                  <div className="flex items-center gap-1.5 text-slate-400">
+                                    <Calendar className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="text-xs">
+                                      Submitted{" "}
+                                      {currentInquiry.createdAt
+                                        ? new Date(
+                                            currentInquiry.createdAt,
                                           ).toLocaleDateString("en-US", {
                                             year: "numeric",
-                                            month: "long",
+                                            month: "short",
                                             day: "numeric",
-                                          })}
-                                        </p>
-                                      </div>
-                                    )}
-                                    {currentInquiry.numberOfParticipants && (
-                                      <div className="space-y-1">
-                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                          Attendance
-                                        </span>
-                                        <p className="text-sm font-semibold text-slate-900">
-                                          {currentInquiry.numberOfParticipants}{" "}
-                                          pax
-                                        </p>
-                                      </div>
-                                    )}
+                                          })
+                                        : "—"}
+                                    </span>
                                   </div>
-
-                                  {currentInquiry.specificTrainingNeed && (
-                                    <div className="space-y-1.5">
-                                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide block">
-                                        Customized Training Details
-                                      </span>
-                                      <p className="text-sm text-slate-700 leading-6 bg-slate-50 rounded-lg px-3 py-2.5 border border-slate-100 whitespace-pre-wrap">
-                                        {currentInquiry.specificTrainingNeed}
-                                      </p>
-                                    </div>
-                                  )}
+                                  <div className="flex items-center gap-1.5 text-slate-500 text-xs">
+                                    <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                    <span className="truncate max-w-[200px] font-medium">
+                                      {currentInquiry.affiliation}
+                                    </span>
+                                  </div>
                                 </div>
-                              )}
-
-                            {/* Submission Footer */}
-                            <div className="pt-3 flex items-center justify-between gap-3 border-t border-slate-100">
-                              <div className="flex items-center gap-1.5 text-slate-400">
-                                <Calendar className="h-3.5 w-3.5 shrink-0" />
-                                <span className="text-xs">
-                                  Submitted{" "}
-                                  {currentInquiry.createdAt
-                                    ? new Date(
-                                        currentInquiry.createdAt,
-                                      ).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                      })
-                                    : "—"}
-                                </span>
                               </div>
-                              <div className="flex items-center gap-1.5 text-slate-500 text-xs">
-                                <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                                <span className="truncate max-w-[200px] font-medium">
-                                  {currentInquiry.affiliation}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Personal Information of Submitter */}
-                    {currentInquiry && (
-                      <div
-                        className={cn(
-                          "bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden",
-                          isReferenceSidebarClient &&
-                            "rounded-xl border-slate-200 px-5 py-4 shadow-none",
-                        )}
-                      >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setIsPersonalInfoExpanded((prev) => !prev)
-                          }
-                          className="flex w-full items-center justify-between gap-3 text-left"
-                          aria-expanded={isPersonalInfoExpanded}
-                        >
-                          <div className="flex items-center gap-3">
-                            {isReferenceSidebarClient ? (
-                              <User className="h-5 w-5 text-[#1769AA]" />
-                            ) : (
-                              <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
                             )}
-                            <span>
-                              <span className="block text-base font-semibold text-slate-800">
-                                {isReferenceSidebarClient
-                                  ? "Personal Information"
-                                  : "Personal Information"}
-                              </span>
-                            </span>
                           </div>
-                          {isPersonalInfoExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-slate-400" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-slate-400" />
-                          )}
-                        </button>
+                        )}
 
-                        {isPersonalInfoExpanded && (
-                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Full Name */}
-                            <div className="space-y-1">
-                              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
-                                <User className="h-3 w-3" />
-                                Full Name
-                              </span>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {currentInquiry.name || "—"}
-                              </p>
-                            </div>
+                        {/* Personal Information of Submitter */}
+                        {currentInquiry && (
+                          <div
+                            className={cn(
+                              "bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden",
+                              isReferenceSidebarClient &&
+                                "rounded-xl border-slate-200 px-5 py-4 shadow-none",
+                            )}
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setIsPersonalInfoExpanded((prev) => !prev)
+                              }
+                              className="flex w-full items-center justify-between gap-3 text-left"
+                              aria-expanded={isPersonalInfoExpanded}
+                            >
+                              <div className="flex items-center gap-3">
+                                {isReferenceSidebarClient ? (
+                                  <User className="h-5 w-5 text-[#1769AA]" />
+                                ) : (
+                                  <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+                                )}
+                                <span>
+                                  <span className="block text-base font-semibold text-slate-800">
+                                    {isReferenceSidebarClient
+                                      ? "Personal Information"
+                                      : "Personal Information"}
+                                  </span>
+                                </span>
+                              </div>
+                              {isPersonalInfoExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-slate-400" />
+                              )}
+                            </button>
 
-                            {/* Email */}
-                            <div className="space-y-1">
-                              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
-                                <Mail className="h-3 w-3" />
-                                Email Address
-                              </span>
-                              <p className="text-sm font-semibold text-slate-900 break-all">
-                                {currentInquiry.email || "—"}
-                              </p>
-                            </div>
+                            {isPersonalInfoExpanded && (
+                              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* Full Name */}
+                                <div className="space-y-1">
+                                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+                                    <User className="h-3 w-3" />
+                                    Full Name
+                                  </span>
+                                  <p className="text-sm font-semibold text-slate-900">
+                                    {currentInquiry.name || "—"}
+                                  </p>
+                                </div>
 
-                            {/* Designation */}
-                            <div className="space-y-1">
-                              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
-                                <Briefcase className="h-3 w-3" />
-                                Designation / Title
-                              </span>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {currentInquiry.designation || "—"}
-                              </p>
-                            </div>
+                                {/* Email */}
+                                <div className="space-y-1">
+                                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+                                    <Mail className="h-3 w-3" />
+                                    Email Address
+                                  </span>
+                                  <p className="text-sm font-semibold text-slate-900 break-all">
+                                    {currentInquiry.email || "—"}
+                                  </p>
+                                </div>
 
-                            {/* Affiliation */}
-                            <div className="space-y-1">
-                              <span className="text-xs font-medium text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
-                                <Building2 className="h-3 w-3" />
-                                Institution / Affiliation
-                              </span>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {currentInquiry.affiliation || "—"}
-                              </p>
-                            </div>
+                                {/* Designation */}
+                                <div className="space-y-1">
+                                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+                                    <Briefcase className="h-3 w-3" />
+                                    Designation / Title
+                                  </span>
+                                  <p className="text-sm font-semibold text-slate-900">
+                                    {currentInquiry.designation || "—"}
+                                  </p>
+                                </div>
+
+                                {/* Affiliation */}
+                                <div className="space-y-1">
+                                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+                                    <Building2 className="h-3 w-3" />
+                                    Institution / Affiliation
+                                  </span>
+                                  <p className="text-sm font-semibold text-slate-900">
+                                    {currentInquiry.affiliation || "—"}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
             </div>
             {visibleAnnouncements.length > 0 && (
               <aside
@@ -9660,188 +9957,190 @@ export default function ClientPortalPage() {
             if (!open) handleCancelConfirm();
           }}
         >
-        <DialogContent className="max-h-[90vh] max-w-xl gap-0 overflow-y-auto rounded-xl border-slate-200 bg-white p-0 shadow-2xl">
-          <div className="px-5 pb-4 pt-5">
-            <DialogHeader className="flex-row items-start gap-3 space-y-0 pr-8 text-left">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#166FB5]">
-                <Lock className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <DialogTitle className="text-lg font-bold text-slate-900">
-                  Confirm Member Information
-                </DialogTitle>
-                <DialogDescription className="text-sm leading-5 text-slate-600">
-                  Review the details below carefully. Once confirmed, the form
-                  will be locked and can no longer be edited directly.
-                </DialogDescription>
-              </div>
-            </DialogHeader>
-          </div>
+          <DialogContent className="max-h-[90vh] max-w-xl gap-0 overflow-y-auto rounded-xl border-slate-200 bg-white p-0 shadow-2xl">
+            <div className="px-5 pb-4 pt-5">
+              <DialogHeader className="flex-row items-start gap-3 space-y-0 pr-8 text-left">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#166FB5]">
+                  <Lock className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <DialogTitle className="text-lg font-bold text-slate-900">
+                    Confirm Member Information
+                  </DialogTitle>
+                  <DialogDescription className="text-sm leading-5 text-slate-600">
+                    Review the details below carefully. Once confirmed, the form
+                    will be locked and can no longer be edited directly.
+                  </DialogDescription>
+                </div>
+              </DialogHeader>
+            </div>
 
-          <div className="space-y-4 px-5 pb-5">
-            {pendingMemberId &&
-              (() => {
-                const member = members.find((m) => m.id === pendingMemberId);
-                if (!member) return null;
-                const memberName = member.formData.name?.trim() || "Unnamed Member";
-                const nameParts = memberName.split(/\s+/);
-                const initials =
-                  nameParts.length > 1
-                    ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`
-                    : `${memberName[0]}${memberName.length > 1 ? memberName[memberName.length - 1] : ""}`;
+            <div className="space-y-4 px-5 pb-5">
+              {pendingMemberId &&
+                (() => {
+                  const member = members.find((m) => m.id === pendingMemberId);
+                  if (!member) return null;
+                  const memberName =
+                    member.formData.name?.trim() || "Unnamed Member";
+                  const nameParts = memberName.split(/\s+/);
+                  const initials =
+                    nameParts.length > 1
+                      ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`
+                      : `${memberName[0]}${memberName.length > 1 ? memberName[memberName.length - 1] : ""}`;
 
-                return (
-                  <>
-                    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#166FB5] to-[#4038AF] text-sm font-bold text-white shadow-sm">
-                        {initials.toUpperCase()}
+                  return (
+                    <>
+                      <div className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#166FB5] to-[#4038AF] text-sm font-bold text-white shadow-sm">
+                          {initials.toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-sm font-bold text-slate-900">
+                            {memberName}
+                          </h3>
+                          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+                            <Mail className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">
+                              {member.formData.email || "No email provided"}
+                            </span>
+                          </div>
+                        </div>
+                        {member.isPrimary && (
+                          <Badge className="shrink-0 border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700 hover:bg-blue-50">
+                            Primary Contact
+                          </Badge>
+                        )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-bold text-slate-900">
-                          {memberName}
-                        </h3>
-                        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
-                          <Mail className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">
-                            {member.formData.email || "No email provided"}
-                          </span>
+
+                      <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 text-sm">
+                        <div className="border-b border-r border-slate-200 px-4 py-3">
+                          <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                            <Building2 className="h-3.5 w-3.5" />
+                            <span className="text-[10px] font-semibold uppercase tracking-wide">
+                              Affiliation
+                            </span>
+                          </div>
+                          <p
+                            className="break-words text-xs font-medium text-slate-800 sm:text-sm"
+                            title={member.formData.affiliation}
+                          >
+                            {member.formData.affiliation || "—"}
+                          </p>
+                        </div>
+                        <div className="border-b border-slate-200 px-4 py-3">
+                          <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                            <Briefcase className="h-3.5 w-3.5" />
+                            <span className="text-[10px] font-semibold uppercase tracking-wide">
+                              Designation
+                            </span>
+                          </div>
+                          <p
+                            className="break-words text-xs font-medium text-slate-800 sm:text-sm"
+                            title={member.formData.designation}
+                          >
+                            {member.formData.designation || "—"}
+                          </p>
+                        </div>
+                        <div className="border-b border-r border-slate-200 px-4 py-3">
+                          <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                            <Smartphone className="h-3.5 w-3.5" />
+                            <span className="text-[10px] font-semibold uppercase tracking-wide">
+                              Mobile
+                            </span>
+                          </div>
+                          <p className="break-words font-mono text-xs font-medium text-slate-800 sm:text-sm">
+                            {member.formData.phoneNumber || "—"}
+                          </p>
+                        </div>
+                        <div className="border-b border-slate-200 px-4 py-3">
+                          <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                            <User className="h-3.5 w-3.5" />
+                            <span className="text-[10px] font-semibold uppercase tracking-wide">
+                              Sex
+                            </span>
+                          </div>
+                          <p className="text-xs font-medium text-slate-800 sm:text-sm">
+                            {member.formData.sex === "M"
+                              ? "Male"
+                              : member.formData.sex === "F"
+                                ? "Female"
+                                : member.formData.sex || "—"}
+                          </p>
+                        </div>
+                        <div className="col-span-2 px-4 py-3">
+                          <div className="mb-1 flex items-center gap-1.5 text-slate-500">
+                            <MapPin className="h-3.5 w-3.5" />
+                            <span className="text-[10px] font-semibold uppercase tracking-wide">
+                              Affiliation Address
+                            </span>
+                          </div>
+                          <p
+                            className="break-words text-xs font-medium text-slate-800 sm:text-sm"
+                            title={member.formData.affiliationAddress}
+                          >
+                            {member.formData.affiliationAddress || "—"}
+                          </p>
                         </div>
                       </div>
-                      {member.isPrimary && (
-                        <Badge className="shrink-0 border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700 hover:bg-blue-50">
-                          Primary Contact
-                        </Badge>
-                      )}
-                    </div>
 
-                    <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 text-sm">
-                      <div className="border-b border-r border-slate-200 px-4 py-3">
-                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
-                          <Building2 className="h-3.5 w-3.5" />
-                          <span className="text-[10px] font-semibold uppercase tracking-wide">
-                            Affiliation
-                          </span>
-                        </div>
-                        <p
-                          className="break-words text-xs font-medium text-slate-800 sm:text-sm"
-                          title={member.formData.affiliation}
+                      <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                         >
-                          {member.formData.affiliation || "—"}
-                        </p>
-                      </div>
-                      <div className="border-b border-slate-200 px-4 py-3">
-                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
-                          <Briefcase className="h-3.5 w-3.5" />
-                          <span className="text-[10px] font-semibold uppercase tracking-wide">
-                            Designation
-                          </span>
+                          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold leading-snug text-amber-800">
+                            This action will lock the form.
+                          </p>
+                          <p className="text-xs leading-snug text-amber-700">
+                            Once confirmed, all fields will be read-only and
+                            cannot be edited. If you&apos;re not yet sure, click{" "}
+                            <span className="font-semibold">
+                              &quot;Not Yet — Go Back&quot;
+                            </span>{" "}
+                            and use the{" "}
+                            <span className="font-semibold">
+                              &quot;Save Draft&quot;
+                            </span>{" "}
+                            button instead to save your progress without
+                            locking.
+                          </p>
                         </div>
-                        <p
-                          className="break-words text-xs font-medium text-slate-800 sm:text-sm"
-                          title={member.formData.designation}
-                        >
-                          {member.formData.designation || "—"}
-                        </p>
                       </div>
-                      <div className="border-b border-r border-slate-200 px-4 py-3">
-                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
-                          <Smartphone className="h-3.5 w-3.5" />
-                          <span className="text-[10px] font-semibold uppercase tracking-wide">
-                            Mobile
-                          </span>
-                        </div>
-                        <p className="break-words font-mono text-xs font-medium text-slate-800 sm:text-sm">
-                          {member.formData.phoneNumber || "—"}
-                        </p>
-                      </div>
-                      <div className="border-b border-slate-200 px-4 py-3">
-                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
-                          <User className="h-3.5 w-3.5" />
-                          <span className="text-[10px] font-semibold uppercase tracking-wide">
-                            Sex
-                          </span>
-                        </div>
-                        <p className="text-xs font-medium text-slate-800 sm:text-sm">
-                          {member.formData.sex === "M"
-                            ? "Male"
-                            : member.formData.sex === "F"
-                              ? "Female"
-                              : member.formData.sex || "—"}
-                        </p>
-                      </div>
-                      <div className="col-span-2 px-4 py-3">
-                        <div className="mb-1 flex items-center gap-1.5 text-slate-500">
-                          <MapPin className="h-3.5 w-3.5" />
-                          <span className="text-[10px] font-semibold uppercase tracking-wide">
-                            Affiliation Address
-                          </span>
-                        </div>
-                        <p
-                          className="break-words text-xs font-medium text-slate-800 sm:text-sm"
-                          title={member.formData.affiliationAddress}
-                        >
-                          {member.formData.affiliationAddress || "—"}
-                        </p>
-                      </div>
-                    </div>
+                    </>
+                  );
+                })()}
+            </div>
 
-                    <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                        <line x1="12" y1="9" x2="12" y2="13" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                      </svg>
-                      <div className="space-y-1">
-                        <p className="text-xs font-semibold leading-snug text-amber-800">
-                          This action will lock the form.
-                        </p>
-                        <p className="text-xs leading-snug text-amber-700">
-                          Once confirmed, all fields will be read-only and
-                          cannot be edited. If you&apos;re not yet sure, click{" "}
-                          <span className="font-semibold">
-                            &quot;Not Yet — Go Back&quot;
-                          </span>{" "}
-                          and use the{" "}
-                          <span className="font-semibold">
-                            &quot;Save Draft&quot;
-                          </span>{" "}
-                          button instead to save your progress without locking.
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-          </div>
-
-          <div className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
-            <Button
-              variant="outline"
-              onClick={handleCancelConfirm}
-              disabled={submitting}
-              className="border-slate-300 bg-white text-slate-700"
-            >
-              Not Yet — Go Back
-            </Button>
-            <Button
-              onClick={handleConfirmSave}
-              disabled={submitting}
-              className="bg-[#166FB5] font-semibold text-white hover:bg-[#125e99]"
-            >
-              <Lock className="mr-2 h-4 w-4" />
-              {submitting ? "Saving..." : "Yes, Confirm & Lock"}
-            </Button>
-          </div>
-        </DialogContent>
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
+              <Button
+                variant="outline"
+                onClick={handleCancelConfirm}
+                disabled={submitting}
+                className="border-slate-300 bg-white text-slate-700"
+              >
+                Not Yet — Go Back
+              </Button>
+              <Button
+                onClick={handleConfirmSave}
+                disabled={submitting}
+                className="bg-[#166FB5] font-semibold text-white hover:bg-[#125e99]"
+              >
+                <Lock className="mr-2 h-4 w-4" />
+                {submitting ? "Saving..." : "Yes, Confirm & Lock"}
+              </Button>
+            </div>
+          </DialogContent>
         </Dialog>
       ) : (
         <ConfirmationModalLayout
@@ -10057,9 +10356,7 @@ export default function ClientPortalPage() {
                       </svg>
                       <p className="text-xs leading-5">
                         This will remove{" "}
-                        <strong>
-                          {member.formData.name || "this member"}
-                        </strong>{" "}
+                        <strong>{member.formData.name || "this member"}</strong>{" "}
                         from the current list.
                         {member.isDraft
                           ? " Since this is a draft, the data will be permanently deleted."
@@ -10167,7 +10464,9 @@ export default function ClientPortalPage() {
                 <CheckCircle2 className="h-3 w-3" />
                 Step 2 of 3
               </Badge>
-              <span className="text-xs text-slate-500">Review Team Members</span>
+              <span className="text-xs text-slate-500">
+                Review Team Members
+              </span>
             </div>
           )}
 
@@ -10207,152 +10506,156 @@ export default function ClientPortalPage() {
             if (!open) setShowSubmitProjectModal(false);
           }}
         >
-        <DialogContent className="max-h-[90vh] max-w-md gap-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-0 shadow-xl">
-          <div className="px-5 pb-4 pt-5">
-            <DialogHeader className="flex-row items-start gap-3 space-y-0 pr-8 text-left">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
-                <ClipboardCheck className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <DialogTitle className="text-base font-semibold leading-5 text-slate-900">
-                  Final Review &amp; Confirmation
-                </DialogTitle>
-                <DialogDescription className="text-sm leading-5 text-slate-600">
-                  Please review your project and member information below
-                  before final submission to administrators.
-                </DialogDescription>
-              </div>
-            </DialogHeader>
-          </div>
+          <DialogContent className="max-h-[90vh] max-w-md gap-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-0 shadow-xl">
+            <div className="px-5 pb-4 pt-5">
+              <DialogHeader className="flex-row items-start gap-3 space-y-0 pr-8 text-left">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                  <ClipboardCheck className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <DialogTitle className="text-base font-semibold leading-5 text-slate-900">
+                    Final Review &amp; Confirmation
+                  </DialogTitle>
+                  <DialogDescription className="text-sm leading-5 text-slate-600">
+                    Please review your project and member information below
+                    before final submission to administrators.
+                  </DialogDescription>
+                </div>
+              </DialogHeader>
+            </div>
 
-          <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 pb-5">
-            {projectRequest && (
-              <section className="overflow-hidden rounded-xl border border-slate-200">
-                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-3">
-                  <FolderOpen className="h-4 w-4 text-slate-600" />
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Project Details:
-                  </h3>
-                </div>
-                <div className="space-y-2 px-4 py-3 text-[13px]">
-                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                    <span className="text-slate-500">Title:</span>
-                    <span className="break-words text-slate-900">
-                      {projectRequest.title || "—"}
-                    </span>
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 pb-5">
+              {projectRequest && (
+                <section className="overflow-hidden rounded-xl border border-slate-200">
+                  <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-3">
+                    <FolderOpen className="h-4 w-4 text-slate-600" />
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      Project Details:
+                    </h3>
                   </div>
-                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                    <span className="text-slate-500">Lead:</span>
-                    <span className="break-words text-slate-900">
-                      {projectRequest.projectLead || "—"}
-                    </span>
+                  <div className="space-y-2 px-4 py-3 text-[13px]">
+                    <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                      <span className="text-slate-500">Title:</span>
+                      <span className="break-words text-slate-900">
+                        {projectRequest.title || "—"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                      <span className="text-slate-500">Lead:</span>
+                      <span className="break-words text-slate-900">
+                        {projectRequest.projectLead || "—"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                      <span className="text-slate-500">
+                        Sending Institution:
+                      </span>
+                      <span className="break-words text-slate-900">
+                        {projectRequest.sendingInstitution || "—"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                      <span className="text-slate-500">
+                        Funding Institution:
+                      </span>
+                      <span className="break-words text-slate-900">
+                        {projectRequest.fundingInstitution || "—"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                    <span className="text-slate-500">Sending Institution:</span>
-                    <span className="break-words text-slate-900">
-                      {projectRequest.sendingInstitution || "—"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                    <span className="text-slate-500">Funding Institution:</span>
-                    <span className="break-words text-slate-900">
-                      {projectRequest.fundingInstitution || "—"}
-                    </span>
-                  </div>
-                </div>
-              </section>
-            )}
+                </section>
+              )}
 
-            {primaryMember && (
-              <section className="overflow-hidden rounded-xl border border-slate-200">
-                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-3">
-                  <User className="h-4 w-4 text-slate-600" />
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Primary Member:
-                  </h3>
-                </div>
-                <div className="space-y-2 px-4 py-3 text-[13px]">
-                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                    <span className="text-slate-500">Name:</span>
-                    <span className="break-words text-slate-900">
-                      {primaryMember.formData.name || "—"}
-                    </span>
+              {primaryMember && (
+                <section className="overflow-hidden rounded-xl border border-slate-200">
+                  <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-3">
+                    <User className="h-4 w-4 text-slate-600" />
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      Primary Member:
+                    </h3>
                   </div>
-                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                    <span className="text-slate-500">Email:</span>
-                    <span className="break-words text-slate-900">
-                      {primaryMember.formData.email || "—"}
-                    </span>
+                  <div className="space-y-2 px-4 py-3 text-[13px]">
+                    <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                      <span className="text-slate-500">Name:</span>
+                      <span className="break-words text-slate-900">
+                        {primaryMember.formData.name || "—"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                      <span className="text-slate-500">Email:</span>
+                      <span className="break-words text-slate-900">
+                        {primaryMember.formData.email || "—"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                      <span className="text-slate-500">Affiliation:</span>
+                      <span className="break-words text-slate-900">
+                        {primaryMember.formData.affiliation || "—"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                    <span className="text-slate-500">Affiliation:</span>
-                    <span className="break-words text-slate-900">
-                      {primaryMember.formData.affiliation || "—"}
-                    </span>
-                  </div>
-                </div>
-              </section>
-            )}
+                </section>
+              )}
 
-            {members.filter((m) => !m.isPrimary && m.isDraft).length > 0 && (
-              <section className="overflow-hidden rounded-xl border border-slate-200">
-                <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-3">
-                  <Users className="h-4 w-4 text-slate-600" />
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Other Member/s:
-                  </h3>
-                </div>
-                <div className="divide-y divide-slate-200 px-4">
-                  {members
-                    .filter((m) => !m.isPrimary && m.isDraft)
-                    .map((member) => (
-                      <div
-                        key={member.id}
-                        className="space-y-2 py-3 text-[13px]"
-                      >
-                        <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                          <span className="text-slate-500">Name:</span>
-                          <span className="break-words text-slate-900">
-                            {member.formData.name || "—"}
-                          </span>
+              {members.filter((m) => !m.isPrimary && m.isDraft).length > 0 && (
+                <section className="overflow-hidden rounded-xl border border-slate-200">
+                  <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-3">
+                    <Users className="h-4 w-4 text-slate-600" />
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      Other Member/s:
+                    </h3>
+                  </div>
+                  <div className="divide-y divide-slate-200 px-4">
+                    {members
+                      .filter((m) => !m.isPrimary && m.isDraft)
+                      .map((member) => (
+                        <div
+                          key={member.id}
+                          className="space-y-2 py-3 text-[13px]"
+                        >
+                          <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                            <span className="text-slate-500">Name:</span>
+                            <span className="break-words text-slate-900">
+                              {member.formData.name || "—"}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                            <span className="text-slate-500">Email:</span>
+                            <span className="break-words text-slate-900">
+                              {member.formData.email || "—"}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
+                            <span className="text-slate-500">Affiliation:</span>
+                            <span className="break-words text-slate-900">
+                              {member.formData.affiliation || "—"}
+                            </span>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                          <span className="text-slate-500">Email:</span>
-                          <span className="break-words text-slate-900">
-                            {member.formData.email || "—"}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-3">
-                          <span className="text-slate-500">Affiliation:</span>
-                          <span className="break-words text-slate-900">
-                            {member.formData.affiliation || "—"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </section>
-            )}
-          </div>
+                      ))}
+                  </div>
+                </section>
+              )}
+            </div>
 
-          <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowSubmitProjectModal(false)}
-              disabled={submitting}
-              className="border-slate-300 bg-white text-slate-700"
-            >
-              Go Back
-            </Button>
-            <Button
-              onClick={handleConfirmSubmitProject}
-              disabled={submitting}
-              className="bg-blue-600 font-semibold text-white hover:bg-blue-700"
-            >
-              {submitting ? "Saving..." : "Submit to Administrator"}
-            </Button>
-          </div>
-        </DialogContent>
+            <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowSubmitProjectModal(false)}
+                disabled={submitting}
+                className="border-slate-300 bg-white text-slate-700"
+              >
+                Go Back
+              </Button>
+              <Button
+                onClick={handleConfirmSubmitProject}
+                disabled={submitting}
+                className="bg-blue-600 font-semibold text-white hover:bg-blue-700"
+              >
+                {submitting ? "Saving..." : "Submit to Administrator"}
+              </Button>
+            </div>
+          </DialogContent>
         </Dialog>
       ) : (
         <ConfirmationModalLayout
@@ -10538,8 +10841,8 @@ export default function ClientPortalPage() {
                 <strong>Quotation: {selectedQuotationRef}</strong>?
                 <br />
                 <br />
-                You will be redirected to the Project Information Form to
-                create your project.
+                You will be redirected to the Project Information Form to create
+                your project.
               </AlertDialogDescription>
             )}
           </AlertDialogHeader>

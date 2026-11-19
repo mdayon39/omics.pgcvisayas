@@ -638,7 +638,12 @@ export default function UploadReceipt({
 
       {/* ── Receipt list ── */}
       {loadingReceipts ? (
-        <div className="flex items-center gap-1.5 py-1 text-[11px] text-slate-400 ml-5">
+        <div
+          className={cn(
+            "flex items-center gap-1.5 py-1 text-[11px] text-slate-400 ml-5",
+            referenceClientDesign && "ml-0",
+          )}
+        >
           <Loader2 className="h-3 w-3 animate-spin" />
           Loading receipts…
         </div>
@@ -652,10 +657,21 @@ export default function UploadReceipt({
           No official receipts yet
         </p>
       ) : (
-        <div className="space-y-1.5 ml-5">
-          <p className="text-[9px] text-slate-400">
-            {verifiedCount} of {visibleReceipts.length} receipt
-            {visibleReceipts.length !== 1 ? "s" : ""} verified
+        <div
+          className={cn(
+            "ml-5 space-y-1.5",
+            referenceClientDesign && "ml-0 space-y-2",
+          )}
+        >
+          <p
+            className={cn(
+              "text-[9px] text-slate-400",
+              referenceClientDesign && "text-[11px] font-medium text-slate-600",
+            )}
+          >
+            {referenceClientDesign && visibleReceipts.length === 1
+              ? `${verifiedCount} of 1 receipt verified`
+              : `${verifiedCount} of ${visibleReceipts.length} receipt${visibleReceipts.length !== 1 ? "s" : ""} verified`}
           </p>
           {visibleReceipts.map((receipt) => {
             const isVerified = receipt.acknowledgedByAdmin;
@@ -667,93 +683,171 @@ export default function UploadReceipt({
             return (
               <div key={receipt.id} className="space-y-1.5">
                 {/* Receipt card: OR details row on top, filename + status badge below */}
-                <div className="rounded-lg bg-white border border-slate-100 shadow-sm px-2.5 py-1.5 group hover:border-blue-200 hover:bg-blue-50/10 transition-colors">
-                  {/* Row 1: OR No. · Date · file size */}
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-[10px] font-medium text-slate-600 truncate">
-                      {[
-                        receipt.orNumber ? `OR No. ${receipt.orNumber}` : null,
-                        receipt.orDate
-                          ? format(new Date(receipt.orDate), "MMM d, yyyy")
-                          : null,
-                        formatFileSize(receipt.size),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || "\u00a0"}
+                <div
+                  className={cn(
+                    "rounded-lg bg-white border border-slate-100 shadow-sm px-2.5 py-1.5 group hover:border-blue-200 hover:bg-blue-50/10 transition-colors",
+                    referenceClientDesign &&
+                      "flex items-center gap-3 rounded-xl border-slate-200 px-3 py-2.5 shadow-none hover:bg-white",
+                  )}
+                >
+                  {referenceClientDesign && (
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#e1f4ed]">
+                      <FileText className="h-4 w-4 text-[#08724f]" />
                     </span>
-                    {/* Action icon — top-right */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      {isVerified && (
-                        <span title="Cannot delete — validated by admin">
-                          <Lock className="h-3 w-3 text-slate-300" />
+                  )}
+                  {referenceClientDesign ? (
+                    <div className="min-w-0 flex-1">
+                      {receipt.downloadURL ? (
+                        <a
+                          href={receipt.downloadURL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={receipt.fileName || receipt.id}
+                          className="block truncate text-xs font-semibold text-slate-900 hover:underline"
+                        >
+                          {receipt.fileName || receipt.id}
+                        </a>
+                      ) : (
+                        <span className="block truncate text-xs font-semibold text-slate-900">
+                          {receipt.fileName || receipt.id}
                         </span>
                       )}
-                      {isPending && (
-                        <span title="Cannot delete — awaiting admin review">
-                          <Lock className="h-3 w-3 text-amber-300" />
-                        </span>
-                      )}
+                      <p className="truncate text-[11px] text-slate-500">
+                        {[
+                          receipt.orNumber
+                            ? `OR No. ${receipt.orNumber}`
+                            : null,
+                          receipt.orDate
+                            ? format(new Date(receipt.orDate), "MMM d, yyyy")
+                            : null,
+                          formatFileSize(receipt.size),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      {/* Row 1: OR No. · Date · file size */}
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[10px] font-medium text-slate-600 truncate">
+                          {[
+                            receipt.orNumber
+                              ? `OR No. ${receipt.orNumber}`
+                              : null,
+                            receipt.orDate
+                              ? format(new Date(receipt.orDate), "MMM d, yyyy")
+                              : null,
+                            formatFileSize(receipt.size),
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "\u00a0"}
+                        </span>
+                        {/* Action icon — top-right */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                          {isVerified && (
+                            <span title="Cannot delete — validated by admin">
+                              <Lock className="h-3 w-3 text-slate-300" />
+                            </span>
+                          )}
+                          {isPending && (
+                            <span title="Cannot delete — awaiting admin review">
+                              <Lock className="h-3 w-3 text-amber-300" />
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                  {/* Row 2: file icon + filename link + status badge */}
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <FileText className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
-                    {receipt.downloadURL ? (
-                      <a
-                        href={receipt.downloadURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={receipt.fileName || receipt.id}
-                        className="text-sm font-semibold text-slate-700 hover:underline truncate flex-1 min-w-0"
-                      >
-                        {receipt.fileName || receipt.id}
-                      </a>
-                    ) : (
-                      <span
-                        title={receipt.fileName || receipt.id}
-                        className="text-sm font-semibold text-slate-700 truncate flex-1 min-w-0"
-                      >
-                        {receipt.fileName || receipt.id}
-                      </span>
-                    )}
-                    {/* Status badge */}
-                    {isVerified && (
-                      <span
-                        className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 flex-shrink-0 h-6"
-                        title="Validated by admin"
-                      >
-                        <CheckCircle2 className="h-3 w-3" />
-                        Verified
-                        {receipt.acknowledgedAt && (
-                          <span className="font-normal text-emerald-500 opacity-80">
-                            ·{" "}
-                            {format(
-                              receipt.acknowledgedAt.toDate(),
-                              "MMM d, yyyy h:mm a",
+                      {/* Row 2: file icon + filename link + status badge */}
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <FileText className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                        {receipt.downloadURL ? (
+                          <a
+                            href={receipt.downloadURL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={receipt.fileName || receipt.id}
+                            className="text-sm font-semibold text-slate-700 hover:underline truncate flex-1 min-w-0"
+                          >
+                            {receipt.fileName || receipt.id}
+                          </a>
+                        ) : (
+                          <span
+                            title={receipt.fileName || receipt.id}
+                            className="text-sm font-semibold text-slate-700 truncate flex-1 min-w-0"
+                          >
+                            {receipt.fileName || receipt.id}
+                          </span>
+                        )}
+                        {/* Status badge */}
+                        {isVerified && (
+                          <span
+                            className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 flex-shrink-0 h-6"
+                            title="Validated by admin"
+                          >
+                            <CheckCircle2 className="h-3 w-3" />
+                            Verified
+                            {receipt.acknowledgedAt && (
+                              <span className="font-normal text-emerald-500 opacity-80">
+                                ·{" "}
+                                {format(
+                                  receipt.acknowledgedAt.toDate(),
+                                  "MMM d, yyyy h:mm a",
+                                )}
+                              </span>
                             )}
                           </span>
                         )}
-                      </span>
-                    )}
-                    {isPending && (
-                      <span
-                        className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 font-semibold flex-shrink-0 h-6"
-                        title="Waiting for admin validation"
-                      >
-                        Pending
-                      </span>
-                    )}
-                    {isReturned && (
-                      <span
-                        className="flex items-center gap-0.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-full px-2 py-0.5 flex-shrink-0 h-6"
-                        title="Admin returned this receipt for correction"
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                        Returned
-                      </span>
-                    )}
-                  </div>
+                        {isPending && (
+                          <span
+                            className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 font-semibold flex-shrink-0 h-6"
+                            title="Waiting for admin validation"
+                          >
+                            Pending
+                          </span>
+                        )}
+                        {isReturned && (
+                          <span
+                            className="flex items-center gap-0.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-full px-2 py-0.5 flex-shrink-0 h-6"
+                            title="Admin returned this receipt for correction"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            Returned
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
+                  {referenceClientDesign && (
+                    <div className="shrink-0">
+                      {isVerified && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#d2efcf] px-2.5 py-1 text-[10px] font-semibold text-[#176b22]">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Verified
+                          {receipt.acknowledgedAt && (
+                            <span className="font-medium">
+                              ·{" "}
+                              {format(
+                                receipt.acknowledgedAt.toDate(),
+                                "MMM d, yyyy h:mm a",
+                              )}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {isPending && (
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-semibold text-blue-800">
+                          Pending
+                        </span>
+                      )}
+                      {isReturned && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold text-rose-800">
+                          <RotateCcw className="h-3 w-3" />
+                          Returned
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {uploadAllowed && isPending && (

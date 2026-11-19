@@ -7150,11 +7150,11 @@ export default function ClientPortalPage() {
                                   ) : (
                                     <>
                                       {isReferenceSidebarClient && (
-                                        <p className="text-xs font-semibold text-slate-600">
-                                          {serviceReportCount} service{" "}
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                                          {serviceReportCount} SERVICE{" "}
                                           {serviceReportCount === 1
-                                            ? "report"
-                                            : "reports"}
+                                            ? "REPORT"
+                                            : "REPORTS"}
                                         </p>
                                       )}
                                       <div
@@ -7198,11 +7198,7 @@ export default function ClientPortalPage() {
                                                 className={cn(
                                                   "rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col gap-2 hover:bg-slate-50 transition-colors",
                                                   isReferenceSidebarClient &&
-                                                    `rounded-none border-0 border-b border-slate-200 bg-white p-4 last:border-b-0 hover:bg-slate-50 md:grid md:items-center md:gap-x-0 md:gap-y-0 ${
-                                                      isReceived
-                                                        ? "md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
-                                                        : "md:grid-cols-3"
-                                                    }`,
+                                                    "rounded-none border-0 border-b border-slate-200 bg-white px-4 py-3 last:border-b-0 hover:bg-slate-50 md:grid md:items-center md:gap-x-4 md:gap-y-0 md:grid-cols-[minmax(0,1.3fr)_minmax(70px,0.7fr)_minmax(140px,1.4fr)_auto]",
                                                 )}
                                               >
                                                 {/* File meta row */}
@@ -7210,14 +7206,14 @@ export default function ClientPortalPage() {
                                                   className={cn(
                                                     "flex items-center gap-2 min-w-0",
                                                     isReferenceSidebarClient &&
-                                                      "border-b border-slate-100 pb-3 md:border-b-0 md:pb-0 md:pr-4",
+                                                      "gap-1.5",
                                                   )}
                                                 >
                                                   <FileText
                                                     className={cn(
                                                       "h-4 w-4 text-blue-500 flex-shrink-0",
                                                       isReferenceSidebarClient &&
-                                                        "h-10 w-10 rounded-xl bg-blue-50 p-2.5 text-blue-700",
+                                                        "h-3.5 w-3.5 text-blue-700",
                                                     )}
                                                   />
                                                   <div className="min-w-0 flex-1">
@@ -7232,7 +7228,7 @@ export default function ClientPortalPage() {
                                                         className={cn(
                                                           "text-sm text-blue-700 hover:underline truncate block",
                                                           isReferenceSidebarClient &&
-                                                            "font-semibold text-slate-900 no-underline hover:text-blue-700 hover:underline",
+                                                            "text-xs font-semibold text-slate-900 no-underline hover:text-blue-700 hover:underline",
                                                         )}
                                                         title="Open service report"
                                                       >
@@ -7244,7 +7240,7 @@ export default function ClientPortalPage() {
                                                         className={cn(
                                                           "text-sm text-slate-600 truncate block",
                                                           isReferenceSidebarClient &&
-                                                            "font-semibold text-slate-900",
+                                                            "text-xs font-semibold text-slate-900",
                                                         )}
                                                       >
                                                         {item.fileName ||
@@ -7252,7 +7248,7 @@ export default function ClientPortalPage() {
                                                       </span>
                                                     )}
                                                     {isReferenceSidebarClient ? (
-                                                      <span className="block text-xs text-slate-500">
+                                                      <span className="block text-[11px] text-slate-500">
                                                         PDF document
                                                       </span>
                                                     ) : uploadedDate ? (
@@ -7268,39 +7264,48 @@ export default function ClientPortalPage() {
                                                 </div>
 
                                                 {isReferenceSidebarClient && (
-                                                  <div className="hidden min-w-0 md:flex md:flex-col md:items-center md:gap-1 md:border-l md:border-slate-200 md:px-4 md:text-center">
-                                                    <span className="text-sm text-slate-600">
+                                                  <div className="hidden min-w-0 md:flex md:flex-col md:items-start md:gap-0.5">
+                                                    <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
                                                       Uploaded
                                                     </span>
-                                                    <span className="truncate text-sm text-slate-900">
+                                                    <span className="truncate text-sm font-medium text-slate-900">
                                                       {uploadedDate || "—"}
                                                     </span>
                                                   </div>
                                                 )}
 
-                                                {isReferenceSidebarClient &&
-                                                  isReceived && (
-                                                    <div className="hidden min-w-0 flex-col items-center justify-center gap-1 border-l border-slate-200 px-4 text-center md:flex">
+                                                {isReferenceSidebarClient && (
+                                                  <div className="hidden min-w-0 flex-col items-start justify-center gap-0.5 md:flex">
+                                                    <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                                      Status
+                                                    </span>
+                                                    {isReceived ? (
                                                       <Badge
                                                         variant="outline"
-                                                        className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800"
+                                                        className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800"
                                                       >
-                                                        <CheckCircle2 className="h-3 w-3" />
+                                                        <CheckCircle2 className="h-3.5 w-3.5" />
                                                         Received
                                                       </Badge>
-                                                      {receivedDate && (
-                                                        <span className="text-xs text-slate-700">
+                                                    ) : (
+                                                      <span className="text-sm font-medium text-slate-900">
+                                                        Awaiting receipt
+                                                      </span>
+                                                    )}
+                                                    {isReceived &&
+                                                      receivedDate && (
+                                                        <span className="text-[11px] text-slate-600">
                                                           {receivedDate}
                                                         </span>
                                                       )}
-                                                    </div>
-                                                  )}
+                                                  </div>
+                                                )}
 
                                                 <div
                                                   className={cn(
                                                     "flex items-center justify-end",
                                                     isReferenceSidebarClient &&
-                                                      "flex-wrap justify-end gap-2 pt-1 md:w-full md:border-l md:border-slate-200 md:py-2 md:pl-4 md:pt-0",
+                                                      "flex-wrap justify-end gap-2 pt-1 md:w-auto md:pt-0",
                                                   )}
                                                 >
                                                   {isReceived ? (
@@ -7317,11 +7322,11 @@ export default function ClientPortalPage() {
                                                             variant="outline"
                                                             className="h-auto gap-1 rounded-full border-0 bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800"
                                                           >
-                                                            <CheckCircle2 className="h-3 w-3" />
+                                                            <CheckCircle2 className="h-3.5 w-3.5" />
                                                             Received
                                                           </Badge>
                                                           {receivedDate && (
-                                                            <span className="text-xs text-slate-700">
+                                                            <span className="text-[11px] text-slate-600">
                                                               {receivedDate}
                                                             </span>
                                                           )}
@@ -7350,11 +7355,11 @@ export default function ClientPortalPage() {
                                                             className={cn(
                                                               "inline-flex h-8 items-center gap-1 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700",
                                                               isReferenceSidebarClient &&
-                                                                "h-10 rounded-xl border border-blue-600 bg-white px-4 font-semibold text-blue-700 hover:bg-blue-50",
+                                                                "h-9 rounded-lg border border-blue-600 bg-white px-3 text-xs font-semibold text-blue-700 hover:bg-blue-50",
                                                             )}
                                                           >
                                                             {isReferenceSidebarClient ? (
-                                                              <ExternalLink className="h-4 w-4" />
+                                                              <ExternalLink className="h-3.5 w-3.5" />
                                                             ) : (
                                                               <Download className="h-3 w-3" />
                                                             )}

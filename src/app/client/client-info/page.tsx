@@ -7179,14 +7179,14 @@ export default function ClientPortalPage() {
                                               ?.toDate
                                               ? format(
                                                   item.receivedAt.toDate(),
-                                                  "MMM d, yyyy h:mm a",
+                                                  "MMM d, yyyy",
                                                 )
                                               : "";
                                             const uploadedDate = item.uploadedAt
                                               ?.toDate
                                               ? format(
                                                   item.uploadedAt.toDate(),
-                                                  "MMM d, yyyy h:mm a",
+                                                  "MMM d, yyyy",
                                                 )
                                               : "";
                                             const reportKey = `${selectedProjectPid}:${item.id}`;

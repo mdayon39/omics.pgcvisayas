@@ -523,37 +523,6 @@ export default function DownloadForms({
                                 : "—"}
                           </span>
                         </div>
-                        {referenceClientDesign && !f.acknowledgedByAdmin && (
-                          <div className="flex shrink-0 items-center gap-1">
-                            <a
-                              href={f.downloadURL}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
-                              title="Preview file"
-                              aria-label={`Preview ${f.fileName}`}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </a>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                void handleDelete(
-                                  f.id,
-                                  f.storagePath,
-                                  f.fileName,
-                                );
-                              }}
-                              className="rounded-md p-1.5 text-red-600 hover:bg-slate-100"
-                              title="Remove file"
-                              aria-label={`Remove ${f.fileName}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        )}
                       </div>
                       {referenceClientDesign &&
                         f.acknowledgedByAdmin &&

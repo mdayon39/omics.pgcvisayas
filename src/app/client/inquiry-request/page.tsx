@@ -526,6 +526,7 @@ export default function QuotationRequestForm() {
   const handleCancelModal = () => {
     setShowConfirmModal(false);
     setPendingData(null);
+    setSubmissionLocked(false);
   };
 
   return (

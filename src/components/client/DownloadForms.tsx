@@ -517,15 +517,18 @@ export default function DownloadForms({
                                   : "—"}{" "}
                                 ·{" "}
                                 {f.acknowledgedByAdmin ? (
-                                  <span className="rounded-sm bg-yellow-300 px-1 py-0.5 text-slate-800 box-decoration-clone">
-                                    Acknowledged on{" "}
+                                  <>
+                                    <span className="rounded-sm bg-yellow-300 px-1 py-0.5 text-slate-800 box-decoration-clone">
+                                      Acknowledged
+                                    </span>
+                                    {" - "}
                                     {f.acknowledgedAt
                                       ? format(
                                           f.acknowledgedAt.toDate(),
                                           "MMM d, yyyy",
                                         )
                                       : "—"}
-                                  </span>
+                                  </>
                                 ) : (
                                   "Submitted"
                                 )}

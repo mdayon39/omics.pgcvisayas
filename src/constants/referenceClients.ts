@@ -1,11 +1,6 @@
-const REFERENCE_CLIENT_EMAILS = [
-  "ping.biason@gmail.com",
-  "carmjavier@gmail.com",
-] as const;
+const EXCLUDED_CLIENT_EMAIL = "dayonmerlitojr@gmail.com";
 
 export function isReferenceClient(email?: string | null): boolean {
   const normalizedEmail = email?.trim().toLowerCase();
-  return REFERENCE_CLIENT_EMAILS.some(
-    (referenceEmail) => referenceEmail === normalizedEmail,
-  );
+  return Boolean(normalizedEmail && normalizedEmail !== EXCLUDED_CLIENT_EMAIL);
 }

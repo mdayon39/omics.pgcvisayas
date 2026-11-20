@@ -215,6 +215,37 @@ function ConfigurationsContent() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Client Portal</CardTitle>
+          <CardDescription>
+            Control which form actions are available to clients.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-700">
+                Show Team Member Save Draft Button
+              </p>
+              <p className="text-xs text-slate-500">
+                {portalFeatures.teamMemberSaveDraftButton
+                  ? "Visible"
+                  : "Hidden"}
+                . Lets clients save team member details without confirming them.
+              </p>
+            </div>
+            <Switch
+              checked={portalFeatures.teamMemberSaveDraftButton}
+              onCheckedChange={() =>
+                updatePortalFeature("teamMemberSaveDraftButton")
+              }
+              disabled={!canEdit("configurations")}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Chat & Support</CardTitle>
           <CardDescription>
             Configure chat widget automated behaviors.

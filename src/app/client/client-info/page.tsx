@@ -4325,38 +4325,43 @@ export default function ClientPortalPage() {
           {/* Actions */}
           <div
             className={cn(
-              "flex justify-between pt-3 border-t border-slate-100",
+              "flex pt-3 border-t border-slate-100",
+              portalFeatures.teamMemberSaveDraftButton
+                ? "justify-between"
+                : "justify-end",
               isReferenceSidebarClient &&
                 "-mx-4 -mb-4 mt-4 items-center bg-slate-50 px-4 py-3",
             )}
           >
-            <Button
-              type="button"
-              onClick={() => handleSaveDraft(member.id)}
-              disabled={
-                activeSavingId === member.id ||
-                submitting ||
-                projectDetails?.status === "Completed" ||
-                projectDetails?.status === "Pending Approval"
-              }
-              variant="outline"
-              className={cn(
-                "h-10 px-6 border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50",
-                isReferenceSidebarClient && "h-8 px-3 text-[10px]",
-              )}
-            >
-              {activeSavingId === member.id ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isReferenceSidebarClient ? "Save draft" : "Save Draft"}
-                </>
-              )}
-            </Button>
+            {portalFeatures.teamMemberSaveDraftButton && (
+              <Button
+                type="button"
+                onClick={() => handleSaveDraft(member.id)}
+                disabled={
+                  activeSavingId === member.id ||
+                  submitting ||
+                  projectDetails?.status === "Completed" ||
+                  projectDetails?.status === "Pending Approval"
+                }
+                variant="outline"
+                className={cn(
+                  "h-10 px-6 border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold disabled:opacity-50",
+                  isReferenceSidebarClient && "h-8 px-3 text-[10px]",
+                )}
+              >
+                {activeSavingId === member.id ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isReferenceSidebarClient ? "Save draft" : "Save Draft"}
+                  </>
+                )}
+              </Button>
+            )}
             <Button
               type="submit"
               disabled={

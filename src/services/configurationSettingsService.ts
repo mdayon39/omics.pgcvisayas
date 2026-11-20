@@ -19,6 +19,7 @@ export const DEFAULT_PORTAL_FEATURES: PortalFeatureVisibility = {
   clientMenuAbout: true,
   chatAutoReply: true,
   chatHeaderStatus: true,
+  teamMemberSaveDraftButton: true,
 };
 
 export const DEFAULT_INQUIRY_NOTIFICATION_GROUPS: InquiryNotificationGroup[] = [

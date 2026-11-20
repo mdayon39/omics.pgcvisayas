@@ -1659,6 +1659,9 @@ export default function ClientPortalPage() {
         const email = r.email?.toLowerCase();
         const name = r.name?.trim();
 
+        // Old versions persisted empty member slots using a placeholder email.
+        if (email?.endsWith("@temp.pgc")) return false;
+
         // Skip if completely empty and not just added
         if (!email && !name) return false;
 
@@ -1861,7 +1864,7 @@ export default function ClientPortalPage() {
   //  Handlers
   // ────────────────────────────────────────────────────────────────
 
-  const handleAddMember = async () => {
+  const handleAddMember = () => {
     if (!selectedProjectPid || !inquiryIdParam) {
       toast.error("Please select a project first");
       return;
@@ -1900,80 +1903,47 @@ export default function ClientPortalPage() {
       return;
     }
 
-    const memberScopeId = getMemberScopeOrToast("add member");
-    if (!memberScopeId) return;
-
     const uniqueDraftId = `draft-${Date.now()}`;
-    const dummyEmail = `${uniqueDraftId}@temp.pgc`;
-
-    const newMemberData = {
-      inquiryId: inquiryIdParam,
-      requestedBy: emailParam || "",
-      requestedByName: members.find((m) => m.isPrimary)?.formData.name || "",
-      name: "",
-      email: dummyEmail,
-      affiliation: "",
-      designation: "",
-      sex: "" as any,
-      phoneNumber: "",
-      affiliationAddress: "",
+    const newMember: ClientMember = {
+      id: uniqueDraftId,
+      cid: "",
+      formData: {
+        name: "",
+        email: "",
+        affiliation: "",
+        designation: "",
+        sex: "",
+        phoneNumber: "",
+        affiliationAddress: "",
+      },
+      initialData: {
+        name: "",
+        email: "",
+        affiliation: "",
+        designation: "",
+        sex: "",
+        phoneNumber: "",
+        affiliationAddress: "",
+      },
+      errors: {},
+      isSubmitted: false,
       isPrimary: false,
-      isValidated: false,
-      status: "draft" as const,
-      projectRequestId: memberScopeId,
+      isDraft: true,
     };
 
-    try {
-      const savedDocId = await saveClientRequest(newMemberData);
+    setMembers((previous) => [...previous, newMember]);
+    setExpandedMembers(() => {
+      const next = new Set([uniqueDraftId]);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "expandedMembers",
+          JSON.stringify(Array.from(next)),
+        );
+      }
+      return next;
+    });
 
-      const newMember: ClientMember = {
-        id: savedDocId,
-        cid: "",
-        formData: {
-          name: "",
-          email: "", // UI is empty
-          affiliation: "",
-          designation: "",
-          sex: "" as any,
-          phoneNumber: "",
-          affiliationAddress: "",
-        },
-        initialData: {
-          name: "",
-          email: "",
-          affiliation: "",
-          designation: "",
-          sex: "" as any,
-          phoneNumber: "",
-          affiliationAddress: "",
-        },
-        errors: {},
-        isSubmitted: false,
-        isPrimary: false,
-        isDraft: true,
-      };
-
-      // Don't auto-expand new members - let user decide when to open them
-      // toast.success("New member slot added. Please fill in their details.");
-
-      // UPDATE: Auto-expand ONLY the new member (collapse primary/others)
-      setExpandedMembers(() => {
-        const next = new Set([savedDocId]);
-        // Persist to localStorage
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            "expandedMembers",
-            JSON.stringify(Array.from(next)),
-          );
-        }
-        return next;
-      });
-
-      toast.success("New member slot added");
-    } catch (error) {
-      console.error("Error adding draft member:", error);
-      toast.error("Failed to add new member draft");
-    }
+    toast.success("New member slot added");
   };
 
   const handleRemoveMember = (memberId: string) => {

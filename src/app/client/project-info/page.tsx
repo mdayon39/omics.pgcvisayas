@@ -309,6 +309,8 @@ export default function ProjectForm() {
         const params = new URLSearchParams();
         if (email) params.set("email", email);
         if (inquiryId) params.set("inquiryId", inquiryId);
+        params.set("pid", savedId);
+        params.set("projectRequestId", savedId);
         router.push(`/client/client-info?${params.toString()}`);
       }, 1500);
     } catch (error) {

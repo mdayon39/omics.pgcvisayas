@@ -1435,6 +1435,17 @@ export default function ClientPortalPage() {
         ) || null;
     }
 
+    // On login or refresh, open the active inquiry's project workspace automatically.
+    if (
+      !selectedDetails &&
+      isInProgressReferenceClient &&
+      !userWantsWorkspaceRef.current
+    ) {
+      selectedDetails =
+        allProjects.find((project) => project.inquiryId === inquiryIdParam) ||
+        null;
+    }
+
     if (selectedDetails) {
       // Sync project details but avoid infinite loops with deep comparison checks
       if (
@@ -1806,10 +1817,13 @@ export default function ClientPortalPage() {
     fetchedMemberApprovals,
     allInquiries,
     emailParam,
+    inquiryIdParam,
     currentProjectRequestId,
     pidParam,
     selectedProjectPid,
+    projectDetails,
     canonicalMemberScopeId,
+    isInProgressReferenceClient,
   ]);
 
   // ────────────────────────────────────────────────────────────────

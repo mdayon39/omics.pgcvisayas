@@ -4501,20 +4501,19 @@ export default function ClientPortalPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-            <Badge
-              className={cn(
-                status.color,
-                "text-white border-0 text-[10px] h-5 px-2",
-                isReferenceSidebarClient &&
-                  status.label === "Complete" &&
-                  "h-auto rounded-full border-0 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700 shadow-none",
-                isReferenceSidebarClient &&
-                  status.label === "Draft" &&
-                  "h-auto rounded-full border-0 bg-amber-100 px-2 py-1 text-[9px] font-medium text-amber-900 shadow-none",
-              )}
-            >
-              {status.label}
-            </Badge>
+            {status.label !== "Draft" && (
+              <Badge
+                className={cn(
+                  status.color,
+                  "text-white border-0 text-[10px] h-5 px-2",
+                  isReferenceSidebarClient &&
+                    status.label === "Complete" &&
+                    "h-auto rounded-full border-0 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700 shadow-none",
+                )}
+              >
+                {status.label}
+              </Badge>
+            )}
             <div className="p-1 hover:bg-slate-100 rounded-full transition-colors">
               <ChevronRight
                 className={cn(

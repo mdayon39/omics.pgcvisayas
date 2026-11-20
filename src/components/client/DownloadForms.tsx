@@ -535,8 +535,10 @@ export default function DownloadForms({
                           </span>
                           {referenceClientDesign && !f.acknowledgedByAdmin && (
                             <p className="text-[11px] leading-4 text-slate-600">
-                              We&apos;ll notify you once the admin acknowledges
-                              your form.
+                              <span className="rounded-sm bg-yellow-300 px-1 py-0.5 text-slate-800 box-decoration-clone">
+                                We&apos;ll notify you once the admin
+                                acknowledges your form.
+                              </span>
                             </p>
                           )}
                         </div>

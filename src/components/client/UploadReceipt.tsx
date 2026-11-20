@@ -783,7 +783,7 @@ export default function UploadReceipt({
                                 ·{" "}
                                 {format(
                                   receipt.acknowledgedAt.toDate(),
-                                  "MMM d, yyyy h:mm a",
+                                  "MMM d, yyyy",
                                 )}
                               </span>
                             )}
@@ -820,7 +820,7 @@ export default function UploadReceipt({
                               ·{" "}
                               {format(
                                 receipt.acknowledgedAt.toDate(),
-                                "MMM d, yyyy h:mm a",
+                                "MMM d, yyyy",
                               )}
                             </span>
                           )}

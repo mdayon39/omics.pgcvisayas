@@ -647,16 +647,7 @@ export default function UploadReceipt({
           <Loader2 className="h-3 w-3 animate-spin" />
           Loading receipts…
         </div>
-      ) : visibleReceipts.length === 0 ? (
-        <p
-          className={cn(
-            "text-xs text-slate-400 ml-5",
-            referenceClientDesign && "hidden",
-          )}
-        >
-          No official receipts yet
-        </p>
-      ) : (
+      ) : visibleReceipts.length === 0 ? null : (
         <div
           className={cn(
             "ml-5 space-y-1.5",
@@ -1071,9 +1062,6 @@ export default function UploadReceipt({
             <Paperclip className="h-3.5 w-3.5" />
             Attach Receipt
           </button>
-          {referenceClientDesign && (
-            <p className="text-xs text-slate-600">No official receipts yet</p>
-          )}
           {!hasChargeSlip && (
             <p className="text-[9px] text-slate-400 mt-1">
               A Charge Slip must be issued first.

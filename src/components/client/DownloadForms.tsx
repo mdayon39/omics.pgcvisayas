@@ -507,31 +507,37 @@ export default function DownloadForms({
                                 "text-[11px] text-slate-500",
                             )}
                           >
-                            {referenceClientDesign
-                              ? `PDF · ${
-                                  typeof f.size === "number"
-                                    ? f.size >= 1024 * 1024
-                                      ? `${(f.size / (1024 * 1024)).toFixed(1)} MB`
-                                      : `${(f.size / 1024).toFixed(1)} KB`
-                                    : "—"
-                                } · ${
-                                  f.acknowledgedByAdmin
-                                    ? `Acknowledged on ${
-                                        f.acknowledgedAt
-                                          ? format(
-                                              f.acknowledgedAt.toDate(),
-                                              "MMM d, yyyy",
-                                            )
-                                          : "—"
-                                      }`
-                                    : "Submitted"
-                                }`
-                              : f.uploadedAt
-                                ? format(
-                                    f.uploadedAt.toDate(),
-                                    "MMM d, yyyy h:mm a",
-                                  )
-                                : "—"}
+                            {referenceClientDesign ? (
+                              <>
+                                PDF ·{" "}
+                                {typeof f.size === "number"
+                                  ? f.size >= 1024 * 1024
+                                    ? `${(f.size / (1024 * 1024)).toFixed(1)} MB`
+                                    : `${(f.size / 1024).toFixed(1)} KB`
+                                  : "—"}{" "}
+                                ·{" "}
+                                {f.acknowledgedByAdmin ? (
+                                  <span className="rounded-sm bg-yellow-300 px-1 py-0.5 text-slate-800 box-decoration-clone">
+                                    Acknowledged on{" "}
+                                    {f.acknowledgedAt
+                                      ? format(
+                                          f.acknowledgedAt.toDate(),
+                                          "MMM d, yyyy",
+                                        )
+                                      : "—"}
+                                  </span>
+                                ) : (
+                                  "Submitted"
+                                )}
+                              </>
+                            ) : f.uploadedAt ? (
+                              format(
+                                f.uploadedAt.toDate(),
+                                "MMM d, yyyy h:mm a",
+                              )
+                            ) : (
+                              "—"
+                            )}
                           </span>
                           {referenceClientDesign && !f.acknowledgedByAdmin && (
                             <p className="text-[11px] leading-4 text-slate-600">

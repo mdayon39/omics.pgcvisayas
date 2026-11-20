@@ -3378,43 +3378,69 @@ export default function ClientPortalPage() {
   //  Helpers
   // ────────────────────────────────────────────────────────────────
 
-  const getMemberStatus = (member: ClientMember) => {
-    // 1. Explicit Firestore status from member model (set during merging)
-    if (member.status === "pending" || member.status === "Pending Approval") {
-      return {
-        label: "Pending Approval",
-        color: "bg-blue-500",
-      };
-    }
+  const getMemberStatus = useCallback(
+    (member: ClientMember) => {
+      // 1. Explicit Firestore status from member model (set during merging)
+      if (member.status === "pending" || member.status === "Pending Approval") {
+        return {
+          label: "Pending Approval",
+          color: "bg-blue-500",
+        };
+      }
 
-    // 2. Global project or specific approval status
-    if (
-      (projectDetails?.status === "Pending Approval" ||
-        approvalStatus === "pending") &&
-      member.isDraft
-    ) {
-      return {
-        label: "Pending Approval",
-        color: "bg-blue-500",
-      };
-    }
+      // 2. Global project or specific approval status
+      if (
+        (projectDetails?.status === "Pending Approval" ||
+          approvalStatus === "pending") &&
+        member.isDraft
+      ) {
+        return {
+          label: "Pending Approval",
+          color: "bg-blue-500",
+        };
+      }
 
-    if (member.isDraft && approvalStatus === "pending")
-      return {
-        label: "Pending Approval",
-        color: "bg-orange-500",
-      };
-    if (member.isDraft && approvalStatus === "rejected")
-      return { label: "Rejected", color: "bg-red-500" };
-    if (member.isSubmitted)
-      return {
-        label: member.isDraft ? "Ready" : "Complete",
-        color: member.isDraft ? "bg-blue-500" : "bg-green-500",
-      };
-    if (Object.values(member.errors).some(Boolean))
-      return { label: "Needs Attention", color: "bg-red-500" };
-    return { label: "Draft", color: "bg-yellow-500" };
-  };
+      if (member.isDraft && approvalStatus === "pending")
+        return {
+          label: "Pending Approval",
+          color: "bg-orange-500",
+        };
+      if (member.isDraft && approvalStatus === "rejected")
+        return { label: "Rejected", color: "bg-red-500" };
+      if (member.isSubmitted)
+        return {
+          label: member.isDraft ? "Ready" : "Complete",
+          color: member.isDraft ? "bg-blue-500" : "bg-green-500",
+        };
+      if (Object.values(member.errors).some(Boolean))
+        return { label: "Needs Attention", color: "bg-red-500" };
+      return { label: "Draft", color: "bg-yellow-500" };
+    },
+    [approvalStatus, projectDetails?.status],
+  );
+
+  const readyMemberIds = useMemo(
+    () =>
+      members
+        .filter((member) => getMemberStatus(member).label === "Ready")
+        .map((member) => member.id),
+    [getMemberStatus, members],
+  );
+
+  useEffect(() => {
+    if (readyMemberIds.length === 0) return;
+
+    setExpandedMembers((current) => {
+      const next = new Set(current);
+      readyMemberIds.forEach((memberId) => next.delete(memberId));
+      if (next.size === current.size) return current;
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("expandedMembers", JSON.stringify(Array.from(next)));
+      }
+      return next;
+    });
+  }, [readyMemberIds]);
 
   const toggleMemberExpand = (memberId: string) => {
     setExpandedMembers((prev) => {

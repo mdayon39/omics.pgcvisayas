@@ -726,9 +726,18 @@ export default function MemberApprovalsPage() {
     );
     const { approveClientRequest, approveAllClientRequestsByInquiry } =
       await import("@/services/clientRequestService");
-    const { doc, setDoc, updateDoc, serverTimestamp, Timestamp } = await import(
-      "firebase/firestore"
-    );
+    const {
+      collection,
+      doc,
+      getDocs,
+      query,
+      setDoc,
+      updateDoc,
+      serverTimestamp,
+      Timestamp,
+      where,
+      writeBatch,
+    } = await import("firebase/firestore");
     const { db } = await import("@/lib/firebase");
 
     const year = new Date().getFullYear();
@@ -857,6 +866,28 @@ export default function MemberApprovalsPage() {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    // Client uploads made before PID assignment use the inquiry ID as their
+    // temporary project scope. Reassociate them with the approved project.
+    const pendingFormSubmissions = await getDocs(
+      query(
+        collection(db, "clientFormSubmissions"),
+        where("projectId", "==", approval.inquiryId),
+      ),
+    );
+    for (
+      let offset = 0;
+      offset < pendingFormSubmissions.docs.length;
+      offset += 500
+    ) {
+      const batch = writeBatch(db);
+      pendingFormSubmissions.docs
+        .slice(offset, offset + 500)
+        .forEach((submission) => {
+          batch.update(submission.ref, { projectId: pid });
+        });
+      await batch.commit();
+    }
 
     // Update project request status
     const primaryCid = memberCids.find((m) => m.isPrimary)?.cid;

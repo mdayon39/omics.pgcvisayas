@@ -6255,32 +6255,9 @@ export default function ClientPortalPage() {
                             )}
                           >
                             {isReferenceSidebarClient ? (
-                              <>
-                                <span
-                                  role="progressbar"
-                                  aria-label="Saved team members"
-                                  aria-valuemin={0}
-                                  aria-valuemax={members.length}
-                                  aria-valuenow={savedMemberCount}
-                                  className="h-1 w-[72px] overflow-hidden rounded-full bg-slate-200"
-                                >
-                                  <span
-                                    className="block h-full rounded-full bg-blue-700 transition-[width]"
-                                    style={{
-                                      width: `${
-                                        members.length
-                                          ? (savedMemberCount /
-                                              members.length) *
-                                            100
-                                          : 0
-                                      }%`,
-                                    }}
-                                  />
-                                </span>
-                                <span>
-                                  {savedMemberCount} of {members.length} saved
-                                </span>
-                              </>
+                              <span>
+                                {savedMemberCount} of {members.length} saved
+                              </span>
                             ) : (
                               <>
                                 <strong>{savedMemberCount}</strong> /{" "}

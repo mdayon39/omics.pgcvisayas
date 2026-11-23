@@ -604,6 +604,7 @@ export default function ClientPortalPage() {
 
   // Active document panel shown in main content (below Team Members)
   const [activeDocPanel, setActiveDocPanel] = useState<string | null>(null);
+  const autoOpenedSampleFormProjectsRef = useRef(new Set<string>());
 
   const handleSelectDocPanel = (pid: string, section: string) => {
     const key = `${pid}:${section}`;
@@ -3781,6 +3782,15 @@ export default function ClientPortalPage() {
     workflowProjectPid,
   ]);
 
+  const hasSubmittedProjectAndMemberDetails =
+    projectRequest?.status === "pending" ||
+    projectRequest?.status === "approved" ||
+    approvalStatus === "pending" ||
+    approvalStatus === "approved" ||
+    projectDetails?.status === "Pending Approval" ||
+    projectDetails?.status === "Ongoing" ||
+    projectDetails?.status === "Completed";
+
   const clientWorkflowSteps = useMemo(() => {
     const docs = workflowProjectPid
       ? projectDocuments.get(workflowProjectPid)
@@ -3816,15 +3826,6 @@ export default function ClientPortalPage() {
       approvalStatus === "approved" ||
       projectDetails?.status === "Ongoing" ||
       projectDetails?.status === "Completed";
-    const hasSubmittedProjectAndMemberDetails =
-      projectRequest?.status === "pending" ||
-      projectRequest?.status === "approved" ||
-      approvalStatus === "pending" ||
-      approvalStatus === "approved" ||
-      projectDetails?.status === "Pending Approval" ||
-      projectDetails?.status === "Ongoing" ||
-      projectDetails?.status === "Completed";
-
     return [
       {
         completedLabel: "Inquiry submitted",
@@ -3885,6 +3886,30 @@ export default function ClientPortalPage() {
     projectDocuments,
     projectRequest,
     workflowProjectPid,
+  ]);
+
+  useEffect(() => {
+    if (!selectedProjectPid || !hasSubmittedProjectAndMemberDetails) return;
+
+    const selectedProject = projects.find(
+      (project) => project.pid === selectedProjectPid,
+    );
+    if (
+      !selectedProject ||
+      autoOpenedSampleFormProjectsRef.current.has(selectedProjectPid)
+    ) {
+      return;
+    }
+
+    autoOpenedSampleFormProjectsRef.current.add(selectedProjectPid);
+    setExpandedProjectDocs(new Set([selectedProjectPid]));
+    setActiveDocPanel(`${selectedProjectPid}:sampleForm`);
+    void loadProjectDocuments(selectedProject);
+  }, [
+    hasSubmittedProjectAndMemberDetails,
+    loadProjectDocuments,
+    projects,
+    selectedProjectPid,
   ]);
 
   // ────────────────────────────────────────────────────────────────
@@ -5122,32 +5147,26 @@ export default function ClientPortalPage() {
                             {/* Sample Submission Form */}
                             <div>
                               {(() => {
-                                const isSampleFormDisabled =
-                                  currentInquiry?.status === "In Progress";
                                 const isActive =
                                   activeDocPanel ===
                                   `${project.pid}:sampleForm`;
                                 return (
                                   <button
                                     type="button"
-                                    disabled={isSampleFormDisabled}
                                     className={cn(
                                       "flex items-center gap-2 px-2 py-1.5 w-full text-left rounded-lg transition-colors",
                                       isReferenceSidebarClient &&
                                         "min-h-10 rounded-none border-b border-slate-200 px-2 py-2",
                                       isActive
                                         ? "bg-orange-50"
-                                        : isSampleFormDisabled
-                                          ? "opacity-40 cursor-not-allowed"
-                                          : "hover:bg-slate-50",
+                                        : "hover:bg-slate-50",
                                     )}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (!isSampleFormDisabled)
-                                        handleSelectDocPanel(
-                                          project.pid!,
-                                          "sampleForm",
-                                        );
+                                      handleSelectDocPanel(
+                                        project.pid!,
+                                        "sampleForm",
+                                      );
                                     }}
                                   >
                                     {isReferenceSidebarClient ? (

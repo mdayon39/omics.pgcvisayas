@@ -3390,20 +3390,27 @@ export default function ClientPortalPage() {
     [approvalStatus, projectDetails?.status],
   );
 
-  const readyMemberIds = useMemo(
+  const memberIdsToCollapse = useMemo(
     () =>
       members
-        .filter((member) => getMemberStatus(member).label === "Ready")
+        .filter((member) => {
+          const status = getMemberStatus(member).label;
+          return (
+            status === "Ready" ||
+            status === "Pending Approval" ||
+            projectDetails?.status === "Pending Approval"
+          );
+        })
         .map((member) => member.id),
-    [getMemberStatus, members],
+    [getMemberStatus, members, projectDetails?.status],
   );
 
   useEffect(() => {
-    if (readyMemberIds.length === 0) return;
+    if (memberIdsToCollapse.length === 0) return;
 
     setExpandedMembers((current) => {
       const next = new Set(current);
-      readyMemberIds.forEach((memberId) => next.delete(memberId));
+      memberIdsToCollapse.forEach((memberId) => next.delete(memberId));
       if (next.size === current.size) return current;
 
       if (typeof window !== "undefined") {
@@ -3411,7 +3418,7 @@ export default function ClientPortalPage() {
       }
       return next;
     });
-  }, [readyMemberIds]);
+  }, [memberIdsToCollapse]);
 
   const toggleMemberExpand = (memberId: string) => {
     setExpandedMembers((prev) => {
@@ -4446,7 +4453,11 @@ export default function ClientPortalPage() {
   /** Renders a single member card (expandable) */
   const renderMemberCard = (member: ClientMember) => {
     const status = getMemberStatus(member);
-    const isExpanded = expandedMembers.has(member.id);
+    const isPendingApproval =
+      status.label === "Pending Approval" ||
+      projectDetails?.status === "Pending Approval";
+    const isExpanded =
+      !isPendingApproval && expandedMembers.has(member.id);
 
     return (
       <Card
@@ -4466,9 +4477,10 @@ export default function ClientPortalPage() {
         {/* Card Header – always visible */}
         <button
           type="button"
+          disabled={isPendingApproval}
           onClick={() => toggleMemberExpand(member.id)}
           className={cn(
-            "w-full flex items-center justify-between p-3 text-left",
+            "w-full flex items-center justify-between p-3 text-left disabled:cursor-default",
             isReferenceSidebarClient && "px-4 py-3",
             !member.isSubmitted && "bg-amber-50 hover:bg-amber-100",
           )}

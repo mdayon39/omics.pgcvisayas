@@ -440,7 +440,7 @@ export default function ProjectForm() {
                 >
                   {[
                     "Save project details",
-                    "Add yourself as Primary Member",
+                    "Complete Member Details",
                     "Submit for admin approval",
                   ].map((step, index) => (
                     <li

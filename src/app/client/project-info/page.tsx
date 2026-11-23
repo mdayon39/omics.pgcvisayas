@@ -428,12 +428,6 @@ export default function ProjectForm() {
                     Project Information Form
                   </h1>
                 </div>
-                {isDraft && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-[10px] font-semibold text-amber-900">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-600" />
-                    Draft
-                  </span>
-                )}
               </header>
               <div className="py-5">
                 <p className="text-sm leading-6 text-[#18365d]">
@@ -445,7 +439,7 @@ export default function ProjectForm() {
                   className="mt-4 grid grid-cols-3 gap-2"
                 >
                   {[
-                    "Save project draft",
+                    "Save project details",
                     "Add yourself as Primary Member",
                     "Submit for admin approval",
                   ].map((step, index) => (
@@ -480,11 +474,6 @@ export default function ProjectForm() {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-[#166FB5] to-[#4038AF] bg-clip-text text-transparent">
                   Project Information Form
                 </h1>
-                {isDraft && (
-                  <div className="px-3 py-1 bg-orange-50 border border-orange-200 rounded-full text-xs font-semibold text-orange-600 ml-4">
-                    Draft
-                  </div>
-                )}
               </div>
               <div className="p-4 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50">
                 <p className="text-slate-700 leading-relaxed mb-1.5">
@@ -493,9 +482,8 @@ export default function ProjectForm() {
                   fill out this form.
                 </p>
                 <p className="text-sm text-slate-600 italic">
-                  <strong>Note:</strong> This form creates a draft. After
-                  saving, you'll add yourself as the Primary Member, then submit
-                  for admin approval.
+                  <strong>Note:</strong> After saving, you'll add yourself as
+                  the Primary Member, then submit for admin approval.
                 </p>
               </div>
             </div>
@@ -760,11 +748,6 @@ export default function ProjectForm() {
               >
                 Go Back
               </Button>
-              {usesReferenceDesign && (
-                <span className="hidden text-[10px] text-slate-600 sm:inline">
-                  You can edit this draft later
-                </span>
-              )}
               <Button
                 type="submit"
                 disabled={isDraftSaveLocked || isSavingDraft}
@@ -774,9 +757,7 @@ export default function ProjectForm() {
                     : "h-9 px-6 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300"
                 }
               >
-                {usesReferenceDesign
-                  ? "Save project draft"
-                  : "Save Project Draft"}
+                Save Project Details
               </Button>
             </div>
           </form>
@@ -788,9 +769,9 @@ export default function ProjectForm() {
         onConfirm={handleConfirmSave}
         onCancel={handleCancelModal}
         loading={isSavingDraft}
-        title="Save Project Draft?"
+        title="Save Project Details?"
         description="Review your project information below. You can edit this later before submitting for approval."
-        confirmLabel="Save Draft"
+        confirmLabel="Save Project Details"
         cancelLabel="Go Back"
         headerIcon={<Save className="h-5 w-5 text-violet-700" />}
         className="max-w-xl"

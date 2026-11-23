@@ -5600,7 +5600,7 @@ export default function ClientPortalPage() {
                               <p
                                 className="text-sm text-orange-700 leading-relaxed"
                               >
-                                Add your member details, then select{" "}
+                                Add member details, then select{" "}
                                 <strong>
                                   Submit Project & Team for Approval
                                 </strong>

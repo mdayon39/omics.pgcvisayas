@@ -5591,19 +5591,13 @@ export default function ClientPortalPage() {
                           {projectDetails.status === "Draft" ? (
                             <>
                               <p
-                                className={cn(
-                                  "text-xs font-semibold text-orange-900 leading-none",
-                                  isReferenceSidebarClient && "text-[10px]",
-                                )}
+                                className="text-sm font-semibold text-orange-900 leading-tight"
                               >
                                 Action required: complete your details before
                                 submission
                               </p>
                               <p
-                                className={cn(
-                                  "text-xs text-orange-700 leading-relaxed",
-                                  isReferenceSidebarClient && "text-[9px]",
-                                )}
+                                className="text-sm text-orange-700 leading-relaxed"
                               >
                                 Add your details as the{" "}
                                 <strong>Primary Member</strong>, then select{" "}

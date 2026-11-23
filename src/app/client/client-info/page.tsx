@@ -5730,19 +5730,14 @@ export default function ClientPortalPage() {
                           ) : projectDetails.status === "Pending Approval" ? (
                             <>
                               <p className="text-xs font-semibold text-blue-900 leading-none">
-                                Application Submitted & Under Review
+                                Application Submitted Successfully
                               </p>
                               <p className="text-xs text-blue-700 leading-relaxed">
-                                Your project and team details have been
-                                successfully submitted. Our team is currently
-                                reviewing your application. Please check this
-                                portal dashboard for your{" "}
+                                You may now proceed with submitting your Sample
+                                Form. Check your dashboard for your{" "}
                                 <strong>Project ID</strong>,{" "}
                                 <strong>Client ID</strong>, and approval
-                                notification.{" "}
-                                <strong>
-                                  No further action is required at this time.
-                                </strong>
+                                updates.
                               </p>
                             </>
                           ) : projectDetails.status === "Ongoing" ? (

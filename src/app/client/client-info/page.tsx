@@ -609,6 +609,9 @@ export default function ClientPortalPage() {
   const handleSelectDocPanel = (pid: string, section: string) => {
     const key = `${pid}:${section}`;
     setActiveDocPanel((prev) => (prev === key ? null : key));
+    if (section === "projectMembers") {
+      setIsProjectInfoExpanded(true);
+    }
     // Collapse all expanded member forms
     setExpandedMembers(new Set());
     if (typeof window !== "undefined") {
@@ -3797,6 +3800,9 @@ export default function ClientPortalPage() {
     projectDetails?.status === "Pending Approval" ||
     projectDetails?.status === "Ongoing" ||
     projectDetails?.status === "Completed";
+  const shouldShowProjectAndMemberDetails =
+    !hasSubmittedProjectAndMemberDetails ||
+    activeDocPanel === `${selectedProjectPid}:projectMembers`;
 
   const clientWorkflowSteps = useMemo(() => {
     const docs = workflowProjectPid
@@ -4953,6 +4959,11 @@ export default function ClientPortalPage() {
                   !!inquiryIdParam &&
                   project.inquiryId === inquiryIdParam;
                 const isDocsExpanded = expandedProjectDocs.has(project.pid);
+                const hasSubmittedDetailsForProject =
+                  ["Pending Approval", "Ongoing", "Completed"].includes(
+                    project.status,
+                  ) ||
+                  (isSelected && hasSubmittedProjectAndMemberDetails);
                 const docs = projectDocuments.get(project.pid);
                 const quotationCount = docs?.quotations.length || 0;
                 const chargeSlipCount = docs?.chargeSlips.length || 0;
@@ -5087,6 +5098,62 @@ export default function ClientPortalPage() {
                                 "bg-[#F7F9FC] px-2 py-1",
                             )}
                           >
+                            {hasSubmittedDetailsForProject && (
+                              <div>
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    "flex items-center gap-2 px-2 py-1.5 w-full text-left rounded-lg transition-colors",
+                                    isReferenceSidebarClient &&
+                                      "min-h-10 rounded-none border-b border-slate-200 px-2 py-2",
+                                    activeDocPanel ===
+                                      `${project.pid}:projectMembers`
+                                      ? "bg-blue-50"
+                                      : "hover:bg-slate-50",
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSelectDocPanel(
+                                      project.pid!,
+                                      "projectMembers",
+                                    );
+                                  }}
+                                >
+                                  <Users
+                                    className={cn(
+                                      "h-3 w-3 flex-shrink-0",
+                                      activeDocPanel ===
+                                        `${project.pid}:projectMembers`
+                                        ? "text-blue-600"
+                                        : "text-blue-500",
+                                    )}
+                                  />
+                                  <span
+                                    className={cn(
+                                      "text-sm font-semibold flex-1",
+                                      isReferenceSidebarClient &&
+                                        "text-[13px] font-medium",
+                                      activeDocPanel ===
+                                        `${project.pid}:projectMembers`
+                                        ? "text-blue-700"
+                                        : "text-slate-700",
+                                    )}
+                                  >
+                                    Project and Member Details
+                                  </span>
+                                  <ChevronRight
+                                    className={cn(
+                                      "h-3 w-3 flex-shrink-0 transition-transform",
+                                      activeDocPanel ===
+                                        `${project.pid}:projectMembers`
+                                        ? "rotate-90 text-blue-500"
+                                        : "text-slate-400",
+                                    )}
+                                  />
+                                </button>
+                              </div>
+                            )}
+
                             {/* Quotations */}
                             <div>
                               <button
@@ -5730,7 +5797,7 @@ export default function ClientPortalPage() {
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2"></div>
 
                   {/* ── Project Information (collapsible) ────────────── */}
-                  {(() => {
+                  {shouldShowProjectAndMemberDetails && (() => {
                     const canEditProjectInfo =
                       !!projectDetails?.isDraft &&
                       (projectDetails?.status === "Draft" ||
@@ -6224,13 +6291,14 @@ export default function ClientPortalPage() {
                         </CardContent>
                       </Card>
                     )}
-                  <div
-                    className={cn(
-                      "space-y-2",
-                      isReferenceSidebarClient &&
-                        "-mx-4 space-y-3 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm",
-                    )}
-                  >
+                  {shouldShowProjectAndMemberDetails && (
+                    <div
+                      className={cn(
+                        "space-y-2",
+                        isReferenceSidebarClient &&
+                          "-mx-4 space-y-3 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm",
+                      )}
+                    >
                     {/* Section header */}
                     <div
                       className={cn(
@@ -6439,7 +6507,8 @@ export default function ClientPortalPage() {
                           </div>
                         </div>
                       )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* ── Document Panel (shown below Team Members when a doc section is selected) ── */}
                   {selectedProjectPid &&

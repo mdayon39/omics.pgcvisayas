@@ -29,7 +29,7 @@ export default function ClientWorkflowTimeline({
       <div className="overflow-x-auto pb-1">
         <ol
           aria-label="Service request progress"
-          className="grid min-w-[560px] grid-cols-7 items-start"
+          className="grid min-w-[640px] grid-cols-8 items-start"
         >
           {steps.map((step, index) => {
             const isCurrent = !step.complete && index === currentStepIndex;

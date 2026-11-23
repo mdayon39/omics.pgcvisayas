@@ -3811,6 +3811,14 @@ export default function ClientPortalPage() {
       hasChargeSlips ||
       hasUploadedOfficialReceipts ||
       hasReceivedServiceReports;
+    const hasSubmittedProjectAndMemberDetails =
+      projectRequest?.status === "pending" ||
+      projectRequest?.status === "approved" ||
+      approvalStatus === "pending" ||
+      approvalStatus === "approved" ||
+      projectDetails?.status === "Pending Approval" ||
+      projectDetails?.status === "Ongoing" ||
+      projectDetails?.status === "Completed";
 
     return [
       {
@@ -3829,6 +3837,11 @@ export default function ClientPortalPage() {
         completedLabel: "Quotation approved",
         pendingLabel: "Confirm and Proceed",
         complete: hasProceeded,
+      },
+      {
+        completedLabel: "Project and Member Details Submitted",
+        pendingLabel: "Submit Project and Member Details",
+        complete: hasSubmittedProjectAndMemberDetails,
       },
       {
         completedLabel: "Sample Information Submitted",
@@ -3852,6 +3865,7 @@ export default function ClientPortalPage() {
       },
     ];
   }, [
+    approvalStatus,
     currentInquiry,
     hasAcknowledgedUploadedSampleSubmission,
     hasAcknowledgedWorkflowSampleForm,

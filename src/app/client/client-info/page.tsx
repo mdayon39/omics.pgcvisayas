@@ -4471,6 +4471,17 @@ export default function ClientPortalPage() {
                   {member.formData.name ||
                     (member.isPrimary ? "Primary Member" : "Unnamed Member")}
                 </span>
+                {member.isPrimary && (
+                  <Badge
+                    className={cn(
+                      "bg-[#166FB5]/10 text-[#166FB5] border-[#166FB5]/20 text-[10px] h-5 px-1.5",
+                      isReferenceSidebarClient &&
+                        "h-auto border-0 bg-transparent px-0 text-[10px] font-medium text-[#166FB5]",
+                    )}
+                  >
+                    Primary
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-3 mt-0.5">
                 {member.cid &&

@@ -4438,6 +4438,7 @@ export default function ClientPortalPage() {
           className={cn(
             "w-full flex items-center justify-between p-3 text-left",
             isReferenceSidebarClient && "px-4 py-3",
+            !member.isSubmitted && "bg-amber-50 hover:bg-amber-100",
           )}
         >
           <div className="flex items-center gap-2.5 min-w-0 flex-1">

@@ -5730,7 +5730,7 @@ export default function ClientPortalPage() {
                           ) : projectDetails.status === "Pending Approval" ? (
                             <>
                               <p className="text-xs font-semibold text-blue-900 leading-none">
-                                Application Submitted Successfully
+                                Submitted Successfully
                               </p>
                               <p className="text-xs text-blue-700 leading-relaxed">
                                 You may now proceed with submitting your Sample

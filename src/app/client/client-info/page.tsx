@@ -611,7 +611,7 @@ export default function ClientPortalPage() {
     const isClosingActivePanel = activeDocPanel === key;
     setActiveDocPanel(isClosingActivePanel ? null : key);
     if (section === "projectMembers" && !isClosingActivePanel) {
-      setIsProjectInfoExpanded(true);
+      setIsProjectInfoExpanded(false);
     }
     // Collapse all expanded member forms
     setExpandedMembers(new Set());

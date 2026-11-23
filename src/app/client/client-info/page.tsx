@@ -3925,6 +3925,8 @@ export default function ClientPortalPage() {
 
   const primaryMember = members.find((m) => m.isPrimary);
   const otherMembers = members.filter((m) => !m.isPrimary);
+  const isSubmitForApprovalDisabled =
+    submitting || members.some((member) => !member.isSubmitted);
   const savedMemberCount = members.filter(
     (member) => member.isSubmitted,
   ).length;
@@ -4399,10 +4401,8 @@ export default function ClientPortalPage() {
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving...
                 </>
-              ) : isReferenceSidebarClient ? (
-                member.isPrimary ? "Save" : "Save & confirm member details"
               ) : (
-                member.isPrimary ? "Save" : "Save & Confirm Member Details"
+                "Save"
               )}
             </Button>
           </div>
@@ -5561,7 +5561,8 @@ export default function ClientPortalPage() {
                   )}
                 >
                   {/* Draft/Pending/Approved status banner */}
-                  {(projectDetails?.isDraft ||
+                  {((projectDetails?.status === "Draft" &&
+                    isSubmitForApprovalDisabled) ||
                     projectDetails?.status === "Ongoing" ||
                     projectDetails?.status === "Pending Approval" ||
                     projectDetails?.status === "Rejected" ||
@@ -6363,17 +6364,13 @@ export default function ClientPortalPage() {
                             </div>
                             <Button
                               onClick={handleFinalSubmit}
-                              disabled={
-                                submitting ||
-                                members.some((m) => !m.isSubmitted)
-                              }
+                              disabled={isSubmitForApprovalDisabled}
                               className={cn(
                                 "h-12 px-8 bg-gradient-to-r from-[#166FB5] to-[#4038AF] hover:from-[#166FB5]/90 hover:to-[#4038AF]/90 text-white font-bold shadow-xl hover:shadow-2xl disabled:opacity-50 whitespace-nowrap",
                                 isReferenceSidebarClient &&
                                   "h-8 px-3 text-[9px] font-medium shadow-none disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-100",
                                 isReferenceSidebarClient &&
-                                  (submitting ||
-                                    members.some((m) => !m.isSubmitted)) &&
+                                  isSubmitForApprovalDisabled &&
                                   "disabled:h-9 disabled:border disabled:border-slate-300 disabled:px-4 disabled:text-xs disabled:font-medium disabled:bg-none disabled:bg-slate-200 disabled:text-slate-600 disabled:shadow-none disabled:opacity-100 disabled:hover:bg-none disabled:hover:bg-slate-200",
                               )}
                             >
@@ -6382,8 +6379,7 @@ export default function ClientPortalPage() {
                                   "h-5 w-5 mr-2",
                                   isReferenceSidebarClient && "mr-1 h-3 w-3",
                                   isReferenceSidebarClient &&
-                                    (submitting ||
-                                      members.some((m) => !m.isSubmitted)) &&
+                                    isSubmitForApprovalDisabled &&
                                     "disabled:mr-1.5 disabled:h-3.5 disabled:w-3.5",
                                 )}
                               />

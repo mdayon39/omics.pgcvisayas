@@ -4470,17 +4470,6 @@ export default function ClientPortalPage() {
                   {member.formData.name ||
                     (member.isPrimary ? "Primary Member" : "Unnamed Member")}
                 </span>
-                {member.isPrimary && (
-                  <Badge
-                    className={cn(
-                      "bg-[#166FB5]/10 text-[#166FB5] border-[#166FB5]/20 text-[10px] h-5 px-1.5",
-                      isReferenceSidebarClient &&
-                        "h-auto border-0 bg-transparent px-0 text-[10px] font-medium text-[#166FB5]",
-                    )}
-                  >
-                    Primary
-                  </Badge>
-                )}
               </div>
               <div className="flex items-center gap-3 mt-0.5">
                 {member.cid &&
@@ -5607,9 +5596,8 @@ export default function ClientPortalPage() {
                                   isReferenceSidebarClient && "text-[10px]",
                                 )}
                               >
-                                {isReferenceSidebarClient
-                                  ? "Action required: complete your project submission"
-                                  : "Action Required: Complete Project Submission"}
+                                Action required: complete your details before
+                                submission
                               </p>
                               <p
                                 className={cn(
@@ -5617,41 +5605,14 @@ export default function ClientPortalPage() {
                                   isReferenceSidebarClient && "text-[9px]",
                                 )}
                               >
-                                {isReferenceSidebarClient ? (
-                                  <>
-                                    Add your details as the{" "}
-                                    <strong>Primary Member</strong>, then
-                                    select{" "}
-                                  </>
-                                ) : members.some(
-                                    (m) => m.isPrimary && !m.isSubmitted,
-                                  ) ? (
-                                  <>
-                                    Please provide your details as the{" "}
-                                    <strong>Primary Member</strong>.{" "}
-                                  </>
-                                ) : (
-                                  <>
-                                    If you have additional team members, please
-                                    add them now.{" "}
-                                  </>
-                                )}
-                                {isReferenceSidebarClient
-                                  ? ""
-                                  : 'Once finished, scroll to the bottom and click "'}
+                                Add your details as the{" "}
+                                <strong>Primary Member</strong>, then select{" "}
                                 <strong>
                                   Submit Project & Team for Approval
                                 </strong>
-                                {isReferenceSidebarClient
-                                  ? " to send your application for admin review. Once approved, you'll receive a Project ID and Client ID."
-                                  : '" to send your application for admin review. After'}
-                                {!isReferenceSidebarClient && (
-                                  <>
-                                    approval, you will be assigned a{" "}
-                                    <strong>Project ID</strong> and{" "}
-                                    <strong>Client ID</strong>.
-                                  </>
-                                )}
+                                {" "}to send for admin review. Once approved,
+                                you'll receive a <strong>Project ID</strong> and{" "}
+                                <strong>Client ID</strong>.
                               </p>
                             </>
                           ) : projectDetails.status === "Pending Approval" ? (

@@ -5733,9 +5733,11 @@ export default function ClientPortalPage() {
                                 Submitted Successfully!
                               </p>
                               <p className="text-xs text-blue-700 leading-relaxed">
-                                You may now proceed with submitting your Sample
-                                Form. Your Project ID and Client ID will be
-                                provided once your application is approved.
+                                You may now proceed with submitting your{" "}
+                                <strong>Sample Form</strong>. Your{" "}
+                                <strong>Project ID</strong> and{" "}
+                                <strong>Client ID</strong> will be provided
+                                once your application is approved.
                                 Please check your dashboard regularly for
                                 updates and notifications.
                               </p>

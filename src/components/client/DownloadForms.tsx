@@ -58,8 +58,8 @@ const PORTAL_FORMS: FormEntry[] = [
   },
   {
     label: "Sample Submission Form",
-    description: "PGCV-LF-SSF Rev. 001 — Complete and attach the form.",
-    portalDescription: "Complete and attach the form.",
+    description: "PGCV-LF-SSF Rev. 001 — Attach and Submit the Completed Form",
+    portalDescription: "Attach and Submit the Completed Form",
     revision: "PGCV-LF-SSF · Rev. 001",
     storagePath: "forms/Sample_Submission_Form.pdf",
     formKey: "ssf",

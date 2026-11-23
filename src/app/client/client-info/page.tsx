@@ -4400,9 +4400,9 @@ export default function ClientPortalPage() {
                   Saving...
                 </>
               ) : isReferenceSidebarClient ? (
-                `Save & confirm ${member.isPrimary ? "my" : "member"} details`
+                member.isPrimary ? "Save" : "Save & confirm member details"
               ) : (
-                `${member.isPrimary ? "Save & Confirm My Details" : "Save & Confirm Member Details"}`
+                member.isPrimary ? "Save" : "Save & Confirm Member Details"
               )}
             </Button>
           </div>
@@ -5803,12 +5803,6 @@ export default function ClientPortalPage() {
                                 >
                                   <Pencil className="h-3.5 w-3.5" />
                                 </button>
-                              )}
-                            {isReferenceSidebarClient &&
-                              !isProjectInfoExpanded && (
-                                <span className="mr-1 text-[9px] font-medium text-slate-700">
-                                  View details
-                                </span>
                               )}
                             <ChevronDown
                               className={cn(

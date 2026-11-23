@@ -32,7 +32,6 @@ export const DEFAULT_INQUIRY_NOTIFICATION_GROUPS: InquiryNotificationGroup[] = [
     serviceFilters: ["all"],
     recipients: [
       "sequencing.pgc.upvisayas@up.edu.ph",
-      "mdayon1@up.edu.ph",
       "madayon1@up.edu.ph",
     ],
     enabled: true,

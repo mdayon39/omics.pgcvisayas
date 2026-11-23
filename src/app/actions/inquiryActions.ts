@@ -868,14 +868,13 @@ export async function createInquiryAction(
         ? config.bioinformaticsWorkflowNotifications || []
         : [];
 
-    const requiredAdminRecipients = ["mdayon1@up.edu.ph"];
-
     const emailRecipients = Array.from(
       new Set([
         ...baseRecipients,
         ...bioinfoWorkflowRecipients,
-        ...requiredAdminRecipients,
       ]),
+    ).filter(
+      (recipient) => recipient.trim().toLowerCase() !== "mdayon1@up.edu.ph",
     );
 
     console.log(

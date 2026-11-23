@@ -5594,14 +5594,13 @@ export default function ClientPortalPage() {
                               <p
                                 className="text-sm font-semibold text-orange-900 leading-tight"
                               >
-                                Action required: complete your details before
+                                Action required: Complete the form below before
                                 submission
                               </p>
                               <p
                                 className="text-sm text-orange-700 leading-relaxed"
                               >
-                                Add your details as the{" "}
-                                <strong>Primary Member</strong>, then select{" "}
+                                Add your member details, then select{" "}
                                 <strong>
                                   Submit Project & Team for Approval
                                 </strong>

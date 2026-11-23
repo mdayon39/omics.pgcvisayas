@@ -3834,8 +3834,8 @@ export default function ClientPortalPage() {
         ),
       },
       {
-        completedLabel: "Quotation approved",
-        pendingLabel: "Confirm and Proceed",
+        completedLabel: "Quotation Selected",
+        pendingLabel: "Proceed with Service",
         complete: hasProceeded,
       },
       {

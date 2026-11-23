@@ -3811,6 +3811,11 @@ export default function ClientPortalPage() {
       hasChargeSlips ||
       hasUploadedOfficialReceipts ||
       hasReceivedServiceReports;
+    const isProjectAndTeamApproved =
+      projectRequest?.status === "approved" ||
+      approvalStatus === "approved" ||
+      projectDetails?.status === "Ongoing" ||
+      projectDetails?.status === "Completed";
     const hasSubmittedProjectAndMemberDetails =
       projectRequest?.status === "pending" ||
       projectRequest?.status === "approved" ||
@@ -3839,8 +3844,10 @@ export default function ClientPortalPage() {
         complete: hasProceeded,
       },
       {
-        completedLabel: "Project and Member Details Submitted",
-        pendingLabel: "Submit Project and Member Details",
+        completedLabel: isProjectAndTeamApproved
+          ? "Project & Team Approved"
+          : "Project & Team Submitted",
+        pendingLabel: "Submit Project & Team for Approval",
         complete: hasSubmittedProjectAndMemberDetails,
       },
       {

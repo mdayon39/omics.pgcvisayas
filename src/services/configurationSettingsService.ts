@@ -20,6 +20,8 @@ export const DEFAULT_PORTAL_FEATURES: PortalFeatureVisibility = {
   chatAutoReply: true,
   chatHeaderStatus: true,
   teamMemberSaveDraftButton: true,
+  hideQuotationRequestDetails: false,
+  hidePersonalInformation: false,
 };
 
 export const DEFAULT_INQUIRY_NOTIFICATION_GROUPS: InquiryNotificationGroup[] = [

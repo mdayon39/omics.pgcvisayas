@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -60,11 +61,14 @@ function ConfigurationsContent() {
     [settings],
   );
 
-  const updatePortalFeature = async (key: PortalFeatureKey) => {
+  const updatePortalFeature = async (
+    key: PortalFeatureKey,
+    checked?: boolean,
+  ) => {
     if (!settings) return;
     const next = {
       ...settings.portalFeatures,
-      [key]: !settings.portalFeatures[key],
+      [key]: checked ?? !settings.portalFeatures[key],
     };
 
     setSettings({ ...settings, portalFeatures: next });
@@ -217,10 +221,10 @@ function ConfigurationsContent() {
         <CardHeader>
           <CardTitle>Client Portal</CardTitle>
           <CardDescription>
-            Control which form actions are available to clients.
+            Control which client portal sections and form actions are available.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-700">
@@ -241,6 +245,43 @@ function ConfigurationsContent() {
               disabled={!canEdit("configurations")}
             />
           </div>
+          <Separator />
+          <label className="flex cursor-pointer items-start gap-3">
+            <Checkbox
+              checked={portalFeatures.hideQuotationRequestDetails}
+              onCheckedChange={(checked) =>
+                updatePortalFeature("hideQuotationRequestDetails", checked === true)
+              }
+              disabled={!canEdit("configurations")}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="block text-sm font-medium text-slate-700">
+                Hide Quotation Request Details
+              </span>
+              <span className="block text-xs text-slate-500">
+                Hides the Quotation Request Details section in the client portal.
+              </span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3">
+            <Checkbox
+              checked={portalFeatures.hidePersonalInformation}
+              onCheckedChange={(checked) =>
+                updatePortalFeature("hidePersonalInformation", checked === true)
+              }
+              disabled={!canEdit("configurations")}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="block text-sm font-medium text-slate-700">
+                Hide Personal Information
+              </span>
+              <span className="block text-xs text-slate-500">
+                Hides the Personal Information section in the client portal.
+              </span>
+            </span>
+          </label>
         </CardContent>
       </Card>
 

@@ -8,7 +8,9 @@ export type PortalFeatureKey =
   | "clientMenuAbout"
   | "chatAutoReply"
   | "chatHeaderStatus"
-  | "teamMemberSaveDraftButton";
+  | "teamMemberSaveDraftButton"
+  | "hideQuotationRequestDetails"
+  | "hidePersonalInformation";
 
 export interface PortalFeatureVisibility {
   sampleForms: boolean;
@@ -21,6 +23,8 @@ export interface PortalFeatureVisibility {
   chatAutoReply: boolean;
   chatHeaderStatus: boolean;
   teamMemberSaveDraftButton: boolean;
+  hideQuotationRequestDetails: boolean;
+  hidePersonalInformation: boolean;
 }
 
 export interface InquiryNotificationGroup {

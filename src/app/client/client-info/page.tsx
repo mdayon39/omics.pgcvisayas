@@ -8023,7 +8023,8 @@ export default function ClientPortalPage() {
                         {/* Messages / Communications (Floating) — rendered globally below */}
 
                         {/* Quotation Request Details (previously Inquiry Details Summary) */}
-                        {currentInquiry && (
+                        {currentInquiry &&
+                          !portalFeatures.hideQuotationRequestDetails && (
                           <div
                             className={cn(
                               "bg-amber-50/70 border border-amber-100 rounded-xl px-4 py-3",
@@ -9839,7 +9840,8 @@ export default function ClientPortalPage() {
                         )}
 
                         {/* Personal Information of Submitter */}
-                        {currentInquiry && (
+                        {currentInquiry &&
+                          !portalFeatures.hidePersonalInformation && (
                           <div
                             className={cn(
                               "bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden",

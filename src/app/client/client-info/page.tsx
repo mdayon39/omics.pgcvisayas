@@ -7777,7 +7777,7 @@ export default function ClientPortalPage() {
                           isReferenceSidebarClient && "space-y-4",
                         )}
                       >
-                        {/* Official Documents (Quotations) - MOVED UP */}
+                        {/* Quotations */}
                         <div
                           className={cn(
                             "bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100",
@@ -7794,7 +7794,7 @@ export default function ClientPortalPage() {
                                     "h-[18px] w-[18px] text-slate-600",
                                 )}
                               />
-                              Official Documents
+                              Quotations
                             </h3>
                           </div>
 
@@ -8023,8 +8023,7 @@ export default function ClientPortalPage() {
                         {/* Messages / Communications (Floating) — rendered globally below */}
 
                         {/* Quotation Request Details (previously Inquiry Details Summary) */}
-                        {currentInquiry &&
-                          !portalFeatures.hideQuotationRequestDetails && (
+                        {currentInquiry && (
                           <div
                             className={cn(
                               "bg-amber-50/70 border border-amber-100 rounded-xl px-4 py-3",
@@ -8115,7 +8114,8 @@ export default function ClientPortalPage() {
                           </div>
                         )}
 
-                        {currentInquiry && (
+                        {currentInquiry &&
+                          !portalFeatures.hideQuotationRequestDetails && (
                           <div
                             className={cn(
                               "bg-white rounded-2xl px-4 py-4 shadow-sm border border-slate-100 overflow-hidden",

@@ -3318,11 +3318,11 @@ export default function ClientPortalPage() {
         });
         if (receiptResult.adminEmailNotificationSent) {
           toast.success(
-            `"${report.fileName}" is available. Select Open Report to view or download it.`,
+            `"${report.fileName}" was opened and marked as received.`,
           );
         } else {
           toast.warning(
-            `"${report.fileName}" is available. Select Open Report to view or download it. The admin email notification could not be sent.`,
+            `"${report.fileName}" was opened and marked as received. The admin email notification could not be sent.`,
           );
         }
       } catch (err) {
@@ -3829,6 +3829,12 @@ export default function ClientPortalPage() {
     ) ?? false;
   const isServiceReportAvailable =
     hasUploadedServiceReport && hasValidatedSettledChargeSlip;
+  const hasClientOpenedServiceReport =
+    workflowProjectDocuments?.serviceReports?.some(
+      (report) => report.status === "received",
+    ) ?? false;
+  const isServiceReportReceived =
+    isServiceReportAvailable && hasClientOpenedServiceReport;
 
   const clientWorkflowSteps = useMemo(() => {
     const docs = workflowProjectPid
@@ -3902,7 +3908,7 @@ export default function ClientPortalPage() {
       {
         completedLabel: "Service Report Received",
         pendingLabel: "Receive Service Report",
-        complete: isServiceReportAvailable,
+        complete: isServiceReportReceived,
       },
     ];
   }, [
@@ -3917,7 +3923,7 @@ export default function ClientPortalPage() {
     projectDetails,
     projectDocuments,
     projectRequest,
-    isServiceReportAvailable,
+    isServiceReportReceived,
     workflowProjectPid,
   ]);
   const isSampleInformationSubmitted =
@@ -3927,10 +3933,6 @@ export default function ClientPortalPage() {
   const isChargeSlipReceived =
     clientWorkflowSteps.find(
       (step) => step.completedLabel === "Charge Slip Received",
-    )?.complete ?? false;
-  const isServiceReportReceived =
-    clientWorkflowSteps.find(
-      (step) => step.completedLabel === "Service Report Received",
     )?.complete ?? false;
   const isServiceReportPending =
     hasUploadedServiceReport && !isServiceReportAvailable;
@@ -7391,6 +7393,20 @@ export default function ClientPortalPage() {
                                                     "string"
                                                   ? item.downloadURL
                                                   : "";
+                                            const canReceiveReport =
+                                              canReceiveServiceReport ||
+                                              Boolean(
+                                                item.skipChargeSlipRequirement,
+                                              );
+                                            const hasOpenedFeedbackForm =
+                                              formOpenedReports.has(item.id);
+                                            const canOpenReport =
+                                              item.clientAccessEnabled !==
+                                                false &&
+                                              Boolean(reportUrl) &&
+                                              (isReceived ||
+                                                (canReceiveReport &&
+                                                  hasOpenedFeedbackForm));
                                             const receivedDate = item.receivedAt
                                               ?.toDate
                                               ? format(
@@ -7441,14 +7457,23 @@ export default function ClientPortalPage() {
                                                     />
                                                   </span>
                                                   <div className="min-w-0 flex-1">
-                                                    {isReceived &&
-                                                    item.clientAccessEnabled !==
-                                                      false &&
-                                                    reportUrl ? (
+                                                    {canOpenReport ? (
                                                       <a
                                                         href={reportUrl}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
+                                                        onClick={(event) => {
+                                                          if (isReceiving) {
+                                                            event.preventDefault();
+                                                            return;
+                                                          }
+                                                          if (!isReceived) {
+                                                            void handleReceiveServiceReport(
+                                                              selectedProjectPid,
+                                                              item,
+                                                            );
+                                                          }
+                                                        }}
                                                         className={cn(
                                                           "text-sm text-blue-700 hover:underline truncate block",
                                                           isReferenceSidebarClient &&
@@ -7575,6 +7600,18 @@ export default function ClientPortalPage() {
                                                             href={reportUrl}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
+                                                            onClick={(event) => {
+                                                              if (isReceiving) {
+                                                                event.preventDefault();
+                                                                return;
+                                                              }
+                                                              if (!isReceived) {
+                                                                void handleReceiveServiceReport(
+                                                                  selectedProjectPid,
+                                                                  item,
+                                                                );
+                                                              }
+                                                            }}
                                                             className={cn(
                                                               "inline-flex h-8 items-center gap-1 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700",
                                                               isReferenceSidebarClient &&
@@ -7593,10 +7630,7 @@ export default function ClientPortalPage() {
                                                         )}
                                                     </div>
                                                   ) : !(
-                                                      canReceiveServiceReport ||
-                                                      Boolean(
-                                                        item.skipChargeSlipRequirement,
-                                                      )
+                                                      canReceiveReport
                                                     ) ? (
                                                     <TooltipProvider
                                                       delayDuration={100}
@@ -7628,32 +7662,44 @@ export default function ClientPortalPage() {
                                                         </TooltipContent>
                                                       </Tooltip>
                                                     </TooltipProvider>
-                                                  ) : formOpenedReports.has(
-                                                      item.id,
-                                                    ) ? (
-                                                    /* Step 2 — confirm form was submitted then unlock PDF */
+                                                  ) : hasOpenedFeedbackForm ? (
+                                                    /* Open the report and record receipt on the same client action. */
                                                     <div className="flex w-full flex-col items-end gap-1">
-                                                      <Button
-                                                        size="sm"
-                                                        className="h-8 text-xs px-3 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
-                                                        disabled={isReceiving}
-                                                        onClick={() =>
-                                                          handleReceiveServiceReport(
+                                                      <a
+                                                        href={reportUrl || undefined}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        aria-disabled={isReceiving}
+                                                        onClick={(event) => {
+                                                          if (
+                                                            isReceiving ||
+                                                            !reportUrl
+                                                          ) {
+                                                            event.preventDefault();
+                                                            return;
+                                                          }
+                                                          void handleReceiveServiceReport(
                                                             selectedProjectPid,
                                                             item,
-                                                          )
-                                                        }
+                                                          );
+                                                        }}
+                                                        className={cn(
+                                                          "inline-flex h-8 items-center gap-1 rounded-md bg-emerald-600 px-3 text-xs font-medium text-white hover:bg-emerald-700",
+                                                          isReceiving &&
+                                                            "pointer-events-none opacity-50",
+                                                        )}
                                                       >
                                                         {isReceiving ? (
                                                           <Loader2 className="h-3 w-3 animate-spin" />
                                                         ) : (
-                                                          <CheckCircle2 className="h-3.5 w-3.5" />
+                                                          <ExternalLink className="h-3.5 w-3.5" />
                                                         )}
-                                                        Confirm & Access Report
-                                                      </Button>
+                                                        Open Report
+                                                      </a>
                                                       <span className="text-right text-[13px] text-slate-500 italic">
-                                                        Form opened — confirm to
-                                                        access the file.
+                                                        Your receipt will be
+                                                        recorded when you open
+                                                        the file.
                                                       </span>
                                                     </div>
                                                   ) : (

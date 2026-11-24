@@ -3895,6 +3895,10 @@ export default function ClientPortalPage() {
     projectRequest,
     workflowProjectPid,
   ]);
+  const isSampleInformationSubmitted =
+    clientWorkflowSteps.find(
+      (step) => step.completedLabel === "Sample Information Submitted",
+    )?.complete ?? false;
 
   useEffect(() => {
     if (!selectedProjectPid || !hasSubmittedProjectAndMemberDetails) return;
@@ -3921,30 +3925,31 @@ export default function ClientPortalPage() {
   ]);
 
   useEffect(() => {
+    const targetProjectPid = selectedProjectPid || workflowProjectPid;
     if (
       !isReferenceSidebarClient ||
-      !workflowProjectPid ||
-      (!hasWorkflowSampleForm && !hasUploadedSampleSubmission) ||
-      autoOpenedChargeSlipProjectsRef.current.has(workflowProjectPid)
+      !targetProjectPid ||
+      !isSampleInformationSubmitted ||
+      autoOpenedChargeSlipProjectsRef.current.has(targetProjectPid)
     ) {
       return;
     }
 
     const submittedProject = projects.find(
-      (project) => project.pid === workflowProjectPid,
+      (project) => project.pid === targetProjectPid,
     );
     if (!submittedProject) return;
 
-    autoOpenedChargeSlipProjectsRef.current.add(workflowProjectPid);
-    setExpandedProjectDocs(new Set([workflowProjectPid]));
-    setActiveDocPanel(`${workflowProjectPid}:chargeSlips`);
+    autoOpenedChargeSlipProjectsRef.current.add(targetProjectPid);
+    setExpandedProjectDocs(new Set([targetProjectPid]));
+    setActiveDocPanel(`${targetProjectPid}:chargeSlips`);
     void loadProjectDocuments(submittedProject);
   }, [
-    hasUploadedSampleSubmission,
-    hasWorkflowSampleForm,
     isReferenceSidebarClient,
+    isSampleInformationSubmitted,
     loadProjectDocuments,
     projects,
+    selectedProjectPid,
     workflowProjectPid,
   ]);
 

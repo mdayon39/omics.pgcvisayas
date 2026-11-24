@@ -3816,6 +3816,20 @@ export default function ClientPortalPage() {
     !hasSubmittedProjectAndMemberDetails ||
     activeDocPanel === `${selectedProjectPid}:projectMembers`;
 
+  const workflowProjectDocuments = workflowProjectPid
+    ? projectDocuments.get(workflowProjectPid)
+    : undefined;
+  const hasUploadedServiceReport =
+    (workflowProjectDocuments?.serviceReports?.length ?? 0) > 0;
+  const hasValidatedSettledChargeSlip =
+    workflowProjectDocuments?.chargeSlips?.some(
+      (chargeSlip) =>
+        chargeSlip.orStatus === "Validated" &&
+        ["paid", "waived"].includes((chargeSlip.status ?? "").toLowerCase()),
+    ) ?? false;
+  const isServiceReportAvailable =
+    hasUploadedServiceReport && hasValidatedSettledChargeSlip;
+
   const clientWorkflowSteps = useMemo(() => {
     const docs = workflowProjectPid
       ? projectDocuments.get(workflowProjectPid)
@@ -3825,7 +3839,6 @@ export default function ClientPortalPage() {
     const hasChargeSlips = (docs?.chargeSlips?.length ?? 0) > 0;
     const hasUploadedOfficialReceipts =
       (docs?.officialReceipts?.length ?? 0) > 0;
-    const hasReceivedServiceReports = (docs?.serviceReports ?? []).length > 0;
     const hasApprovedQuotation = inquiryQuotations.some(
       (quotation) =>
         quotation.status === "selected" || quotation.status === "completed",
@@ -3840,7 +3853,7 @@ export default function ClientPortalPage() {
       hasSubmittedSampleInformation ||
       hasChargeSlips ||
       hasUploadedOfficialReceipts ||
-      hasReceivedServiceReports;
+      hasUploadedServiceReport;
     const isProjectAndTeamApproved =
       projectRequest?.status === "approved" ||
       approvalStatus === "approved" ||
@@ -3889,12 +3902,13 @@ export default function ClientPortalPage() {
       {
         completedLabel: "Service Report Received",
         pendingLabel: "Receive Service Report",
-        complete: hasReceivedServiceReports,
+        complete: isServiceReportAvailable,
       },
     ];
   }, [
     approvalStatus,
     currentInquiry,
+    hasUploadedServiceReport,
     hasUploadedSampleSubmission,
     hasSubmittedOfficialReceipt,
     hasWorkflowSampleForm,
@@ -3903,6 +3917,7 @@ export default function ClientPortalPage() {
     projectDetails,
     projectDocuments,
     projectRequest,
+    isServiceReportAvailable,
     workflowProjectPid,
   ]);
   const isSampleInformationSubmitted =
@@ -3917,28 +3932,8 @@ export default function ClientPortalPage() {
     clientWorkflowSteps.find(
       (step) => step.completedLabel === "Service Report Received",
     )?.complete ?? false;
-  const hasValidatedSettledChargeSlip =
-    (workflowProjectPid
-      ? projectDocuments.get(workflowProjectPid)?.chargeSlips
-      : undefined
-    )?.some(
-      (chargeSlip) =>
-        chargeSlip.orStatus === "Validated" &&
-        ["paid", "waived"].includes((chargeSlip.status ?? "").toLowerCase()),
-    ) ?? false;
-  const isServiceReportAvailable =
-    isServiceReportReceived && hasValidatedSettledChargeSlip;
-  const hasProcessingChargeSlip =
-    (workflowProjectPid
-      ? projectDocuments.get(workflowProjectPid)?.chargeSlips
-      : undefined
-    )?.some(
-      (chargeSlip) => (chargeSlip.status ?? "").toLowerCase() === "processing",
-    ) ?? false;
   const isServiceReportPending =
-    isServiceReportReceived &&
-    hasProcessingChargeSlip &&
-    !hasSubmittedOfficialReceipt;
+    hasUploadedServiceReport && !isServiceReportAvailable;
 
   useEffect(() => {
     if (

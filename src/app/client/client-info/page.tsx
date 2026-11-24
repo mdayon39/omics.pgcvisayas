@@ -603,10 +603,22 @@ export default function ClientPortalPage() {
     });
 
   // Active document panel shown in main content (below Team Members)
-  const [activeDocPanel, setActiveDocPanel] = useState<string | null>(null);
+  const [activeDocPanel, setActiveDocPanel] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("activeDocPanel");
+  });
   const autoOpenedSampleFormProjectsRef = useRef(new Set<string>());
   const autoOpenedChargeSlipStatesRef = useRef(new Set<string>());
   const autoOpenedServiceReportProjectsRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (activeDocPanel) {
+      localStorage.setItem("activeDocPanel", activeDocPanel);
+    } else {
+      localStorage.removeItem("activeDocPanel");
+    }
+  }, [activeDocPanel]);
 
   const handleSelectDocPanel = (pid: string, section: string) => {
     const key = `${pid}:${section}`;
@@ -718,7 +730,10 @@ export default function ClientPortalPage() {
     configSettings?.portalFeatures ?? DEFAULT_PORTAL_FEATURES;
 
   const [selectedProjectPid, setSelectedProjectPid] = useState<string | null>(
-    null,
+    () => {
+      if (typeof window === "undefined") return null;
+      return localStorage.getItem("activeDocPanel")?.split(":")[0] || null;
+    },
   );
   const [projectDetails, setProjectDetails] = useState<ProjectDetails | null>(
     null,
@@ -3810,9 +3825,7 @@ export default function ClientPortalPage() {
     const hasChargeSlips = (docs?.chargeSlips?.length ?? 0) > 0;
     const hasUploadedOfficialReceipts =
       (docs?.officialReceipts?.length ?? 0) > 0;
-    const hasReceivedServiceReports = (docs?.serviceReports ?? []).some(
-      (report) => report.status === "received",
-    );
+    const hasReceivedServiceReports = (docs?.serviceReports ?? []).length > 0;
     const hasApprovedQuotation = inquiryQuotations.some(
       (quotation) =>
         quotation.status === "selected" || quotation.status === "completed",
@@ -3906,7 +3919,11 @@ export default function ClientPortalPage() {
     )?.complete ?? false;
 
   useEffect(() => {
-    if (!selectedProjectPid || !hasSubmittedProjectAndMemberDetails) return;
+    if (
+      !selectedProjectPid ||
+      !hasSubmittedProjectAndMemberDetails ||
+      isServiceReportReceived
+    ) return;
 
     const selectedProject = projects.find(
       (project) => project.pid === selectedProjectPid,
@@ -3924,6 +3941,7 @@ export default function ClientPortalPage() {
     void loadProjectDocuments(selectedProject);
   }, [
     hasSubmittedProjectAndMemberDetails,
+    isServiceReportReceived,
     loadProjectDocuments,
     projects,
     selectedProjectPid,
@@ -3939,6 +3957,7 @@ export default function ClientPortalPage() {
       !isReferenceSidebarClient ||
       !workflowProjectPid ||
       (!isSampleInformationSubmitted && !isChargeSlipReceived) ||
+      isServiceReportReceived ||
       !stateKey ||
       autoOpenedChargeSlipStatesRef.current.has(stateKey)
     ) {

@@ -3925,31 +3925,31 @@ export default function ClientPortalPage() {
   ]);
 
   useEffect(() => {
-    const targetProjectPid = selectedProjectPid || workflowProjectPid;
     if (
       !isReferenceSidebarClient ||
-      !targetProjectPid ||
+      !workflowProjectPid ||
       !isSampleInformationSubmitted ||
-      autoOpenedChargeSlipProjectsRef.current.has(targetProjectPid)
+      autoOpenedChargeSlipProjectsRef.current.has(workflowProjectPid)
     ) {
       return;
     }
 
     const submittedProject = projects.find(
-      (project) => project.pid === targetProjectPid,
+      (project) => project.pid === workflowProjectPid,
     );
     if (!submittedProject) return;
 
-    autoOpenedChargeSlipProjectsRef.current.add(targetProjectPid);
-    setExpandedProjectDocs(new Set([targetProjectPid]));
-    setActiveDocPanel(`${targetProjectPid}:chargeSlips`);
+    autoOpenedChargeSlipProjectsRef.current.add(workflowProjectPid);
+    setSelectedProjectPid(workflowProjectPid);
+    setProjectDetails(submittedProject);
+    setExpandedProjectDocs(new Set([workflowProjectPid]));
+    setActiveDocPanel(`${workflowProjectPid}:chargeSlips`);
     void loadProjectDocuments(submittedProject);
   }, [
     isReferenceSidebarClient,
     isSampleInformationSubmitted,
     loadProjectDocuments,
     projects,
-    selectedProjectPid,
     workflowProjectPid,
   ]);
 

@@ -5842,16 +5842,18 @@ export default function ClientPortalPage() {
                           ) : projectDetails.status === "Pending Approval" ? (
                             <>
                               <p className="text-xs font-semibold text-blue-900 leading-none">
-                                Submitted Successfully!
+                                Project &amp; Team Details Submitted!
                               </p>
                               <p className="text-xs text-blue-700 leading-relaxed">
                                 You may now proceed with submitting your{" "}
                                 <strong>Sample Form</strong>. Your{" "}
                                 <strong>Project ID</strong> and{" "}
                                 <strong>Client ID</strong> will be provided
-                                once your application is approved.
+                                once your application has been approved.
+                              </p>
+                              <p className="text-xs text-blue-700 leading-relaxed">
                                 Please check your dashboard regularly for
-                                updates and notifications.
+                                updates.
                               </p>
                             </>
                           ) : projectDetails.status === "Ongoing" ? (

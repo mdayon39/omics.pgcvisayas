@@ -605,6 +605,7 @@ export default function ClientPortalPage() {
   // Active document panel shown in main content (below Team Members)
   const [activeDocPanel, setActiveDocPanel] = useState<string | null>(null);
   const autoOpenedSampleFormProjectsRef = useRef(new Set<string>());
+  const autoOpenedChargeSlipProjectsRef = useRef(new Set<string>());
 
   const handleSelectDocPanel = (pid: string, section: string) => {
     const key = `${pid}:${section}`;
@@ -3100,8 +3101,7 @@ export default function ClientPortalPage() {
 
         const formSubmissionsSnapshot =
           project.pid &&
-          project.pid !== "DRAFT" &&
-          !project.pid.startsWith("PENDING-")
+          project.pid !== "DRAFT"
             ? await getDocs(
                 query(
                   collection(db, "clientFormSubmissions"),
@@ -3650,8 +3650,7 @@ export default function ClientPortalPage() {
         [...projects.map((project) => project.pid), workflowProjectPid].filter(
           (pid): pid is string =>
             typeof pid === "string" &&
-            pid !== "DRAFT" &&
-            !pid.startsWith("PENDING-"),
+            pid !== "DRAFT",
         ),
       ),
     );
@@ -3919,6 +3918,34 @@ export default function ClientPortalPage() {
     loadProjectDocuments,
     projects,
     selectedProjectPid,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isReferenceSidebarClient ||
+      !workflowProjectPid ||
+      (!hasWorkflowSampleForm && !hasUploadedSampleSubmission) ||
+      autoOpenedChargeSlipProjectsRef.current.has(workflowProjectPid)
+    ) {
+      return;
+    }
+
+    const submittedProject = projects.find(
+      (project) => project.pid === workflowProjectPid,
+    );
+    if (!submittedProject) return;
+
+    autoOpenedChargeSlipProjectsRef.current.add(workflowProjectPid);
+    setExpandedProjectDocs(new Set([workflowProjectPid]));
+    setActiveDocPanel(`${workflowProjectPid}:chargeSlips`);
+    void loadProjectDocuments(submittedProject);
+  }, [
+    hasUploadedSampleSubmission,
+    hasWorkflowSampleForm,
+    isReferenceSidebarClient,
+    loadProjectDocuments,
+    projects,
+    workflowProjectPid,
   ]);
 
   // ────────────────────────────────────────────────────────────────
@@ -5302,8 +5329,14 @@ export default function ClientPortalPage() {
                             {/* Charge Slips */}
                             <div>
                               {(() => {
+                                const hasSubmittedSampleInformation =
+                                  sampleSubmissionCount > 0 ||
+                                  (project.pid === workflowProjectPid &&
+                                    (hasWorkflowSampleForm ||
+                                      hasUploadedSampleSubmission));
                                 const isChargeSlipsDisabled =
-                                  chargeSlipCount === 0;
+                                  chargeSlipCount === 0 &&
+                                  !hasSubmittedSampleInformation;
                                 const isActive =
                                   activeDocPanel ===
                                   `${project.pid}:chargeSlips`;

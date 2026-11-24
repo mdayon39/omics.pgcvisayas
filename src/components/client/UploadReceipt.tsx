@@ -841,14 +841,6 @@ export default function UploadReceipt({
                   )}
                 </div>
 
-                {uploadAllowed && isPending && (
-                  <div className="ml-4 flex items-center gap-1.5 text-[10px] text-amber-600">
-                    <Lock className="h-3 w-3" />
-                    Receipt attachment locked — awaiting admin validation or
-                    return for correction.
-                  </div>
-                )}
-
                 {/* Returned receipt — inline replace section */}
                 {uploadAllowed && isReturned && (
                   <div className="ml-4 space-y-1.5">

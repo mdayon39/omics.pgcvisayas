@@ -4007,26 +4007,26 @@ export default function ClientPortalPage() {
     if (
       !isReferenceSidebarClient ||
       !workflowProjectPid ||
-      !isServiceReportReceived ||
+      !isServiceReportAvailable ||
       autoOpenedServiceReportProjectsRef.current.has(workflowProjectPid)
     ) {
       return;
     }
 
-    const projectWithReceivedReport = projects.find(
+    const projectWithAvailableReport = projects.find(
       (project) => project.pid === workflowProjectPid,
     );
-    if (!projectWithReceivedReport) return;
+    if (!projectWithAvailableReport) return;
 
     autoOpenedServiceReportProjectsRef.current.add(workflowProjectPid);
     setSelectedProjectPid(workflowProjectPid);
-    setProjectDetails(projectWithReceivedReport);
+    setProjectDetails(projectWithAvailableReport);
     setExpandedProjectDocs(new Set([workflowProjectPid]));
     setActiveDocPanel(`${workflowProjectPid}:serviceReports`);
-    void loadProjectDocuments(projectWithReceivedReport);
+    void loadProjectDocuments(projectWithAvailableReport);
   }, [
     isReferenceSidebarClient,
-    isServiceReportReceived,
+    isServiceReportAvailable,
     loadProjectDocuments,
     projects,
     workflowProjectPid,

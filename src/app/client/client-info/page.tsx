@@ -5725,8 +5725,7 @@ export default function ClientPortalPage() {
                   {/* Draft/Pending/Approved status banner */}
                   {((projectDetails?.status === "Draft" &&
                     isSubmitForApprovalDisabled) ||
-                    (projectDetails?.status === "Ongoing" &&
-                      !isChargeSlipReceived) ||
+                    projectDetails?.status === "Ongoing" ||
                     projectDetails?.status === "Pending Approval" ||
                     projectDetails?.status === "Rejected" ||
                     projectDetails?.status === "Returned for Revision") && (

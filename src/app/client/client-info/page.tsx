@@ -3590,7 +3590,7 @@ export default function ClientPortalPage() {
     workflowInquiryProjects.find(
       (project) => project.pid === selectedProjectPid,
     )?.pid || workflowInquiryProjects[0]?.pid;
-  const [hasValidatedOfficialReceipt, setHasValidatedOfficialReceipt] =
+  const [hasSubmittedOfficialReceipt, setHasSubmittedOfficialReceipt] =
     useState(false);
   const [hasWorkflowSampleForm, setHasWorkflowSampleForm] = useState(false);
   const [hasUploadedSampleSubmission, setHasUploadedSampleSubmission] =
@@ -3612,19 +3612,15 @@ export default function ClientPortalPage() {
       workflowProjectPid === "DRAFT" ||
       workflowProjectPid.startsWith("PENDING-")
     ) {
-      setHasValidatedOfficialReceipt(false);
+      setHasSubmittedOfficialReceipt(false);
       return;
     }
 
-    setHasValidatedOfficialReceipt(false);
+    setHasSubmittedOfficialReceipt(false);
     return onSnapshot(
       collection(db, "projects", workflowProjectPid, "officialReceipts"),
       (snapshot) => {
-        setHasValidatedOfficialReceipt(
-          snapshot.docs.some(
-            (receipt) => receipt.data().acknowledgedByAdmin === true,
-          ),
-        );
+        setHasSubmittedOfficialReceipt(!snapshot.empty);
       },
       (error) => {
         console.error(
@@ -3872,9 +3868,9 @@ export default function ClientPortalPage() {
         complete: hasChargeSlips,
       },
       {
-        completedLabel: "Official receipt uploaded",
-        pendingLabel: "Upload Official Receipt",
-        complete: hasValidatedOfficialReceipt,
+        completedLabel: "Official Receipt Submitted",
+        pendingLabel: "Submit Official Receipt",
+        complete: hasSubmittedOfficialReceipt,
       },
       {
         completedLabel: "Service reports received",
@@ -3886,7 +3882,7 @@ export default function ClientPortalPage() {
     approvalStatus,
     currentInquiry,
     hasUploadedSampleSubmission,
-    hasValidatedOfficialReceipt,
+    hasSubmittedOfficialReceipt,
     hasWorkflowSampleForm,
     inquiryIdParam,
     inquiryQuotations,

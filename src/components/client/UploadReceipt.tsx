@@ -1023,7 +1023,7 @@ export default function UploadReceipt({
             ) : (
               <Upload className="h-3 w-3" />
             )}
-            {uploading ? "Uploading…" : "Upload Receipt"}
+            {uploading ? "Uploading…" : "Submit Receipt"}
           </Button>
         </div>
       )}

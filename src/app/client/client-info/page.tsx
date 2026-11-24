@@ -3928,6 +3928,17 @@ export default function ClientPortalPage() {
     ) ?? false;
   const isServiceReportAvailable =
     isServiceReportReceived && hasValidatedSettledChargeSlip;
+  const hasProcessingChargeSlip =
+    (workflowProjectPid
+      ? projectDocuments.get(workflowProjectPid)?.chargeSlips
+      : undefined
+    )?.some(
+      (chargeSlip) => (chargeSlip.status ?? "").toLowerCase() === "processing",
+    ) ?? false;
+  const isServiceReportPending =
+    isServiceReportReceived &&
+    hasProcessingChargeSlip &&
+    !hasSubmittedOfficialReceipt;
 
   useEffect(() => {
     if (
@@ -5851,20 +5862,24 @@ export default function ClientPortalPage() {
                               <p className="text-xs font-semibold text-green-900 leading-none">
                                 {isServiceReportAvailable
                                   ? "Service Report Available"
+                                  : isServiceReportPending
+                                    ? "Service Report Available"
                                   : hasSubmittedOfficialReceipt
-                                  ? "Official Receipt Submitted"
-                                  : isChargeSlipReceived
-                                    ? "Charge Slip Received"
-                                    : "Project Approved"}
+                                    ? "Official Receipt Submitted"
+                                    : isChargeSlipReceived
+                                      ? "Charge Slip Received"
+                                      : "Project Approved"}
                               </p>
                               <p className="text-xs text-green-700 leading-relaxed">
                                 {isServiceReportAvailable
                                   ? "You can now view and download your Service Report."
-                                  : hasSubmittedOfficialReceipt
-                                  ? "Please wait for the administrator to validate your receipt and update your Charge Slip status."
-                                  : isChargeSlipReceived
-                                    ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."
-                                    : "Your project has been approved and is now active. You can now view your unique Project ID and Client IDs, and access all project documents below."}
+                                  : isServiceReportPending
+                                    ? "Please wait for the administrator to validate your Official Receipt and update your Charge Slip status. Once the status is marked as Paid or Waived, your Service Report will be available for viewing and download."
+                                    : hasSubmittedOfficialReceipt
+                                      ? "Please wait for the administrator to validate your receipt and update your Charge Slip status."
+                                      : isChargeSlipReceived
+                                        ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."
+                                        : "Your project has been approved and is now active. You can now view your unique Project ID and Client IDs, and access all project documents below."}
                               </p>
                             </>
                           ) : projectDetails.status ===

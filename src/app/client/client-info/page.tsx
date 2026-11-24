@@ -606,6 +606,7 @@ export default function ClientPortalPage() {
   const [activeDocPanel, setActiveDocPanel] = useState<string | null>(null);
   const autoOpenedSampleFormProjectsRef = useRef(new Set<string>());
   const autoOpenedChargeSlipStatesRef = useRef(new Set<string>());
+  const autoOpenedServiceReportProjectsRef = useRef(new Set<string>());
 
   const handleSelectDocPanel = (pid: string, section: string) => {
     const key = `${pid}:${section}`;
@@ -3873,7 +3874,7 @@ export default function ClientPortalPage() {
         complete: hasSubmittedOfficialReceipt,
       },
       {
-        completedLabel: "Service reports received",
+        completedLabel: "Service Report Received",
         pendingLabel: "Receive Service Reports",
         complete: hasReceivedServiceReports,
       },
@@ -3898,6 +3899,10 @@ export default function ClientPortalPage() {
   const isChargeSlipReceived =
     clientWorkflowSteps.find(
       (step) => step.completedLabel === "Charge Slip Received",
+    )?.complete ?? false;
+  const isServiceReportReceived =
+    clientWorkflowSteps.find(
+      (step) => step.completedLabel === "Service Report Received",
     )?.complete ?? false;
 
   useEffect(() => {
@@ -3955,6 +3960,35 @@ export default function ClientPortalPage() {
     isChargeSlipReceived,
     isReferenceSidebarClient,
     isSampleInformationSubmitted,
+    loadProjectDocuments,
+    projects,
+    workflowProjectPid,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isReferenceSidebarClient ||
+      !workflowProjectPid ||
+      !isServiceReportReceived ||
+      autoOpenedServiceReportProjectsRef.current.has(workflowProjectPid)
+    ) {
+      return;
+    }
+
+    const projectWithReceivedReport = projects.find(
+      (project) => project.pid === workflowProjectPid,
+    );
+    if (!projectWithReceivedReport) return;
+
+    autoOpenedServiceReportProjectsRef.current.add(workflowProjectPid);
+    setSelectedProjectPid(workflowProjectPid);
+    setProjectDetails(projectWithReceivedReport);
+    setExpandedProjectDocs(new Set([workflowProjectPid]));
+    setActiveDocPanel(`${workflowProjectPid}:serviceReports`);
+    void loadProjectDocuments(projectWithReceivedReport);
+  }, [
+    isReferenceSidebarClient,
+    isServiceReportReceived,
     loadProjectDocuments,
     projects,
     workflowProjectPid,

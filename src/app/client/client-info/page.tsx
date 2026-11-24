@@ -3811,9 +3811,6 @@ export default function ClientPortalPage() {
       : undefined;
     const hasSubmittedSampleInformation =
       hasWorkflowSampleForm || hasUploadedSampleSubmission;
-    const hasAcknowledgedSampleInformation =
-      hasAcknowledgedWorkflowSampleForm ||
-      hasAcknowledgedUploadedSampleSubmission;
     const hasChargeSlips = (docs?.chargeSlips?.length ?? 0) > 0;
     const hasUploadedOfficialReceipts =
       (docs?.officialReceipts?.length ?? 0) > 0;
@@ -3868,7 +3865,7 @@ export default function ClientPortalPage() {
       {
         completedLabel: "Sample Information Submitted",
         pendingLabel: "Submit Sample Information",
-        complete: hasAcknowledgedSampleInformation,
+        complete: hasSubmittedSampleInformation,
       },
       {
         completedLabel: "Charge slip received",
@@ -3889,8 +3886,6 @@ export default function ClientPortalPage() {
   }, [
     approvalStatus,
     currentInquiry,
-    hasAcknowledgedUploadedSampleSubmission,
-    hasAcknowledgedWorkflowSampleForm,
     hasUploadedSampleSubmission,
     hasValidatedOfficialReceipt,
     hasWorkflowSampleForm,

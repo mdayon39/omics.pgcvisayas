@@ -605,7 +605,7 @@ export default function ClientPortalPage() {
   // Active document panel shown in main content (below Team Members)
   const [activeDocPanel, setActiveDocPanel] = useState<string | null>(null);
   const autoOpenedSampleFormProjectsRef = useRef(new Set<string>());
-  const autoOpenedChargeSlipProjectsRef = useRef(new Set<string>());
+  const autoOpenedChargeSlipStatesRef = useRef(new Set<string>());
 
   const handleSelectDocPanel = (pid: string, section: string) => {
     const key = `${pid}:${section}`;
@@ -3867,7 +3867,7 @@ export default function ClientPortalPage() {
         complete: hasSubmittedSampleInformation,
       },
       {
-        completedLabel: "Charge slip received",
+        completedLabel: "Charge Slip Received",
         pendingLabel: "Receive Charge Slip",
         complete: hasChargeSlips,
       },
@@ -3899,6 +3899,10 @@ export default function ClientPortalPage() {
     clientWorkflowSteps.find(
       (step) => step.completedLabel === "Sample Information Submitted",
     )?.complete ?? false;
+  const isChargeSlipReceived =
+    clientWorkflowSteps.find(
+      (step) => step.completedLabel === "Charge Slip Received",
+    )?.complete ?? false;
 
   useEffect(() => {
     if (!selectedProjectPid || !hasSubmittedProjectAndMemberDetails) return;
@@ -3925,11 +3929,17 @@ export default function ClientPortalPage() {
   ]);
 
   useEffect(() => {
+    const stateKey = workflowProjectPid
+      ? `${workflowProjectPid}:${
+          isChargeSlipReceived ? "received" : "sample-submitted"
+        }`
+      : null;
     if (
       !isReferenceSidebarClient ||
       !workflowProjectPid ||
-      !isSampleInformationSubmitted ||
-      autoOpenedChargeSlipProjectsRef.current.has(workflowProjectPid)
+      (!isSampleInformationSubmitted && !isChargeSlipReceived) ||
+      !stateKey ||
+      autoOpenedChargeSlipStatesRef.current.has(stateKey)
     ) {
       return;
     }
@@ -3939,13 +3949,14 @@ export default function ClientPortalPage() {
     );
     if (!submittedProject) return;
 
-    autoOpenedChargeSlipProjectsRef.current.add(workflowProjectPid);
+    autoOpenedChargeSlipStatesRef.current.add(stateKey);
     setSelectedProjectPid(workflowProjectPid);
     setProjectDetails(submittedProject);
     setExpandedProjectDocs(new Set([workflowProjectPid]));
     setActiveDocPanel(`${workflowProjectPid}:chargeSlips`);
     void loadProjectDocuments(submittedProject);
   }, [
+    isChargeSlipReceived,
     isReferenceSidebarClient,
     isSampleInformationSubmitted,
     loadProjectDocuments,

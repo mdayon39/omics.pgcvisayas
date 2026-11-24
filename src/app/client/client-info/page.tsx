@@ -5789,14 +5789,14 @@ export default function ClientPortalPage() {
                           ) : projectDetails.status === "Ongoing" ? (
                             <>
                               <p className="text-xs font-semibold text-green-900 leading-none">
-                                Project Approved
+                                {isChargeSlipReceived
+                                  ? "Charge Slip Received"
+                                  : "Project Approved"}
                               </p>
                               <p className="text-xs text-green-700 leading-relaxed">
-                                Your project has been approved and is now
-                                active. You can now view your unique{" "}
-                                <strong>Project ID</strong> and{" "}
-                                <strong>Client IDs</strong>, and access all
-                                project documents below.
+                                {isChargeSlipReceived
+                                  ? "You can now view the Charge Slip and attach your payment receipt for validation."
+                                  : "Your project has been approved and is now active. You can now view your unique Project ID and Client IDs, and access all project documents below."}
                               </p>
                             </>
                           ) : projectDetails.status ===

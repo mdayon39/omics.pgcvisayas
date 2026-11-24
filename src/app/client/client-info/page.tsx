@@ -3934,6 +3934,21 @@ export default function ClientPortalPage() {
     clientWorkflowSteps.find(
       (step) => step.completedLabel === "Charge Slip Received",
     )?.complete ?? false;
+  const hasIssuedProjectId = Boolean(
+    projectDetails?.pid &&
+      projectDetails.pid !== "DRAFT" &&
+      !projectDetails.pid.startsWith("PENDING-") &&
+      !projectDetails.isDraft,
+  );
+  const hasIssuedClientId = members.some(
+    (member) =>
+      member.cid &&
+      !["pending", "draft"].includes(member.cid.trim().toLowerCase()),
+  );
+  const isSampleInformationSubmittedBeforeIds =
+    isSampleInformationSubmitted &&
+    !hasIssuedProjectId &&
+    !hasIssuedClientId;
   const isServiceReportPending =
     hasUploadedServiceReport && !isServiceReportAvailable;
 
@@ -5840,22 +5855,36 @@ export default function ClientPortalPage() {
                               </p>
                             </>
                           ) : projectDetails.status === "Pending Approval" ? (
-                            <>
-                              <p className="text-xs font-semibold text-blue-900 leading-none">
-                                Project &amp; Team Details Submitted!
-                              </p>
-                              <p className="text-xs text-blue-700 leading-relaxed">
-                                You may now proceed with submitting your{" "}
-                                <strong>Sample Form</strong>. Your{" "}
-                                <strong>Project ID</strong> and{" "}
-                                <strong>Client ID</strong> will be provided
-                                once your application has been approved.
-                              </p>
-                              <p className="text-xs text-blue-700 leading-relaxed">
-                                Please check your dashboard regularly for
-                                updates.
-                              </p>
-                            </>
+                            isSampleInformationSubmittedBeforeIds ? (
+                              <>
+                                <p className="text-xs font-semibold text-blue-900 leading-none">
+                                  Sample Information Submitted!
+                                </p>
+                                <p className="text-xs text-blue-700 leading-relaxed">
+                                  The admin will review your submitted sample
+                                  information and may contact you through the
+                                  Chatbox if additional details or confirmation
+                                  are needed.
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-xs font-semibold text-blue-900 leading-none">
+                                  Project &amp; Team Details Submitted!
+                                </p>
+                                <p className="text-xs text-blue-700 leading-relaxed">
+                                  You may now proceed with submitting your{" "}
+                                  <strong>Sample Form</strong>. Your{" "}
+                                  <strong>Project ID</strong> and{" "}
+                                  <strong>Client ID</strong> will be provided
+                                  once your application has been approved.
+                                </p>
+                                <p className="text-xs text-blue-700 leading-relaxed">
+                                  Please check your dashboard regularly for
+                                  updates.
+                                </p>
+                              </>
+                            )
                           ) : projectDetails.status === "Ongoing" ? (
                             <>
                               <p className="text-xs font-semibold text-green-900 leading-none">

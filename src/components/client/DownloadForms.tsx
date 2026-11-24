@@ -30,12 +30,20 @@ import {
   Paperclip,
   Eye,
   Trash2,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import useAuth from "@/hooks/useAuth";
-import { format } from "date-fns";
+import { format, isValid, parseISO, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 
 interface FormEntry {
   label: string;
@@ -79,6 +87,7 @@ interface SubmittedFile {
   storagePath: string;
   size?: number;
   uploadedAt: Timestamp | null;
+  plannedSampleSubmissionDate?: string;
   acknowledgedByAdmin?: boolean;
   acknowledgedAt?: Timestamp | null;
 }
@@ -104,6 +113,9 @@ export default function DownloadForms({
   const [attachedFiles, setAttachedFiles] = useState<
     Record<string, File | null>
   >({});
+  const [plannedSampleSubmissionDate, setPlannedSampleSubmissionDate] =
+    useState("");
+  const [plannedDatePickerOpen, setPlannedDatePickerOpen] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Load template download URLs
@@ -152,6 +164,10 @@ export default function DownloadForms({
             storagePath: data.storagePath,
             size: typeof data.size === "number" ? data.size : undefined,
             uploadedAt: data.uploadedAt ?? null,
+            plannedSampleSubmissionDate:
+              typeof data.plannedSampleSubmissionDate === "string"
+                ? data.plannedSampleSubmissionDate
+                : undefined,
             acknowledgedByAdmin: data.acknowledgedByAdmin ?? false,
             acknowledgedAt: data.acknowledgedAt ?? null,
           });
@@ -223,6 +239,10 @@ export default function DownloadForms({
 
   const handleRemoveAttachment = (formKey: string) => {
     setAttachedFiles((prev) => ({ ...prev, [formKey]: null }));
+    if (formKey === "ssf") {
+      setPlannedSampleSubmissionDate("");
+      setPlannedDatePickerOpen(false);
+    }
     const input = fileInputRefs.current[formKey];
     if (input) input.value = "";
   };
@@ -231,6 +251,10 @@ export default function DownloadForms({
     const file = attachedFiles[form.formKey];
     if (!file) {
       toast.error("No file attached.");
+      return;
+    }
+    if (form.formKey === "ssf" && !plannedSampleSubmissionDate) {
+      toast.error("Select the planned sample submission date.");
       return;
     }
 
@@ -258,6 +282,9 @@ export default function DownloadForms({
           uploadedAt: serverTimestamp(),
           uploadedBy: user?.email ?? "client",
           ...(user?.uid ? { uuid: user.uid } : {}),
+          ...(form.formKey === "ssf" && plannedSampleSubmissionDate
+            ? { plannedSampleSubmissionDate }
+            : {}),
           acknowledgedByAdmin: false,
         },
       );
@@ -272,6 +299,9 @@ export default function DownloadForms({
             storagePath,
             size: file.size,
             uploadedAt: Timestamp.now(),
+            ...(form.formKey === "ssf" && plannedSampleSubmissionDate
+              ? { plannedSampleSubmissionDate }
+              : {}),
             acknowledgedByAdmin: false,
             acknowledgedAt: null,
           },
@@ -282,6 +312,10 @@ export default function DownloadForms({
       }));
       toast.success(`"${file.name}" uploaded successfully.`);
       setAttachedFiles((prev) => ({ ...prev, [form.formKey]: null }));
+      if (form.formKey === "ssf") {
+        setPlannedSampleSubmissionDate("");
+        setPlannedDatePickerOpen(false);
+      }
     } catch (err) {
       console.error("Upload failed:", err);
       toast.error("Upload failed. Please try again.");
@@ -331,8 +365,19 @@ export default function DownloadForms({
         const isUploading = uploadingKey === form.formKey;
         const uploaded = submittedFiles[form.formKey] ?? [];
         const attachedFile = attachedFiles[form.formKey];
+        const parsedPlannedDate = plannedSampleSubmissionDate
+          ? parseISO(plannedSampleSubmissionDate)
+          : undefined;
+        const selectedPlannedDate =
+          parsedPlannedDate && isValid(parsedPlannedDate)
+            ? parsedPlannedDate
+            : undefined;
         // Hide upload button if any file is still pending admin acknowledgement
         const hasPendingUpload = uploaded.some((f) => !f.acknowledgedByAdmin);
+        const formatPlannedSubmissionDate = (date: string) => {
+          const parsed = parseISO(date);
+          return isValid(parsed) ? format(parsed, "MMM d, yyyy") : date;
+        };
 
         return (
           <div
@@ -532,6 +577,15 @@ export default function DownloadForms({
                                 ) : (
                                   "Submitted"
                                 )}
+                                {form.formKey === "ssf" &&
+                                  f.plannedSampleSubmissionDate && (
+                                    <>
+                                      {" · Planned sample delivery: "}
+                                      {formatPlannedSubmissionDate(
+                                        f.plannedSampleSubmissionDate,
+                                      )}
+                                    </>
+                                  )}
                               </>
                             ) : f.uploadedAt ? (
                               format(
@@ -586,12 +640,18 @@ export default function DownloadForms({
                       </button>
                     </div>
                   ) : (
-                    <div className={cn(referenceClientDesign && "space-y-0")}>
+                    <div
+                      className={cn(
+                        "space-y-2",
+                        referenceClientDesign &&
+                          "space-y-0 overflow-hidden rounded-lg border border-slate-200 bg-white",
+                      )}
+                    >
                       <div
                         className={cn(
                           "flex items-center gap-2 p-2 bg-blue-50/50 border border-blue-200 rounded-lg",
                           referenceClientDesign &&
-                            "flex-col items-stretch gap-2 rounded-lg border-slate-200 bg-white p-2.5 sm:flex-row sm:items-center sm:gap-2.5",
+                            "flex-col items-stretch gap-2 rounded-none border-0 border-b border-slate-200 bg-white p-2.5 sm:flex-row sm:items-center sm:gap-2.5",
                         )}
                       >
                         {referenceClientDesign ? (
@@ -676,7 +736,11 @@ export default function DownloadForms({
                                 e.stopPropagation();
                                 void handleUpload(form);
                               }}
-                              disabled={isUploading}
+                              disabled={
+                                isUploading ||
+                                (form.formKey === "ssf" &&
+                                  !plannedSampleSubmissionDate)
+                              }
                               className="inline-flex h-9 w-full shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#92351f] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#7f2d1a] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             >
                               {isUploading ? (
@@ -689,13 +753,76 @@ export default function DownloadForms({
                           </>
                         )}
                       </div>
+                      {form.formKey === "ssf" && (
+                        <div
+                          className={cn(
+                            "space-y-2 rounded-lg border border-slate-200 bg-white p-3",
+                            referenceClientDesign &&
+                              "rounded-none border-0 bg-slate-50 p-4",
+                          )}
+                        >
+                          <label
+                            className={cn(
+                              "block text-xs font-semibold text-slate-900",
+                              referenceClientDesign && "text-[13px]",
+                            )}
+                          >
+                            When do you plan to send your samples to PGC Visayas?
+                            <span className="ml-1 text-red-600">*</span>
+                          </label>
+                          <Popover
+                            open={plannedDatePickerOpen}
+                            onOpenChange={setPlannedDatePickerOpen}
+                          >
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                disabled={isUploading}
+                                aria-label="Select planned sample submission date"
+                                className={cn(
+                                  "h-10 w-full justify-start border-slate-300 bg-white px-3 text-left font-normal text-slate-700 sm:w-[295px]",
+                                  !selectedPlannedDate &&
+                                    "text-muted-foreground",
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4 text-[#b23a24]" />
+                                {selectedPlannedDate
+                                  ? format(selectedPlannedDate, "PPP")
+                                  : "Select date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
+                              <CalendarPicker
+                                mode="single"
+                                selected={selectedPlannedDate}
+                                onSelect={(date) => {
+                                  setPlannedSampleSubmissionDate(
+                                    date ? format(date, "yyyy-MM-dd") : "",
+                                  );
+                                  setPlannedDatePickerOpen(false);
+                                }}
+                                disabled={{ before: startOfDay(new Date()) }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )}
                       {!referenceClientDesign && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             void handleUpload(form);
                           }}
-                          disabled={isUploading}
+                          disabled={
+                            isUploading ||
+                            (form.formKey === "ssf" &&
+                              !plannedSampleSubmissionDate)
+                          }
                           className="flex w-full items-center justify-center gap-1.5 rounded-full bg-[#166FB5] px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[#0e4f8a] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {isUploading ? (

@@ -24,7 +24,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import useAuth from "@/hooks/useAuth";
 
 interface SubmittedFile {
@@ -35,6 +35,7 @@ interface SubmittedFile {
   downloadURL: string;
   storagePath: string;
   uploadedAt: Timestamp | null;
+  plannedSampleSubmissionDate?: string;
   uploadedBy: string;
   acknowledgedByAdmin: boolean;
   acknowledgedAt?: Timestamp | null;
@@ -76,6 +77,10 @@ export default function AdminFormSubmissions({ projectId }: AdminFormSubmissions
             downloadURL: data.downloadURL,
             storagePath: data.storagePath ?? "",
             uploadedAt: data.uploadedAt ?? null,
+            plannedSampleSubmissionDate:
+              typeof data.plannedSampleSubmissionDate === "string"
+                ? data.plannedSampleSubmissionDate
+                : undefined,
             uploadedBy: data.uploadedBy ?? "client",
             acknowledgedByAdmin: data.acknowledgedByAdmin ?? false,
             acknowledgedAt: data.acknowledgedAt ?? null,
@@ -155,6 +160,14 @@ export default function AdminFormSubmissions({ projectId }: AdminFormSubmissions
       <div className="space-y-2 ml-5">
         {submissions.map((f) => {
           const isAcknowledging = acknowledging === f.id;
+          const plannedSampleDate = f.plannedSampleSubmissionDate
+            ? parseISO(f.plannedSampleSubmissionDate)
+            : null;
+          const plannedSampleDateLabel = plannedSampleDate
+            ? isValid(plannedSampleDate)
+              ? format(plannedSampleDate, "MMM d, yyyy")
+              : f.plannedSampleSubmissionDate
+            : null;
           return (
             <div
               key={f.id}
@@ -189,6 +202,11 @@ export default function AdminFormSubmissions({ projectId }: AdminFormSubmissions
               <div className="flex flex-col gap-0.5 pl-5 text-[10px] text-slate-400">
                 {f.uploadedAt && (
                   <span>Uploaded {format(f.uploadedAt.toDate(), "MMM d, yyyy")}</span>
+                )}
+                {f.formKey === "ssf" && plannedSampleDateLabel && (
+                  <span className="font-medium text-slate-600">
+                    Planned sample delivery: {plannedSampleDateLabel}
+                  </span>
                 )}
                 {f.acknowledgedByAdmin && f.acknowledgedAt && (
                   <span className="text-emerald-600">

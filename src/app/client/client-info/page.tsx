@@ -3917,6 +3917,17 @@ export default function ClientPortalPage() {
     clientWorkflowSteps.find(
       (step) => step.completedLabel === "Service Report Received",
     )?.complete ?? false;
+  const hasValidatedSettledChargeSlip =
+    (workflowProjectPid
+      ? projectDocuments.get(workflowProjectPid)?.chargeSlips
+      : undefined
+    )?.some(
+      (chargeSlip) =>
+        chargeSlip.orStatus === "Validated" &&
+        ["paid", "waived"].includes((chargeSlip.status ?? "").toLowerCase()),
+    ) ?? false;
+  const isServiceReportAvailable =
+    isServiceReportReceived && hasValidatedSettledChargeSlip;
 
   useEffect(() => {
     if (
@@ -5838,14 +5849,18 @@ export default function ClientPortalPage() {
                           ) : projectDetails.status === "Ongoing" ? (
                             <>
                               <p className="text-xs font-semibold text-green-900 leading-none">
-                                {hasSubmittedOfficialReceipt
+                                {isServiceReportAvailable
+                                  ? "Service Report Available"
+                                  : hasSubmittedOfficialReceipt
                                   ? "Official Receipt Submitted"
                                   : isChargeSlipReceived
                                     ? "Charge Slip Received"
                                     : "Project Approved"}
                               </p>
                               <p className="text-xs text-green-700 leading-relaxed">
-                                {hasSubmittedOfficialReceipt
+                                {isServiceReportAvailable
+                                  ? "You can now view and download your Service Report."
+                                  : hasSubmittedOfficialReceipt
                                   ? "Please wait for the administrator to validate your receipt and update your Charge Slip status."
                                   : isChargeSlipReceived
                                     ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."

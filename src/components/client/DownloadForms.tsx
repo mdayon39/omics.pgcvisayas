@@ -678,10 +678,13 @@ export default function DownloadForms({
                                   ? `${(attachedFile.size / (1024 * 1024)).toFixed(1)} MB`
                                   : `${(attachedFile.size / 1024).toFixed(1)} KB`}
                               </span>
-                              <span className="inline-flex items-center gap-1 text-emerald-700">
-                                <CheckCircle2 className="h-3 w-3" />
-                                Ready to upload
-                              </span>
+                              {(form.formKey !== "ssf" ||
+                                plannedSampleSubmissionDate) && (
+                                <span className="inline-flex items-center gap-1 text-emerald-700">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Ready to upload
+                                </span>
+                              )}
                             </p>
                           ) : (
                             <p className="text-[11px] leading-5 text-slate-500">

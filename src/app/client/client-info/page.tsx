@@ -5795,7 +5795,7 @@ export default function ClientPortalPage() {
                               </p>
                               <p className="text-xs text-green-700 leading-relaxed">
                                 {isChargeSlipReceived
-                                  ? "You can now view the Charge Slip and attach your payment receipt for validation."
+                                  ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."
                                   : "Your project has been approved and is now active. You can now view your unique Project ID and Client IDs, and access all project documents below."}
                               </p>
                             </>

@@ -5869,7 +5869,7 @@ export default function ClientPortalPage() {
                                 {isServiceReportAvailable
                                   ? "You can now view and download your Service Report."
                                   : isServiceReportPending
-                                    ? "Please wait for the administrator to validate your Official Receipt and update your Charge Slip status. Once the status is marked as Paid or Waived, your Service Report will be available for viewing and download."
+                                    ? "Please wait for the administrator to validate your Official Receipt and update your Charge Slip status. Once the status is marked as Paid, your Service Report will be available for viewing and download."
                                     : hasSubmittedOfficialReceipt
                                       ? "Please wait for the administrator to validate your receipt and update your Charge Slip status."
                                       : isChargeSlipReceived

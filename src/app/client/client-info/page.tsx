@@ -7731,11 +7731,6 @@ export default function ClientPortalPage() {
                                                         )}
                                                         Open Report
                                                       </a>
-                                                      <span className="text-right text-[13px] text-slate-500 italic">
-                                                        Your receipt will be
-                                                        recorded when you open
-                                                        the file.
-                                                      </span>
                                                     </div>
                                                   ) : (
                                                     /* Step 1 — prompt client to fill the Google feedback form first */

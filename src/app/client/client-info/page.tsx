@@ -3875,7 +3875,7 @@ export default function ClientPortalPage() {
       },
       {
         completedLabel: "Service Report Received",
-        pendingLabel: "Receive Service Reports",
+        pendingLabel: "Receive Service Report",
         complete: hasReceivedServiceReports,
       },
     ];

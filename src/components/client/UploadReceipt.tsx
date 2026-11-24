@@ -1060,7 +1060,7 @@ export default function UploadReceipt({
             )}
           >
             <Paperclip className="h-3.5 w-3.5" />
-            Attach Receipt
+            Upload Receipt
           </button>
           {!hasChargeSlip && (
             <p className="text-[9px] text-slate-400 mt-1">

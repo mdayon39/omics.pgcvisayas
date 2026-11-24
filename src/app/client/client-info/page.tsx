@@ -5785,14 +5785,18 @@ export default function ClientPortalPage() {
                           ) : projectDetails.status === "Ongoing" ? (
                             <>
                               <p className="text-xs font-semibold text-green-900 leading-none">
-                                {isChargeSlipReceived
-                                  ? "Charge Slip Received"
-                                  : "Project Approved"}
+                                {hasSubmittedOfficialReceipt
+                                  ? "Official Receipt Submitted"
+                                  : isChargeSlipReceived
+                                    ? "Charge Slip Received"
+                                    : "Project Approved"}
                               </p>
                               <p className="text-xs text-green-700 leading-relaxed">
-                                {isChargeSlipReceived
-                                  ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."
-                                  : "Your project has been approved and is now active. You can now view your unique Project ID and Client IDs, and access all project documents below."}
+                                {hasSubmittedOfficialReceipt
+                                  ? "Please wait for the administrator to validate your receipt and update your Charge Slip status."
+                                  : isChargeSlipReceived
+                                    ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."
+                                    : "Your project has been approved and is now active. You can now view your unique Project ID and Client IDs, and access all project documents below."}
                               </p>
                             </>
                           ) : projectDetails.status ===

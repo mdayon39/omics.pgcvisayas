@@ -5868,7 +5868,7 @@ export default function ClientPortalPage() {
                                     : isChargeSlipReceived
                                       ? "Charge Slip Received"
                                       : isSampleInformationSubmitted
-                                        ? "Sample Information Submitted"
+                                        ? "Sample Information Submitted!"
                                         : "Project Approved"}
                               </p>
                               <p className="text-xs text-green-700 leading-relaxed">
@@ -5881,7 +5881,7 @@ export default function ClientPortalPage() {
                                       : isChargeSlipReceived
                                         ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."
                                         : isSampleInformationSubmitted
-                                          ? "Please check your dashboard regularly for updates, including the availability of your Charge Slip."
+                                          ? "The admin will review your submitted sample information and may contact you through the Chatbox if additional details or confirmation are needed."
                                           : "Your project has been approved and is now active. You can now view your unique Project ID and Client IDs, and access all project documents below."}
                               </p>
                             </>

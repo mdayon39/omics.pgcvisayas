@@ -5351,19 +5351,25 @@ export default function ClientPortalPage() {
                                 const isActive =
                                   activeDocPanel ===
                                   `${project.pid}:sampleForm`;
+                                const isDisabled =
+                                  !hasSubmittedDetailsForProject;
                                 return (
                                   <button
                                     type="button"
+                                    disabled={isDisabled}
                                     className={cn(
                                       "flex items-center gap-2 px-2 py-1.5 w-full text-left rounded-lg transition-colors",
                                       isReferenceSidebarClient &&
                                         "min-h-10 rounded-none border-b border-slate-200 px-2 py-2",
-                                      isActive
-                                        ? "bg-orange-50"
-                                        : "hover:bg-slate-50",
+                                      isDisabled
+                                        ? "cursor-not-allowed opacity-40"
+                                        : isActive
+                                          ? "bg-orange-50"
+                                          : "hover:bg-slate-50",
                                     )}
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      if (isDisabled) return;
                                       handleSelectDocPanel(
                                         project.pid!,
                                         "sampleForm",
@@ -5374,18 +5380,22 @@ export default function ClientPortalPage() {
                                       <FlaskConical
                                         className={cn(
                                           "h-3 w-3 flex-shrink-0",
-                                          isActive
-                                            ? "text-orange-600"
-                                            : "text-orange-500",
+                                          isDisabled
+                                            ? "text-slate-400"
+                                            : isActive
+                                              ? "text-orange-600"
+                                              : "text-orange-500",
                                         )}
                                       />
                                     ) : (
                                       <FileText
                                         className={cn(
                                           "h-3 w-3 flex-shrink-0",
-                                          isActive
-                                            ? "text-orange-600"
-                                            : "text-orange-500",
+                                          isDisabled
+                                            ? "text-slate-400"
+                                            : isActive
+                                              ? "text-orange-600"
+                                              : "text-orange-500",
                                         )}
                                       />
                                     )}
@@ -5394,9 +5404,11 @@ export default function ClientPortalPage() {
                                         "text-sm font-semibold flex-1",
                                         isReferenceSidebarClient &&
                                           "text-[13px] font-medium",
-                                        isActive
-                                          ? "text-orange-700"
-                                          : "text-slate-700",
+                                        isDisabled
+                                          ? "text-slate-400"
+                                          : isActive
+                                            ? "text-orange-700"
+                                            : "text-slate-700",
                                       )}
                                     >
                                       Sample Submission Form
@@ -5415,9 +5427,11 @@ export default function ClientPortalPage() {
                                     <ChevronRight
                                       className={cn(
                                         "h-3 w-3 flex-shrink-0 transition-transform",
-                                        isActive
-                                          ? "text-orange-500 rotate-90"
-                                          : "text-slate-400",
+                                        isDisabled
+                                          ? "text-slate-400"
+                                          : isActive
+                                            ? "text-orange-500 rotate-90"
+                                            : "text-slate-400",
                                       )}
                                     />
                                   </button>
@@ -6693,6 +6707,12 @@ export default function ClientPortalPage() {
                         .split(":")
                         .slice(1)
                         .join(":");
+                      if (
+                        panelSection === "sampleForm" &&
+                        !hasSubmittedProjectAndMemberDetails
+                      ) {
+                        return null;
+                      }
                       const panelDocs =
                         projectDocuments.get(selectedProjectPid);
                       const panelChargeSlipCount =

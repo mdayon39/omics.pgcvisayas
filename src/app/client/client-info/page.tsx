@@ -5023,12 +5023,12 @@ export default function ClientPortalPage() {
                           ? cn(
                               "px-2.5 py-2.5 rounded-xl border",
                               isActive
-                                ? "bg-[#E8F2FB] border-[#9CC5E8] text-slate-900"
-                                : "border-transparent text-slate-700 hover:bg-slate-50",
+                                ? "bg-white border-[#9CC5E8] text-slate-900 hover:bg-slate-50"
+                                : "bg-white border-transparent text-slate-700 hover:bg-slate-50",
                             )
                           : isActive
-                            ? "bg-amber-50 text-amber-800 border border-amber-100"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-[#166FB5]",
+                            ? "bg-white text-amber-800 border border-amber-100 hover:bg-slate-50"
+                            : "bg-white text-slate-600 hover:bg-slate-50 hover:text-[#166FB5]",
                       )}
                     >
                       {isReferenceSidebarClient ? (

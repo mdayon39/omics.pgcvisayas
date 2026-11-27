@@ -5916,20 +5916,16 @@ export default function ClientPortalPage() {
                       className={
                         projectDetails.status === "Draft"
                           ? "rounded-lg border border-[#FED7AA] bg-[#FFF7ED] p-3"
-                          : isReferenceSidebarClient &&
-                            projectDetails.status === "Pending Approval" &&
-                            !isSampleInformationSubmittedBeforeIds
-                          ? "rounded-lg border border-amber-300 bg-amber-50 p-3"
                           : projectDetails.status === "Pending Approval" &&
                               !isSampleInformationSubmittedBeforeIds
-                            ? "rounded-lg border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-3"
-                          : `rounded-lg p-3 border ${
-                              projectDetails.status === "Pending Approval"
-                                ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
-                                : projectDetails.status === "Ongoing"
-                                  ? "bg-[#F4FCEB] border-[#DAF0BE]"
-                                  : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200"
-                            }`
+                            ? "rounded-lg border border-[#FED7AA] bg-[#FFF7ED] p-3"
+                            : `rounded-lg p-3 border ${
+                                projectDetails.status === "Pending Approval"
+                                  ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+                                  : projectDetails.status === "Ongoing"
+                                    ? "bg-[#F4FCEB] border-[#DAF0BE]"
+                                    : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200"
+                              }`
                       }
                     >
                       <div className="flex items-start">
@@ -6001,17 +5997,17 @@ export default function ClientPortalPage() {
                               </>
                             ) : (
                               <>
-                                <p className="text-xs font-semibold text-orange-900 leading-none">
+                                <p className="text-xs font-semibold leading-none text-[#9A3412]">
                                   Project &amp; Team Details Submitted!
                                 </p>
-                                <p className="text-xs text-orange-700 leading-relaxed">
+                                <p className="text-xs leading-relaxed text-[#B45309]">
                                   You may now proceed with submitting your{" "}
                                   <strong>Sample Form</strong>. Your{" "}
                                   <strong>Project ID</strong> and{" "}
                                   <strong>Client ID</strong> will be provided
                                   once your application has been approved.
                                 </p>
-                                <p className="text-xs text-orange-700 leading-relaxed">
+                                <p className="text-xs leading-relaxed text-[#B45309]">
                                   Please check your dashboard regularly for
                                   updates.
                                 </p>

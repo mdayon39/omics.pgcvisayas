@@ -3204,6 +3204,7 @@ export default function ClientPortalPage() {
     [
       portalFeatures.officialReceipts,
       portalFeatures.sampleForms,
+      portalFeatures.serviceReports,
       projectDocuments,
     ],
   );
@@ -3218,7 +3219,11 @@ export default function ClientPortalPage() {
   // Real-time charge slip listener for all expanded projects
   // When a charge slip's status changes (e.g. "pending" after OR upload), the UI updates instantly
   useEffect(() => {
-    const expandedPids = [...expandedProjectDocs].filter(
+    const reportPids = new Set([
+      ...expandedProjectDocs,
+      selectedProjectPid,
+    ].filter((pid): pid is string => Boolean(pid)));
+    const expandedPids = [...reportPids].filter(
       (pid) => pid && pid !== "DRAFT" && !pid.startsWith("PENDING-"),
     );
     if (expandedPids.length === 0) return;
@@ -3241,7 +3246,7 @@ export default function ClientPortalPage() {
     });
 
     return () => unsubscribers.forEach((u) => u());
-  }, [expandedProjectDocs]);
+  }, [expandedProjectDocs, selectedProjectPid]);
 
   // Notification-only charge slip listener — subscribes to ALL project pids
   // so the sidebar red dot appears even before the user expands/opens that project
@@ -3968,6 +3973,7 @@ export default function ClientPortalPage() {
     if (
       !selectedProjectPid ||
       !hasSubmittedProjectAndMemberDetails ||
+      hasUploadedServiceReport ||
       isServiceReportReceived
     ) return;
 
@@ -3987,6 +3993,7 @@ export default function ClientPortalPage() {
     void loadProjectDocuments(selectedProject);
   }, [
     hasSubmittedProjectAndMemberDetails,
+    hasUploadedServiceReport,
     isServiceReportReceived,
     loadProjectDocuments,
     projects,
@@ -4001,7 +4008,7 @@ export default function ClientPortalPage() {
       !workflowProjectPid ||
       !isProjectAndTeamApproved ||
       !areProjectAndClientIdsAvailable ||
-      isServiceReportAvailable ||
+      hasUploadedServiceReport ||
       !stateKey ||
       autoOpenedChargeSlipStatesRef.current.has(stateKey)
     ) {
@@ -4021,8 +4028,8 @@ export default function ClientPortalPage() {
     void loadProjectDocuments(approvedProject);
   }, [
     areProjectAndClientIdsAvailable,
+    hasUploadedServiceReport,
     isProjectAndTeamApproved,
-    isServiceReportAvailable,
     loadProjectDocuments,
     projects,
     workflowProjectPid,
@@ -4038,6 +4045,7 @@ export default function ClientPortalPage() {
       !isReferenceSidebarClient ||
       !workflowProjectPid ||
       (!isSampleInformationSubmitted && !isChargeSlipReceived) ||
+      hasUploadedServiceReport ||
       isServiceReportReceived ||
       !stateKey ||
       autoOpenedChargeSlipStatesRef.current.has(stateKey)
@@ -4058,7 +4066,9 @@ export default function ClientPortalPage() {
     void loadProjectDocuments(submittedProject);
   }, [
     isChargeSlipReceived,
+    hasUploadedServiceReport,
     isReferenceSidebarClient,
+    isServiceReportReceived,
     isSampleInformationSubmitted,
     loadProjectDocuments,
     projects,
@@ -4067,9 +4077,8 @@ export default function ClientPortalPage() {
 
   useEffect(() => {
     if (
-      !isReferenceSidebarClient ||
       !workflowProjectPid ||
-      !isServiceReportAvailable ||
+      !hasUploadedServiceReport ||
       autoOpenedServiceReportProjectsRef.current.has(workflowProjectPid)
     ) {
       return;
@@ -4087,8 +4096,7 @@ export default function ClientPortalPage() {
     setActiveDocPanel(`${workflowProjectPid}:serviceReports`);
     void loadProjectDocuments(projectWithAvailableReport);
   }, [
-    isReferenceSidebarClient,
-    isServiceReportAvailable,
+    hasUploadedServiceReport,
     loadProjectDocuments,
     projects,
     workflowProjectPid,

@@ -5929,7 +5929,13 @@ export default function ClientPortalPage() {
                       }
                     >
                       <div className="flex items-start">
-                        {projectDetails.status === "Draft" &&
+                        {projectDetails.status === "Pending Approval" &&
+                        !isSampleInformationSubmittedBeforeIds ? (
+                          <ClipboardCheck
+                            className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-[#9A3412]"
+                            aria-hidden="true"
+                          />
+                        ) : projectDetails.status === "Draft" &&
                         isSubmitForApprovalDisabled ? (
                           <AlertCircle
                             className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-[#9A3412]"

@@ -6013,7 +6013,7 @@ export default function ClientPortalPage() {
                                 {isServiceReportAvailable
                                   ? "Service Report Available"
                                   : isServiceReportPending
-                                    ? "Service Report Available"
+                                    ? "Service Report Pending"
                                     : hasSubmittedOfficialReceipt
                                       ? "Official Receipt Submitted"
                                       : isChargeSlipReceived
@@ -6029,7 +6029,7 @@ export default function ClientPortalPage() {
                                 {isServiceReportAvailable
                                   ? "You can now view and download your Service Report."
                                   : isServiceReportPending
-                                    ? "Please wait for the administrator to validate your Official Receipt and update your Charge Slip status. Once the status is marked as Paid, your Service Report will be available for viewing and download."
+                                    ? "Please wait for the administrator to validate your Official Receipt (OR) and update your Charge Slip status. Once your payment status is marked as Paid, you will be able to view and download your Service Report."
                                     : hasSubmittedOfficialReceipt
                                       ? "Please wait for the administrator to validate your receipt and update your Charge Slip status."
                                       : isChargeSlipReceived

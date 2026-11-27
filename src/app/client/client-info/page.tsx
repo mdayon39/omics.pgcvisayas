@@ -10226,10 +10226,10 @@ export default function ClientPortalPage() {
                       viewBox="0 0 96 30"
                       aria-hidden="true"
                     >
-                      {Array.from({ length: 10 }, (_, index) => {
-                        const offset = Math.sin(index * 0.65) * 8;
-                        const x = 4 + index * 9.7;
-                        const animationDelay = `${index * -100}ms`;
+                      {Array.from({ length: 12 }, (_, index) => {
+                        const offset = Math.sin(index * 0.9) * 8.5;
+                        const x = 4 + index * 8;
+                        const animationDelay = `${index * -140}ms`;
 
                         return (
                           <g key={index}>

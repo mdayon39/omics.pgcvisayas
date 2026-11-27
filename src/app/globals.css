@@ -146,13 +146,13 @@
   stroke-width: 1.2;
   stroke-linecap: round;
   opacity: 0.5;
-  animation: announcement-helix-pulse 1.4s ease-in-out infinite;
+  animation: announcement-helix-pulse 2.4s ease-in-out infinite;
 }
 
 .announcement-helix__dot {
   transform-box: fill-box;
   transform-origin: center;
-  animation: announcement-helix-pulse 1.4s ease-in-out infinite;
+  animation: announcement-helix-pulse 2.4s ease-in-out infinite;
 }
 
 .announcement-helix__dot--blue {

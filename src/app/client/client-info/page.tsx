@@ -5935,6 +5935,12 @@ export default function ClientPortalPage() {
                             className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-[#9A3412]"
                             aria-hidden="true"
                           />
+                        ) : projectDetails.status === "Pending Approval" &&
+                          isSampleInformationSubmittedBeforeIds ? (
+                          <Info
+                            className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-blue-700"
+                            aria-hidden="true"
+                          />
                         ) : projectDetails.status === "Draft" &&
                         isSubmitForApprovalDisabled ? (
                           <AlertCircle
@@ -5999,6 +6005,12 @@ export default function ClientPortalPage() {
                                   information and may contact you through the
                                   Chatbox if additional details or confirmation
                                   are needed.
+                                </p>
+                                <p className="text-xs text-blue-700 leading-relaxed">
+                                  You may also use the Chatbox to follow up on
+                                  your sample submission or coordinate with the
+                                  admin regarding the shipment and delivery of
+                                  your samples to PGC Visayas.
                                 </p>
                               </>
                             ) : (

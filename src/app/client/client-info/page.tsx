@@ -5914,10 +5914,13 @@ export default function ClientPortalPage() {
                     projectDetails?.status === "Returned for Revision") && (
                     <div
                       className={
-                        isReferenceSidebarClient &&
-                        (projectDetails.status === "Draft" ||
-                          (projectDetails.status === "Pending Approval" &&
-                            !isSampleInformationSubmittedBeforeIds))
+                        projectDetails.status === "Draft" &&
+                        isSubmitForApprovalDisabled
+                          ? "rounded-lg border border-[#FED7AA] bg-[#FFF7ED] p-3"
+                          : isReferenceSidebarClient &&
+                              (projectDetails.status === "Draft" ||
+                                (projectDetails.status === "Pending Approval" &&
+                                  !isSampleInformationSubmittedBeforeIds))
                           ? "rounded-lg border border-amber-300 bg-amber-50 p-3"
                           : projectDetails.status === "Pending Approval" &&
                               !isSampleInformationSubmittedBeforeIds
@@ -5934,28 +5937,32 @@ export default function ClientPortalPage() {
                       }
                     >
                       <div className="flex items-start">
-                        {projectDetails.status === "Ongoing" && (
+                        {projectDetails.status === "Draft" &&
+                        isSubmitForApprovalDisabled ? (
+                          <AlertCircle
+                            className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-[#9A3412]"
+                            aria-hidden="true"
+                          />
+                        ) : projectDetails.status === "Ongoing" ? (
                           <Info
                             className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-[#5D7A45]"
                             aria-hidden="true"
                           />
-                        )}
-                        {isReferenceSidebarClient &&
-                          projectDetails.status === "Draft" &&
-                          (isSubmitForApprovalDisabled ? (
-                            <AlertCircle className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-amber-800" />
-                          ) : (
+                        ) : (
+                          isReferenceSidebarClient &&
+                          projectDetails.status === "Draft" && (
                             <CheckCircle2 className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-orange-800" />
-                          ))}
+                          )
+                        )}
                         <div className="flex-1 space-y-1">
                           {projectDetails.status === "Draft" ? (
                             isSubmitForApprovalDisabled ? (
                               <>
-                                <p className="text-sm font-semibold leading-tight text-orange-900">
+                                <p className="text-sm font-semibold leading-tight text-[#9A3412]">
                                   Action required: Complete the form below
                                   before submission
                                 </p>
-                                <p className="text-sm leading-relaxed text-orange-700">
+                                <p className="text-sm leading-relaxed text-[#B45309]">
                                   Add member details, then select{" "}
                                   <strong>
                                     Submit Project & Team for Approval

@@ -5922,6 +5922,12 @@ export default function ClientPortalPage() {
                       }
                     >
                       <div className="flex items-start">
+                        {projectDetails.status === "Ongoing" && (
+                          <Info
+                            className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-[#5D7A45]"
+                            aria-hidden="true"
+                          />
+                        )}
                         {isReferenceSidebarClient &&
                           projectDetails.status === "Draft" &&
                           (isSubmitForApprovalDisabled ? (

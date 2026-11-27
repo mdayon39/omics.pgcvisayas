@@ -5989,33 +5989,33 @@ export default function ClientPortalPage() {
                               <p className="text-xs font-semibold text-green-900 leading-none">
                                 {isServiceReportAvailable
                                   ? "Service Report Available"
-                                  : isServiceReportPending
-                                    ? "Service Report Available"
-                                  : hasSubmittedOfficialReceipt
-                                    ? "Official Receipt Submitted"
-                                    : isChargeSlipReceived
-                                      ? "Charge Slip Received"
-                                      : isSampleInformationSubmitted
-                                        ? "Sample Information Submitted!"
-                                        : areProjectAndClientIdsAvailable &&
-                                            isProjectAndTeamApproved
-                                          ? "Project and Team Approved!"
-                                          : "Project Approved"}
+                                  : areProjectAndClientIdsAvailable &&
+                                      isProjectAndTeamApproved
+                                    ? "Project and Team Approved!"
+                                    : isServiceReportPending
+                                      ? "Service Report Available"
+                                      : hasSubmittedOfficialReceipt
+                                        ? "Official Receipt Submitted"
+                                        : isChargeSlipReceived
+                                          ? "Charge Slip Received"
+                                          : isSampleInformationSubmitted
+                                            ? "Sample Information Submitted!"
+                                            : "Project Approved"}
                               </p>
                               <p className="text-xs text-green-700 leading-relaxed">
                                 {isServiceReportAvailable
                                   ? "You can now view and download your Service Report."
-                                  : isServiceReportPending
-                                    ? "Please wait for the administrator to validate your Official Receipt and update your Charge Slip status. Once the status is marked as Paid, your Service Report will be available for viewing and download."
-                                    : hasSubmittedOfficialReceipt
-                                      ? "Please wait for the administrator to validate your receipt and update your Charge Slip status."
-                                      : isChargeSlipReceived
-                                        ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."
-                                        : isSampleInformationSubmitted
-                                          ? "The admin will review your submitted sample information and may contact you through the Chatbox if additional details or confirmation are needed."
-                                          : areProjectAndClientIdsAvailable &&
-                                              isProjectAndTeamApproved
-                                            ? "Your project has been approved. Your Project ID and Client ID are now available in your dashboard."
+                                  : areProjectAndClientIdsAvailable &&
+                                      isProjectAndTeamApproved
+                                    ? "Your project has been approved. Your Project ID and Client ID are now available in your dashboard."
+                                    : isServiceReportPending
+                                      ? "Please wait for the administrator to validate your Official Receipt and update your Charge Slip status. Once the status is marked as Paid, your Service Report will be available for viewing and download."
+                                      : hasSubmittedOfficialReceipt
+                                        ? "Please wait for the administrator to validate your receipt and update your Charge Slip status."
+                                        : isChargeSlipReceived
+                                          ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."
+                                          : isSampleInformationSubmitted
+                                            ? "The admin will review your submitted sample information and may contact you through the Chatbox if additional details or confirmation are needed."
                                             : "Your project has been approved and is now active. Access your project documents below."}
                               </p>
                             </>

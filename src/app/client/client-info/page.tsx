@@ -5050,11 +5050,13 @@ export default function ClientPortalPage() {
                                 ? "bg-emerald-100/70 text-emerald-700"
                                 : inq.status === "Approved Client"
                                   ? "bg-[#E3F5EC] text-emerald-800"
-                                  : inq.status === "Pending"
-                                    ? "bg-[#FFF1D6] text-amber-800"
-                                    : inq.status === "In Progress"
-                                      ? "bg-[#F6E6D9] text-[#713B19]"
-                                      : "bg-slate-100 text-slate-600",
+                                  : inq.status === "Ongoing Quotation"
+                                    ? "bg-[#E1F1FD] text-[#145B91]"
+                                    : inq.status === "Pending"
+                                      ? "bg-[#FFF1D6] text-amber-800"
+                                      : inq.status === "In Progress"
+                                        ? "bg-[#F6E6D9] text-[#713B19]"
+                                        : "bg-slate-100 text-slate-600",
                             )}
                           >
                             {inq.status === "Approved" && (
@@ -5074,9 +5076,11 @@ export default function ClientPortalPage() {
                           <span
                             className={cn(
                               "ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold",
-                              isActive
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-amber-50 text-amber-600",
+                              inq.status === "Ongoing Quotation"
+                                ? "bg-[#E1F1FD] text-[#145B91]"
+                                : isActive
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-amber-50 text-amber-600",
                             )}
                           >
                             {inq.status}

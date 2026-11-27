@@ -179,6 +179,15 @@ import { isReferenceClient } from "@/constants/referenceClients";
 //  Formatting Helpers
 // ────────────────────────────────────────────────────────────────
 
+const createAnnouncementHelixPath = (direction: 1 | -1) =>
+  Array.from({ length: 49 }, (_, index) => {
+    const progress = index / 48;
+    const x = 4 + progress * 88;
+    const y = 15 + direction * Math.sin(progress * Math.PI * 3.15) * 8.5;
+
+    return `${index === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
+  }).join(" ");
+
 // Format service type for display
 const formatServiceType = (type: string | null | undefined): string => {
   if (!type) return "—";
@@ -10337,9 +10346,18 @@ export default function ClientPortalPage() {
                       viewBox="0 0 96 30"
                       aria-hidden="true"
                     >
+                      <path
+                        d={createAnnouncementHelixPath(1)}
+                        className="announcement-helix__strand announcement-helix__strand--blue"
+                      />
+                      <path
+                        d={createAnnouncementHelixPath(-1)}
+                        className="announcement-helix__strand announcement-helix__strand--violet"
+                      />
                       {Array.from({ length: 12 }, (_, index) => {
-                        const offset = Math.sin(index * 0.9) * 8.5;
-                        const x = 4 + index * 8;
+                        const phase = (index / 11) * Math.PI * 3.15;
+                        const offset = Math.sin(phase) * 8.5;
+                        const x = 4 + (index / 11) * 88;
                         const animationDelay = `${index * -140}ms`;
 
                         return (

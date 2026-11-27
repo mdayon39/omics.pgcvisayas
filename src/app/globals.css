@@ -141,6 +141,29 @@
   }
 }
 
+@keyframes announcement-helix-flow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.announcement-helix__strand {
+  fill: none;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 4 5;
+  animation: announcement-helix-flow 3.2s linear infinite;
+}
+
+.announcement-helix__strand--blue {
+  stroke: #3b82f6;
+}
+
+.announcement-helix__strand--violet {
+  stroke: #818cf8;
+  animation-direction: reverse;
+}
+
 .announcement-helix__rung {
   stroke: #94a3b8;
   stroke-width: 1.2;
@@ -164,10 +187,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .announcement-helix__strand,
   .announcement-helix__rung,
   .announcement-helix__dot {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+
+  .announcement-helix__strand {
+    stroke-dashoffset: 0;
   }
 }

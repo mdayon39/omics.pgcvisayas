@@ -5828,8 +5828,13 @@ export default function ClientPortalPage() {
                     <div
                       className={
                         isReferenceSidebarClient &&
-                        projectDetails.status === "Draft"
+                        (projectDetails.status === "Draft" ||
+                          (projectDetails.status === "Pending Approval" &&
+                            !isSampleInformationSubmittedBeforeIds))
                           ? "rounded-lg border border-amber-300 bg-amber-50 p-3"
+                          : projectDetails.status === "Pending Approval" &&
+                              !isSampleInformationSubmittedBeforeIds
+                            ? "rounded-lg border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-3"
                           : `rounded-lg p-3 border ${
                               projectDetails.status === "Draft"
                                 ? "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200"
@@ -5897,17 +5902,17 @@ export default function ClientPortalPage() {
                               </>
                             ) : (
                               <>
-                                <p className="text-xs font-semibold text-blue-900 leading-none">
+                                <p className="text-xs font-semibold text-orange-900 leading-none">
                                   Project &amp; Team Details Submitted!
                                 </p>
-                                <p className="text-xs text-blue-700 leading-relaxed">
+                                <p className="text-xs text-orange-700 leading-relaxed">
                                   You may now proceed with submitting your{" "}
                                   <strong>Sample Form</strong>. Your{" "}
                                   <strong>Project ID</strong> and{" "}
                                   <strong>Client ID</strong> will be provided
                                   once your application has been approved.
                                 </p>
-                                <p className="text-xs text-blue-700 leading-relaxed">
+                                <p className="text-xs text-orange-700 leading-relaxed">
                                   Please check your dashboard regularly for
                                   updates.
                                 </p>

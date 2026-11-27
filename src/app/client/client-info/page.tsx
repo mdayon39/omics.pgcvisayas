@@ -4167,7 +4167,7 @@ export default function ClientPortalPage() {
         {member.isSubmitted && (
           <div
             className={cn(
-              "flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5",
+              "flex items-center gap-2.5 bg-[#F2FAF9] border border-[#D3ECE8] rounded-lg px-3 py-2.5",
               isReferenceSidebarClient &&
                 "rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5",
             )}
@@ -5916,7 +5916,7 @@ export default function ClientPortalPage() {
                                 : projectDetails.status === "Pending Approval"
                                   ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
                                   : projectDetails.status === "Ongoing"
-                                    ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+                                    ? "bg-[#F2FAF9] border-[#D3ECE8]"
                                     : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200"
                             }`
                       }

@@ -5914,25 +5914,21 @@ export default function ClientPortalPage() {
                     projectDetails?.status === "Returned for Revision") && (
                     <div
                       className={
-                        projectDetails.status === "Draft" &&
-                        isSubmitForApprovalDisabled
+                        projectDetails.status === "Draft"
                           ? "rounded-lg border border-[#FED7AA] bg-[#FFF7ED] p-3"
                           : isReferenceSidebarClient &&
-                              (projectDetails.status === "Draft" ||
-                                (projectDetails.status === "Pending Approval" &&
-                                  !isSampleInformationSubmittedBeforeIds))
+                            projectDetails.status === "Pending Approval" &&
+                            !isSampleInformationSubmittedBeforeIds
                           ? "rounded-lg border border-amber-300 bg-amber-50 p-3"
                           : projectDetails.status === "Pending Approval" &&
                               !isSampleInformationSubmittedBeforeIds
                             ? "rounded-lg border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-3"
                           : `rounded-lg p-3 border ${
-                              projectDetails.status === "Draft"
-                                ? "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200"
-                                : projectDetails.status === "Pending Approval"
-                                  ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
-                                  : projectDetails.status === "Ongoing"
-                                    ? "bg-[#F4FCEB] border-[#DAF0BE]"
-                                    : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200"
+                              projectDetails.status === "Pending Approval"
+                                ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+                                : projectDetails.status === "Ongoing"
+                                  ? "bg-[#F4FCEB] border-[#DAF0BE]"
+                                  : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200"
                             }`
                       }
                     >
@@ -5951,7 +5947,7 @@ export default function ClientPortalPage() {
                         ) : projectDetails.status === "Draft" &&
                           !isSubmitForApprovalDisabled ? (
                           <Info
-                            className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-orange-800"
+                            className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-[#9A3412]"
                             aria-hidden="true"
                           />
                         ) : (
@@ -5977,10 +5973,10 @@ export default function ClientPortalPage() {
                               </>
                             ) : (
                               <>
-                                <p className="text-sm font-semibold leading-tight text-orange-900">
+                                <p className="text-sm font-semibold leading-tight text-[#9A3412]">
                                   Project and Team Ready for Submission!
                                 </p>
-                                <p className="text-sm leading-relaxed text-orange-700">
+                                <p className="text-sm leading-relaxed text-[#B45309]">
                                   Click the{" "}
                                   <strong>
                                     Submit Project & Team for Approval

@@ -3812,6 +3812,11 @@ export default function ClientPortalPage() {
     projectDetails?.status === "Pending Approval" ||
     projectDetails?.status === "Ongoing" ||
     projectDetails?.status === "Completed";
+  const isProjectAndTeamApproved =
+    projectRequest?.status === "approved" ||
+    approvalStatus === "approved" ||
+    projectDetails?.status === "Ongoing" ||
+    projectDetails?.status === "Completed";
   const shouldShowProjectAndMemberDetails =
     !hasSubmittedProjectAndMemberDetails ||
     activeDocPanel === `${selectedProjectPid}:projectMembers`;
@@ -3860,11 +3865,6 @@ export default function ClientPortalPage() {
       hasChargeSlips ||
       hasUploadedOfficialReceipts ||
       hasUploadedServiceReport;
-    const isProjectAndTeamApproved =
-      projectRequest?.status === "approved" ||
-      approvalStatus === "approved" ||
-      projectDetails?.status === "Ongoing" ||
-      projectDetails?.status === "Completed";
     return [
       {
         completedLabel: "Inquiry submitted",
@@ -3914,6 +3914,7 @@ export default function ClientPortalPage() {
   }, [
     approvalStatus,
     currentInquiry,
+    isProjectAndTeamApproved,
     hasUploadedServiceReport,
     hasUploadedSampleSubmission,
     hasSubmittedOfficialReceipt,
@@ -3945,6 +3946,8 @@ export default function ClientPortalPage() {
       member.cid &&
       !["pending", "draft"].includes(member.cid.trim().toLowerCase()),
   );
+  const areProjectAndClientIdsAvailable =
+    hasIssuedProjectId && hasIssuedClientId;
   const isSampleInformationSubmittedBeforeIds =
     isSampleInformationSubmitted &&
     !hasIssuedProjectId &&
@@ -3979,6 +3982,41 @@ export default function ClientPortalPage() {
     loadProjectDocuments,
     projects,
     selectedProjectPid,
+  ]);
+
+  useEffect(() => {
+    const stateKey = workflowProjectPid
+      ? `${workflowProjectPid}:approved-with-ids`
+      : null;
+    if (
+      !workflowProjectPid ||
+      !isProjectAndTeamApproved ||
+      !areProjectAndClientIdsAvailable ||
+      isServiceReportAvailable ||
+      !stateKey ||
+      autoOpenedChargeSlipStatesRef.current.has(stateKey)
+    ) {
+      return;
+    }
+
+    const approvedProject = projects.find(
+      (project) => project.pid === workflowProjectPid,
+    );
+    if (!approvedProject) return;
+
+    autoOpenedChargeSlipStatesRef.current.add(stateKey);
+    setSelectedProjectPid(workflowProjectPid);
+    setProjectDetails(approvedProject);
+    setExpandedProjectDocs(new Set([workflowProjectPid]));
+    setActiveDocPanel(`${workflowProjectPid}:chargeSlips`);
+    void loadProjectDocuments(approvedProject);
+  }, [
+    areProjectAndClientIdsAvailable,
+    isProjectAndTeamApproved,
+    isServiceReportAvailable,
+    loadProjectDocuments,
+    projects,
+    workflowProjectPid,
   ]);
 
   useEffect(() => {
@@ -5959,7 +5997,10 @@ export default function ClientPortalPage() {
                                       ? "Charge Slip Received"
                                       : isSampleInformationSubmitted
                                         ? "Sample Information Submitted!"
-                                        : "Project and Team Approved!"}
+                                        : areProjectAndClientIdsAvailable &&
+                                            isProjectAndTeamApproved
+                                          ? "Project and Team Approved!"
+                                          : "Project Approved"}
                               </p>
                               <p className="text-xs text-green-700 leading-relaxed">
                                 {isServiceReportAvailable
@@ -5972,7 +6013,10 @@ export default function ClientPortalPage() {
                                         ? "You can now view the Charge Slip. Please upload your Official Receipt and submit it for validation."
                                         : isSampleInformationSubmitted
                                           ? "The admin will review your submitted sample information and may contact you through the Chatbox if additional details or confirmation are needed."
-                                          : "Your project has been approved. Your Project ID and Client ID are now available in your dashboard."}
+                                          : areProjectAndClientIdsAvailable &&
+                                              isProjectAndTeamApproved
+                                            ? "Your project has been approved. Your Project ID and Client ID are now available in your dashboard."
+                                            : "Your project has been approved and is now active. Access your project documents below."}
                               </p>
                             </>
                           ) : projectDetails.status ===

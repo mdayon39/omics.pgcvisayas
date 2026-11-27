@@ -5806,16 +5806,18 @@ export default function ClientPortalPage() {
                   )}
                 >
                   {/* Draft/Pending/Approved status banner */}
-                  {((projectDetails?.status === "Draft" &&
-                    isSubmitForApprovalDisabled) ||
+                  {(projectDetails?.status === "Draft" ||
                     projectDetails?.status === "Ongoing" ||
                     projectDetails?.status === "Pending Approval" ||
                     projectDetails?.status === "Rejected" ||
                     projectDetails?.status === "Returned for Revision") && (
                     <div
                       className={
-                        isReferenceSidebarClient &&
-                        projectDetails.status === "Draft"
+                        projectDetails.status === "Draft" &&
+                        !isSubmitForApprovalDisabled
+                          ? "rounded-lg border border-green-300 bg-green-50 p-3"
+                          : isReferenceSidebarClient &&
+                              projectDetails.status === "Draft"
                           ? "rounded-lg border border-amber-300 bg-amber-50 p-3"
                           : `rounded-lg p-3 border ${
                               projectDetails.status === "Draft"
@@ -5830,30 +5832,45 @@ export default function ClientPortalPage() {
                     >
                       <div className="flex items-start">
                         {isReferenceSidebarClient &&
-                          projectDetails.status === "Draft" && (
+                          projectDetails.status === "Draft" &&
+                          (isSubmitForApprovalDisabled ? (
                             <AlertCircle className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-amber-800" />
-                          )}
+                          ) : (
+                            <CheckCircle2 className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-green-700" />
+                          ))}
                         <div className="flex-1 space-y-1">
                           {projectDetails.status === "Draft" ? (
-                            <>
-                              <p
-                                className="text-sm font-semibold text-orange-900 leading-tight"
-                              >
-                                Action required: Complete the form below before
-                                submission
-                              </p>
-                              <p
-                                className="text-sm text-orange-700 leading-relaxed"
-                              >
-                                Add member details, then select{" "}
-                                <strong>
-                                  Submit Project & Team for Approval
-                                </strong>
-                                {" "}to send for admin review. Once approved,
-                                you'll receive a <strong>Project ID</strong> and{" "}
-                                <strong>Client ID</strong>.
-                              </p>
-                            </>
+                            isSubmitForApprovalDisabled ? (
+                              <>
+                                <p className="text-sm font-semibold leading-tight text-orange-900">
+                                  Action required: Complete the form below
+                                  before submission
+                                </p>
+                                <p className="text-sm leading-relaxed text-orange-700">
+                                  Add member details, then select{" "}
+                                  <strong>
+                                    Submit Project & Team for Approval
+                                  </strong>{" "}
+                                  to send for admin review. Once approved,
+                                  you'll receive a <strong>Project ID</strong>{" "}
+                                  and <strong>Client ID</strong>.
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-sm font-semibold leading-tight text-green-900">
+                                  Project and Team Details Saved
+                                </p>
+                                <p className="text-sm leading-relaxed text-green-700">
+                                  Click{" "}
+                                  <strong>
+                                    Submit Project & Team for Approval
+                                  </strong>{" "}
+                                  to submit your details for admin review and
+                                  approval.
+                                </p>
+                              </>
+                            )
                           ) : projectDetails.status === "Pending Approval" ? (
                             isSampleInformationSubmittedBeforeIds ? (
                               <>

@@ -5827,11 +5827,8 @@ export default function ClientPortalPage() {
                     projectDetails?.status === "Returned for Revision") && (
                     <div
                       className={
-                        projectDetails.status === "Draft" &&
-                        !isSubmitForApprovalDisabled
-                          ? "rounded-lg border border-green-300 bg-green-50 p-3"
-                          : isReferenceSidebarClient &&
-                              projectDetails.status === "Draft"
+                        isReferenceSidebarClient &&
+                        projectDetails.status === "Draft"
                           ? "rounded-lg border border-amber-300 bg-amber-50 p-3"
                           : `rounded-lg p-3 border ${
                               projectDetails.status === "Draft"
@@ -5850,7 +5847,7 @@ export default function ClientPortalPage() {
                           (isSubmitForApprovalDisabled ? (
                             <AlertCircle className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-amber-800" />
                           ) : (
-                            <CheckCircle2 className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-green-700" />
+                            <CheckCircle2 className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-orange-800" />
                           ))}
                         <div className="flex-1 space-y-1">
                           {projectDetails.status === "Draft" ? (
@@ -5872,16 +5869,16 @@ export default function ClientPortalPage() {
                               </>
                             ) : (
                               <>
-                                <p className="text-sm font-semibold leading-tight text-green-900">
-                                  Project and Team Details Saved
+                                <p className="text-sm font-semibold leading-tight text-orange-900">
+                                  Project and Team Details Saved!
                                 </p>
-                                <p className="text-sm leading-relaxed text-green-700">
-                                  Click{" "}
+                                <p className="text-sm leading-relaxed text-orange-700">
+                                  Click the{" "}
                                   <strong>
                                     Submit Project & Team for Approval
                                   </strong>{" "}
-                                  to submit your details for admin review and
-                                  approval.
+                                  button to submit your details for admin review
+                                  and approval.
                                 </p>
                               </>
                             )

@@ -4759,21 +4759,25 @@ export default function ClientPortalPage() {
           isReferenceSidebarClient && "px-3 py-3",
         )}
       >
-        {!isReferenceSidebarClient && (
-          <div className="flex justify-between items-center mb-4 pl-1">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Client Portal
-            </h2>
-            {/* Mobile Close Button */}
+        <div
+          className={cn(
+            "flex justify-between items-center mb-4 pl-1",
+            isReferenceSidebarClient && "mb-2 px-1 pl-0",
+          )}
+        >
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            Client Portal
+          </h2>
+          {/* Mobile Close Button */}
+          {!isReferenceSidebarClient && (
             <button
               onClick={() => setMobileSidebarOpen(false)}
               className="lg:hidden text-slate-400 hover:text-slate-600 p-1"
             >
               <X className="h-5 w-5" />
             </button>
-          </div>
-        )}
-
+          )}
+        </div>
         {/* User Identity Card - Simple & Professional */}
         <div className="flex items-center gap-3 p-1">
           <div className="relative">
@@ -4803,6 +4807,15 @@ export default function ClientPortalPage() {
             <div className="text-xs text-slate-500 truncate">
               {user?.email || emailParam || "merlito.dayon@gmail.com"}
             </div>
+            {isReferenceSidebarClient &&
+              primaryMember?.cid?.trim() &&
+              !["pending", "draft"].includes(
+                primaryMember.cid.trim().toLowerCase(),
+              ) && (
+                <span className="mt-1 inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+                  ID: {primaryMember.cid.trim()}
+                </span>
+              )}
             {!isReferenceSidebarClient && (
               <button
                 onClick={() => {
@@ -5074,6 +5087,13 @@ export default function ClientPortalPage() {
             ) : (
               projects.map((project) => {
                 if (!project || !project.pid) return null;
+                const normalizedProjectId = project.pid.trim().toLowerCase();
+                const displayProjectId =
+                  normalizedProjectId &&
+                  normalizedProjectId !== "draft" &&
+                  !normalizedProjectId.startsWith("pending-")
+                    ? project.pid.trim()
+                    : null;
                 const isSelected = selectedProjectPid === project.pid;
                 // Highlight (but don't select) projects linked to the currently viewed inquiry
                 const isLinkedToCurrentInquiry =
@@ -5161,6 +5181,14 @@ export default function ClientPortalPage() {
                           </p>
                           {isReferenceSidebarClient && (
                             <span className="text-xs text-slate-500">
+                              {displayProjectId && (
+                                <>
+                                  <span className="font-mono">
+                                    {displayProjectId}
+                                  </span>
+                                  <span className="mx-1">·</span>
+                                </>
+                              )}
                               {docs?.loading
                                 ? "Loading documents…"
                                 : `${totalDocumentCount} ${

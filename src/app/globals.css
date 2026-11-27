@@ -127,3 +127,47 @@
   outline: none !important;
   stroke: none !important;
 }
+
+@keyframes announcement-helix-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.75);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.announcement-helix__rung {
+  stroke: #94a3b8;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  opacity: 0.5;
+  animation: announcement-helix-pulse 1.4s ease-in-out infinite;
+}
+
+.announcement-helix__dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: announcement-helix-pulse 1.4s ease-in-out infinite;
+}
+
+.announcement-helix__dot--blue {
+  fill: #3b82f6;
+}
+
+.announcement-helix__dot--violet {
+  fill: #818cf8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-helix__rung,
+  .announcement-helix__dot {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

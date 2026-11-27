@@ -10221,6 +10221,44 @@ export default function ClientPortalPage() {
                         Announcements
                       </span>
                     </div>
+                    <svg
+                      className="announcement-helix ml-auto h-[30px] w-[88px] shrink-0"
+                      viewBox="0 0 96 30"
+                      aria-hidden="true"
+                    >
+                      {Array.from({ length: 10 }, (_, index) => {
+                        const offset = Math.sin(index * 0.65) * 8;
+                        const x = 4 + index * 9.7;
+                        const animationDelay = `${index * -100}ms`;
+
+                        return (
+                          <g key={index}>
+                            <line
+                              x1={x}
+                              y1={15 + offset}
+                              x2={x}
+                              y2={15 - offset}
+                              className="announcement-helix__rung"
+                              style={{ animationDelay }}
+                            />
+                            <circle
+                              cx={x}
+                              cy={15 + offset}
+                              r="2.7"
+                              className="announcement-helix__dot announcement-helix__dot--blue"
+                              style={{ animationDelay }}
+                            />
+                            <circle
+                              cx={x}
+                              cy={15 - offset}
+                              r="2.7"
+                              className="announcement-helix__dot announcement-helix__dot--violet"
+                              style={{ animationDelay }}
+                            />
+                          </g>
+                        );
+                      })}
+                    </svg>
                   </div>
                   {visibleAnnouncements.map((announcement, index) =>
                     index === announcementIndex ? (

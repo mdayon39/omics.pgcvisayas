@@ -5948,11 +5948,14 @@ export default function ClientPortalPage() {
                             className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-[#5D7A45]"
                             aria-hidden="true"
                           />
+                        ) : projectDetails.status === "Draft" &&
+                          !isSubmitForApprovalDisabled ? (
+                          <Info
+                            className="mr-2 mt-0.5 h-4 w-4 shrink-0 text-orange-800"
+                            aria-hidden="true"
+                          />
                         ) : (
-                          isReferenceSidebarClient &&
-                          projectDetails.status === "Draft" && (
-                            <CheckCircle2 className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-orange-800" />
-                          )
+                          null
                         )}
                         <div className="flex-1 space-y-1">
                           {projectDetails.status === "Draft" ? (

@@ -5870,7 +5870,7 @@ export default function ClientPortalPage() {
                             ) : (
                               <>
                                 <p className="text-sm font-semibold leading-tight text-orange-900">
-                                  Project and Team Details Saved!
+                                  Project and Team Ready for Submission!
                                 </p>
                                 <p className="text-sm leading-relaxed text-orange-700">
                                   Click the{" "}

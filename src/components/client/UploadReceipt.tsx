@@ -794,7 +794,7 @@ export default function UploadReceipt({
                             className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 font-semibold flex-shrink-0 h-6"
                             title="Waiting for admin validation"
                           >
-                            Pending
+                            For Admin Validation
                           </span>
                         )}
                         {isReturned && (
@@ -828,7 +828,7 @@ export default function UploadReceipt({
                       )}
                       {isPending && (
                         <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-semibold text-blue-800">
-                          Pending
+                          For Admin Validation
                         </span>
                       )}
                       {isReturned && (

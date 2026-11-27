@@ -7455,12 +7455,12 @@ export default function ClientPortalPage() {
                                             ) : csPending ? (
                                               <span
                                                 className={cn(
-                                                  "inline-flex text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-0.5 animate-pulse",
+                                                  "inline-flex text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-0.5",
                                                   isReferenceSidebarClient &&
                                                     "px-2.5 py-1 text-[11px]",
                                                 )}
                                               >
-                                                Pending Validation
+                                                Pending Payment
                                               </span>
                                             ) : (
                                               <span
@@ -7470,7 +7470,7 @@ export default function ClientPortalPage() {
                                                     "border-0 px-2.5 py-1 text-[11px]",
                                                 )}
                                               >
-                                                Processing
+                                                Pending Payment
                                               </span>
                                             )}
                                           </div>
